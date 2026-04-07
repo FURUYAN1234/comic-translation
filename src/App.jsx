@@ -1,4 +1,4 @@
-// AI漫画翻訳ツール V1.0.0
+// AI漫画翻訳ツール V1.0.1
 import React, { useState, useRef, useCallback } from 'react';
 import './App.css';
 import {
