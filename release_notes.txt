@@ -1,0 +1,14 @@
+﻿## Nano Banana Pro v1.1.3
+
+### 🚀 Enhancements / 機能強化
+- **Advanced Instruction Builder (高度な修正ビルダー):** Users can now build custom regeneration prompts seamlessly using preset rules alongside a custom prompt editor. (修正指示テンプレートと自由入力欄を組み合わせた再生成指示ビルダーを実装しました)
+- **Granular Translation Controls (個別翻訳コントロール):** Added buttons for single-line re-translation and translation deletion (🧹) for surgical corrections before generation. (各セリフごとに再翻訳や翻訳結果の消去ができる個別ボタンを追加しました)
+- **UI/UX Optimization (UI/UX最適化):** Moved the history panel to improve eye-flow and adjusted input layout for better visual consistency. (履歴パネルの位置をダウンロードボタン下に移動し、ラベルの視覚的な統一感を向上させました)
+- **Full State Reset (状態管理の改善):** When a new image is loaded, all non-API settings (such as builder states and rules) are strictly cleared. (新しい画像を読み込んだ際に、各種の指示状態が適切に完全リセットされるよう修正しました)
+- **GitHub Pages Stability (デプロイ安定性):** Added public/.nojekyll to prevent Vite deployment missing-asset bugs (404 errors) on GitHub Pages. (GitHub Pages上でViteのビルド成果物が404になる問題を解消しました)
+
+### 🐛 Bug Fixes / バグ修正
+- Fixed line-height and font-size inconsistency in the Instruction Builder prompt labels.
+- Resolved an issue where builder variables contaminated subsequent sessions.
+
+Enjoy the seamless workflow! / 快適になった翻訳・再生成ワークフローをお楽しみください！

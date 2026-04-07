@@ -58,7 +58,18 @@ export const extractTranslations = async (base64Image, onStatus) => {
 
   const prompt = `あなたは日本語漫画の翻訳専門家です。
 この漫画画像に含まれる全てのテキスト要素を検出し、英訳してください。
+同時に、画像のコマ構造（パネルレイアウト）も解析してください。
 
+【STEP 1: コマ構造の解析】
+画像を見て、コマ（パネル）の構造を判定してください。
+- 縦に4コマが並ぶ「四コマ漫画」の場合: type="4koma", panels=["1コマ目","2コマ目","3コマ目","4コマ目"]
+- それ以外の一般漫画の場合: type="general" とし、panels にはコマのラベルを読み順（右上→左下）で列挙してください。
+  - 1段に1コマなら "1段目" のように
+  - 1段に左右2コマなら "1段目右", "1段目左" のように（漫画の読み順：右→左）
+  - 1段に3コマ以上なら "2段目右", "2段目中", "2段目左" のように
+  - タイトルのみの段があれば "タイトル段" とする
+
+【STEP 2: テキスト検出+翻訳】
 検出対象:
 - タイトル (title)
 - 吹き出し内のセリフ (dialogue)
@@ -66,18 +77,27 @@ export const extractTranslations = async (base64Image, onStatus) => {
 - 擬音・効果音 (sfx)
 - その他テキスト (other)
 
-以下のJSON配列形式で出力してください（他の説明は一切不要）:
-[
-  {"type": "title", "original": "日本語テキスト", "translated": "English translation"},
-  {"type": "dialogue", "original": "日本語テキスト", "translated": "English translation"},
-  {"type": "sfx", "original": "ドカーン", "translated": "KABOOM"}
-]
+各テキストがどのコマに属するかも "panel" フィールドで指定してください。
+タイトルや欄外テキストは panel を "欄外" としてください。
+
+以下のJSONオブジェクト形式で出力してください（他の説明は一切不要）:
+{
+  "layout": {
+    "type": "4koma",
+    "panels": ["1コマ目", "2コマ目", "3コマ目", "4コマ目"]
+  },
+  "texts": [
+    {"type": "title", "original": "タイトル", "translated": "Title", "panel": "欄外"},
+    {"type": "dialogue", "original": "セリフ", "translated": "Line", "panel": "1コマ目"},
+    {"type": "sfx", "original": "ドカーン", "translated": "KABOOM", "panel": "3コマ目"}
+  ]
+}
 
 ルール:
 - 擬音は英語の効果音表現に変換すること (例: ドキドキ→BA-DUMP, ザァァ→WHOOOOSH, ゴゴゴ→RUMBLE)
 - セリフは自然な英語に翻訳すること
 - 全テキスト要素を漏れなく検出すること
-- 出力はJSON配列のみ。マークダウンコードブロックは使わないこと`;
+- 出力はJSONオブジェクトのみ。マークダウンコードブロックは使わないこと`;
 
   const imagePayload = {
     inlineData: {
@@ -104,7 +124,7 @@ export const extractTranslations = async (base64Image, onStatus) => {
             }],
             generationConfig: {
               temperature: 0.3,
-              maxOutputTokens: 4096,
+              maxOutputTokens: 8192,
             },
             safetySettings: [
               { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
@@ -130,9 +150,24 @@ export const extractTranslations = async (base64Image, onStatus) => {
       // JSON抽出（コードブロックを除去）
       text = text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
       
-      const translations = JSON.parse(text);
-      if (onStatus) onStatus(`> [抽出] 完了 ✓ ${translations.length}件検出 (${modelId})`);
-      return translations;
+      const parsed = JSON.parse(text);
+
+      // 新形式 {layout, texts} か旧形式 [配列] かを判定して正規化
+      let layout, texts;
+      if (Array.isArray(parsed)) {
+        // 旧形式フォールバック: 配列のみ返った場合は4コマデフォルト
+        layout = { type: "4koma", panels: ["1コマ目", "2コマ目", "3コマ目", "4コマ目"] };
+        texts = parsed.map(t => ({ ...t, panel: t.panel || "不明" }));
+      } else if (parsed.texts && parsed.layout) {
+        // 新形式: そのまま使用
+        layout = parsed.layout;
+        texts = parsed.texts;
+      } else {
+        throw new Error("予期しないレスポンス形式");
+      }
+
+      if (onStatus) onStatus(`> [抽出] 完了 ✓ ${texts.length}件検出 / ${layout.type === "4koma" ? "四コマ" : "一般漫画"}(${layout.panels.length}コマ) (${modelId})`);
+      return { layout, texts };
 
     } catch (err) {
       let msg = err.message;

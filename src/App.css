@@ -296,6 +296,13 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
   border-radius: 4px; padding: 0.25rem 0.35rem;
 }
 .text-type { flex-shrink: 0; font-size: 0.65rem; width: 18px; text-align: center; }
+.panel-badge {
+  flex-shrink: 0; font-size: 0.5rem; font-weight: 800;
+  padding: 0.1rem 0.35rem; border-radius: 10px;
+  background: var(--indigo-dim); border: 1px solid rgba(99,102,241,0.35);
+  color: var(--indigo-light); white-space: nowrap;
+  letter-spacing: 0.02em;
+}
 .text-input {
   flex: 1; min-width: 0; font-size: 0.65rem; padding: 0.3rem 0.4rem;
   background: var(--bg-input); border: 1px solid var(--border);

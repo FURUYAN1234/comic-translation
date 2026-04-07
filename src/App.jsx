@@ -1,4 +1,4 @@
-// AI漫画翻訳ツール V1.1.3
+// AI漫画翻訳ツール V1.2.0
 import React, { useState, useRef, useCallback } from 'react';
 import './App.css';
 import {
@@ -9,7 +9,7 @@ import {
   translateSingleText
 } from './lib/gemini';
 
-const SYSTEM_VERSION = "1.1.3";
+const SYSTEM_VERSION = "1.2.0";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -26,6 +26,10 @@ const App = () => {
   // 翻訳テキスト
   const [translations, setTranslations] = useState([]);
   const [isExtracting, setIsExtracting] = useState(false);
+
+  // コマ構造（動的検出）
+  const [panelLayout, setPanelLayout] = useState(null);
+  // { type: "4koma"|"general", panels: ["1コマ目", ...] }
 
   // 出力
   const [translatedImage, setTranslatedImage] = useState(null);
@@ -65,6 +69,7 @@ const App = () => {
     }
     setErrorMessage('');
     setTranslations([]);
+    setPanelLayout(null);
     setTranslatedImage(null);
     setUsedModel('');
     setOriginalFileName(file.name);
@@ -96,8 +101,17 @@ const App = () => {
     try {
       const base64 = dataUrl.split(',')[1];
       const result = await extractTranslations(base64, (s) => showStatus(s));
-      setTranslations(result);
-      showStatus(`✅ ${result.length}件検出完了`, true);
+      // 新形式 {layout, texts} を分離して保存
+      if (result.layout && result.texts) {
+        setPanelLayout(result.layout);
+        setTranslations(result.texts);
+        const layoutLabel = result.layout.type === '4koma' ? '四コマ' : `一般漫画(${result.layout.panels.length}コマ)`;
+        showStatus(`✅ ${result.texts.length}件検出 / ${layoutLabel}`, true);
+      } else {
+        // 万一旧形式が返った場合のフォールバック
+        setTranslations(Array.isArray(result) ? result : []);
+        showStatus(`✅ 検出完了`, true);
+      }
     } catch (err) {
       setErrorMessage(`テキスト抽出エラー: ${err.message}`);
       showStatus('', false);
@@ -255,6 +269,7 @@ const App = () => {
     setOriginalImage(null);
     setOriginalFileName('');
     setTranslations([]);
+    setPanelLayout(null);
     setTranslatedImage(null);
     setUsedModel('');
     setErrorMessage('');
@@ -362,7 +377,7 @@ const App = () => {
 
             {/* テキスト抽出ボタン（画像の下、テキスト欄の上） */}
             {originalImage && (
-              <button className="btn-extract" onClick={runExtraction} disabled={isExtracting || !originalImage}>
+              <button className="btn-extract" onClick={() => runExtraction()} disabled={isExtracting || !originalImage}>
                 {isExtracting
                   ? <><span className="animate-spin">◉</span> テキスト抽出中...</>
                   : <>📖 テキスト再抽出</>
@@ -388,6 +403,7 @@ const App = () => {
                   {translations.map((t, i) => (
                     <div key={i} className="text-row">
                       <span className="text-type" title={t.type}>{typeIcon(t.type)}</span>
+                      {t.panel && <span className="panel-badge" title={`所属: ${t.panel}`}>{t.panel}</span>}
                       <textarea value={t.original}
                         onChange={(e) => updateOriginalText(i, e.target.value)}
                         className="text-input text-orig" rows={2} />
@@ -488,7 +504,7 @@ const App = () => {
                     <div className="builder-row">
                       <label>1. 対象 (複数可):</label>
                       <div className="panel-checkboxes">
-                        {['全体', 'タイトル', '1コマ目', '2コマ目', '3コマ目', '4コマ目', '欄外'].map(p => (
+                        {['全体', 'タイトル', ...(panelLayout?.panels || ['1コマ目', '2コマ目', '3コマ目', '4コマ目']), '欄外'].map(p => (
                           <label key={p} className="panel-checkbox">
                             <input type="checkbox" checked={panelTargets.includes(p)} onChange={() => handleTogglePanelTarget(p)} />
                             <span>{p}</span>
