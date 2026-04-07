@@ -1,4 +1,4 @@
-// AI漫画翻訳ツール V1.0.1
+// AI漫画翻訳ツール V1.0.2
 import React, { useState, useRef, useCallback } from 'react';
 import './App.css';
 import {
@@ -294,11 +294,11 @@ const App = () => {
                   {translations.map((t, i) => (
                     <div key={i} className="text-row">
                       <span className="text-type">{typeIcon(t.type)}</span>
-                      <input type="text" value={t.original} className="text-input text-orig" readOnly />
+                      <div className="text-input text-orig">{t.original}</div>
                       <span className="text-arrow">→</span>
-                      <input type="text" value={t.translated}
+                      <textarea value={t.translated}
                         onChange={(e) => updateTranslation(i, e.target.value)}
-                        className="text-input text-trans" />
+                        className="text-input text-trans" rows={2} />
                     </div>
                   ))}
                 </div>
@@ -312,7 +312,7 @@ const App = () => {
             <button className="btn-generate" onClick={handleGenerate} disabled={!canGenerate}>
               {isGenerating
                 ? <><span className="animate-spin">◉</span> 画像生成中...</>
-                : <>🌐 反転 + 英訳画像 生成</>
+                : <>{translatedImage ? '🌐 英訳画像を再生成する' : '🌐 反転 + 英訳画像 生成'}</>
               }
             </button>
 

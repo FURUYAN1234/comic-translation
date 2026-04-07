@@ -203,9 +203,11 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
 }
 .text-type { flex-shrink: 0; font-size: 0.65rem; width: 18px; text-align: center; }
 .text-input {
-  flex: 1; min-width: 0; font-size: 0.65rem; padding: 0.2rem 0.35rem;
+  flex: 1; min-width: 0; font-size: 0.65rem; padding: 0.3rem 0.4rem;
   background: var(--bg-input); border: 1px solid var(--border);
   border-radius: 3px; color: var(--text-primary);
+  line-height: 1.4; word-break: break-word; white-space: pre-wrap;
+  resize: vertical; font-family: inherit;
 }
 .text-orig { color: var(--text-muted); font-size: 0.6rem; }
 .text-trans { color: var(--emerald); border-color: rgba(52,211,153,0.25); }
