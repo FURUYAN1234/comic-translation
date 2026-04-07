@@ -149,6 +149,41 @@ export const extractTranslations = async (base64Image, onStatus) => {
 };
 
 /**
+ * STEP 1.5: 単一テキストの再翻訳
+ * ユーザーが日本語を修正した際に個別に英訳を取得する
+ */
+export const translateSingleText = async (originalText) => {
+  if (!currentApiKey) throw new Error("API Key が設定されていません。");
+  const prompt = `あなたは漫画の翻訳家です。以下の日本語のセリフまたは擬音を、アメコミ風の自然でダイナミックな短い英語に翻訳してください。出力は翻訳された英語の文字列のみとしてください。
+
+テキスト: ${originalText}`;
+  
+  for (const modelId of TEXT_MODEL_IDS) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${currentApiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+          signal: controller.signal,
+        }
+      );
+      clearTimeout(timeoutId);
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message);
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      if (text) return text.trim();
+    } catch (e) {
+      console.warn(`[SingleTranslate] ${modelId} failed:`, e.message);
+    }
+  }
+  return originalText; // 失敗時は原文をそのまま返す
+};
+
+/**
  * STEP 2: 翻訳済み画像生成
  * 反転済み画像 + 翻訳テキスト → 英訳済み漫画画像
  * @param {string} base64FlippedImage 左右反転済みの画像 (base64)
@@ -172,14 +207,12 @@ export const generateTranslatedImage = async (base64FlippedImage, translations, 
 
 ${translationList}
 
-【絶対に守るべきルール】
-1. 【超・厳守】英語テキストは全て完全に「横書き」(strict horizontal left-to-right) で記載すること。絶対に文字を縦に並べたり、文字を90度回転させて寝かせた状態で配置しないでください。また「T, h, e」のように１文字ずつ縦に積むことも絶対に行わないこと。
-2. テキストのフォントは、可能な限りアメコミ風（American comic-book style lettering）の大文字フォント等を使用し、読みやすくすること。
-3. 【絶対禁止事項】英語の文字を「T, h, e」のように縦に並べること（スタッキング）は絶対に行わないでください。吹き出しが極端に縦長で狭い場合でも、テキストの縦並びは禁止です。その場合は、元の吹き出しの線を無視してテキストを横書きのまま枠外へはみ出させるか、新しく横長の吹き出しを既存の吹き出しの上に強引に上書きして描画してください。
-4. 擬音・効果音は元の位置に、アメコミ風のダイナミックなレタリングで配置すること。
-5. 元の画像の構図、キャラクター、背景は可能な限り維持すること。
-6. テキストは読みやすいフォントサイズで、吹き出し内に収まるように配置し、行送り（センタリング）を適切に行うこと。
-7. タイトルは目立つ英語タイポグラフィで表現すること。`;
+【絶対に守るべき物理的制約・ルール】
+1. 【角度・方向の絶対指定】英語テキストは全て完全に「水平（0度）」かつ「横書き」(strict horizontal left-to-right) で描画すること。縦長の吹き出しの形に合わせて文字全体を90度回転させたり、T,h,eのように縦に1文字ずつ積むスタッキングは《絶対禁止》です。
+2. 【サイズと改行】日本の縦長吹き出しに水平の英語を収めるため、**フォントサイズを大幅に小さくし**、単語ごとに**大量の改行（折り返し）**を入れて横幅を圧縮すること。
+3. 【吹き出しの変形】上記でも収まらない場合は、元の縦長吹き出しの枠線を完全に無視して、テキストが枠外にはみ出すことを許可します。あるいは既存の吹き出しの上に巨大な横長の吹き出しを上書きしてください。
+4. 【フォントスタイル】アメコミ風の大文字（ALL CAPS）フォントを使用すること。
+5. 擬音・効果音も同様に、元の位置にアメコミ風の水平レタリングで配置すること。`;
 
   const imagePayload = {
     inlineData: {

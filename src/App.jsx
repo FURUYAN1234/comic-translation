@@ -6,9 +6,10 @@ import {
   IMAGE_MODEL_OPTIONS,
   extractTranslations,
   generateTranslatedImage,
+  translateSingleText
 } from './lib/gemini';
 
-const SYSTEM_VERSION = "1.0.0";
+const SYSTEM_VERSION = "1.1.0";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -104,12 +105,34 @@ const App = () => {
   };
 
   // ── テキスト編集 ──
+  const updateOriginalText = (index, value) => {
+    setTranslations(prev => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], original: value };
+      return copy;
+    });
+  };
+
   const updateTranslation = (index, value) => {
     setTranslations(prev => {
       const copy = [...prev];
       copy[index] = { ...copy[index], translated: value };
       return copy;
     });
+  };
+
+  const handleSingleTranslate = async (index) => {
+    const item = translations[index];
+    if (!item.original) return;
+    showStatus(`🔄 個別翻訳中...`);
+    try {
+      const translated = await translateSingleText(item.original);
+      updateTranslation(index, translated);
+      showStatus(`✅ 翻訳更新`, true);
+    } catch (err) {
+      setErrorMessage(`個別翻訳エラー: ${err.message}`);
+      showStatus('', false);
+    }
   };
 
   // ── Canvas左右反転 ──
@@ -293,8 +316,11 @@ const App = () => {
                 <div className="text-list">
                   {translations.map((t, i) => (
                     <div key={i} className="text-row">
-                      <span className="text-type">{typeIcon(t.type)}</span>
-                      <div className="text-input text-orig">{t.original}</div>
+                      <span className="text-type" title={t.type}>{typeIcon(t.type)}</span>
+                      <textarea value={t.original}
+                        onChange={(e) => updateOriginalText(i, e.target.value)}
+                        className="text-input text-orig" rows={2} />
+                      <button className="btn-tiny btn-retrans" onClick={() => handleSingleTranslate(i)} title="この行だけ再翻訳">🔄</button>
                       <span className="text-arrow">→</span>
                       <textarea value={t.translated}
                         onChange={(e) => updateTranslation(i, e.target.value)}

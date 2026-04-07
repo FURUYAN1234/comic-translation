@@ -213,6 +213,12 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
 .text-trans { color: var(--emerald); border-color: rgba(52,211,153,0.25); }
 .text-trans:focus { border-color: var(--emerald); box-shadow: 0 0 0 2px var(--emerald-dim); }
 .text-arrow { color: var(--text-dim); font-size: 0.65rem; font-weight: 800; flex-shrink: 0; }
+.btn-retrans {
+  flex-shrink: 0; padding: 0.2rem; font-size: 0.75rem; border-radius: 4px;
+  background: var(--bg-surface); border: 1px solid var(--border); color: var(--indigo);
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-retrans:hover { background: var(--indigo-dim); border-color: var(--indigo); color: white; transform: rotate(15deg); }
 
 /* === 反転+画像生成ボタン（右カラム最上部） === */
 .btn-generate {

@@ -51,8 +51,8 @@ This tool automates the process of translating Japanese manga pages into English
 
 1. **Get API Key**: Obtain a Gemini API key at [Google AI Studio](https://aistudio.google.com/).
    [Google AI Studio](https://aistudio.google.com/) で Gemini API キーを取得してください。
-2. **Access**: Open the deployed web app and enter your API key.
-   Webアプリにアクセスし、APIキーを入力してスタートします。
+2. **Access**: Open the deployed web app ([Comic Translation Tool](https://furuyan1234.github.io/comic-translation/)) and enter your API key.
+   [Webアプリ (デモサイト)](https://furuyan1234.github.io/comic-translation/) にアクセスし、APIキーを入力してスタートします。
 
 ### 💻 Local Launch (Windows) / ローカルでの起動 (Windows)
 
@@ -210,6 +210,7 @@ An assistant for designing detailed character sheets and settings.
 A tool for translating Japanese manga to English using AI.
 AIを使って日本語漫画を英語に翻訳するツールです。
 - [Explanation / 解説](https://note.com/happy_duck780/n/na8f9a16f40ed)
+- [Demo / デモ](https://furuyan1234.github.io/comic-translation/)
 - [Code / コード](https://github.com/FURUYAN1234/comic-translation)
 
 ---
