@@ -1,4 +1,4 @@
-// AI漫画翻訳ツール V1.0.2
+// AI漫画翻訳ツール V1.0.3
 import React, { useState, useRef, useCallback } from 'react';
 import './App.css';
 import {
@@ -324,7 +324,15 @@ const App = () => {
               </div>
               <div className="result-img-box">
                 {translatedImage ? (
-                  <img src={translatedImage} alt="翻訳結果" className="result-img" />
+                  <div className={`img-wrapper ${isGenerating ? 'is-generating' : ''}`}>
+                    <img src={translatedImage} alt="翻訳結果" className="result-img" />
+                    {isGenerating && (
+                      <div className="gen-overlay">
+                        <span className="animate-spin gen-spin">◉</span>
+                        <p>画像を再生成中...</p>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="result-empty">
                     {isGenerating ? (
