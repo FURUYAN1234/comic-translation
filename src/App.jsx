@@ -1,4 +1,4 @@
-// AI漫画翻訳ツール V1.0.3
+// AI漫画翻訳ツール V1.1.3
 import React, { useState, useRef, useCallback } from 'react';
 import './App.css';
 import {
@@ -9,7 +9,7 @@ import {
   translateSingleText
 } from './lib/gemini';
 
-const SYSTEM_VERSION = "1.1.0";
+const SYSTEM_VERSION = "1.1.3";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -38,6 +38,14 @@ const App = () => {
   const statusTimerRef = useRef(null);
   const [history, setHistory] = useState([]);
 
+  // 再生成指示ビルダー
+  const [instructionRules, setInstructionRules] = useState([]);
+  const [panelTargets, setPanelTargets] = useState([]);
+  const [presetIssue, setPresetIssue] = useState('');
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [showBuilder, setShowBuilder] = useState(false);
+  const [translatingRow, setTranslatingRow] = useState(null);
+
   const showStatus = (msg, autoHide = false) => {
     if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
     setStatusMessage(msg);
@@ -60,6 +68,13 @@ const App = () => {
     setTranslatedImage(null);
     setUsedModel('');
     setOriginalFileName(file.name);
+
+    // ビルダー関連のリセット
+    setInstructionRules([]);
+    setPanelTargets([]);
+    setPresetIssue('');
+    setCustomPrompt('');
+    setShowBuilder(false);
 
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -124,16 +139,61 @@ const App = () => {
   const handleSingleTranslate = async (index) => {
     const item = translations[index];
     if (!item.original) return;
-    showStatus(`🔄 個別翻訳中...`);
+    setTranslatingRow(index);
     try {
       const translated = await translateSingleText(item.original);
       updateTranslation(index, translated);
-      showStatus(`✅ 翻訳更新`, true);
     } catch (err) {
       setErrorMessage(`個別翻訳エラー: ${err.message}`);
-      showStatus('', false);
+    } finally {
+      setTranslatingRow(null);
     }
   };
+
+  // ── 再生成ビルダー機能 ──
+  const handleTogglePanelTarget = (panel) => {
+    if (panelTargets.includes(panel)) {
+      setPanelTargets(panelTargets.filter(p => p !== panel));
+    } else {
+      setPanelTargets([...panelTargets, panel]);
+    }
+  };
+
+  const handlePresetSelect = (val) => {
+    setPresetIssue(val);
+    if (val) {
+      setCustomPrompt(prev => prev ? prev + '\n' + val : val);
+    }
+  };
+
+  const handleAddInstructionRule = () => {
+    if (panelTargets.length === 0) {
+      setErrorMessage('対象のコマを選択してください。');
+      return;
+    }
+    if (!customPrompt.trim()) {
+      setErrorMessage('内容を選択するか、自由入力欄に指示をご記入ください。');
+      return;
+    }
+    
+    // 全体が選ばれている場合は「全体」として統合
+    let targetText = panelTargets.includes('全体') ? '全体' : panelTargets.sort().join('と');
+    const ruleText = `【${targetText}】${customPrompt.trim()}`;
+    
+    if (!instructionRules.includes(ruleText)) {
+      setInstructionRules([...instructionRules, ruleText]);
+    }
+    // リセット
+    setPanelTargets([]);
+    setPresetIssue('');
+    setCustomPrompt('');
+    setErrorMessage('');
+  };
+
+  const handleRemoveInstructionRule = (index) => {
+    setInstructionRules(instructionRules.filter((_, i) => i !== index));
+  };
+
 
   // ── Canvas左右反転 ──
   const flipImageHorizontally = (dataUrl) => {
@@ -157,12 +217,16 @@ const App = () => {
     if (!originalImage || isGenerating) return;
     setIsGenerating(true);
     setErrorMessage('');
+    
+    // UIを自動で閉じる
+    setShowBuilder(false);
+
     showStatus('🔄 画像を左右反転中...');
     try {
       const flippedBase64 = await flipImageHorizontally(originalImage);
       showStatus('🌐 英訳画像を生成中...');
       const result = await generateTranslatedImage(
-        flippedBase64, translations, selectedModel, (s) => showStatus(s)
+        flippedBase64, translations, selectedModel, (s) => showStatus(s), instructionRules, customPrompt
       );
       const imgSrc = `data:image/png;base64,${result.base64Img}`;
       setTranslatedImage(imgSrc);
@@ -196,6 +260,13 @@ const App = () => {
     setErrorMessage('');
     showStatus('🔄 リセット完了', true);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    
+    // オプション等のリセット
+    setInstructionRules([]);
+    setPanelTargets([]);
+    setPresetIssue('');
+    setCustomPrompt('');
+    setShowBuilder(false);
   };
 
   // ── API リセット ──
@@ -291,7 +362,7 @@ const App = () => {
 
             {/* テキスト抽出ボタン（画像の下、テキスト欄の上） */}
             {originalImage && (
-              <button className="btn-extract" onClick={() => runExtraction()} disabled={isExtracting || !originalImage}>
+              <button className="btn-extract" onClick={runExtraction} disabled={isExtracting || !originalImage}>
                 {isExtracting
                   ? <><span className="animate-spin">◉</span> テキスト抽出中...</>
                   : <>📖 テキスト再抽出</>
@@ -320,7 +391,12 @@ const App = () => {
                       <textarea value={t.original}
                         onChange={(e) => updateOriginalText(i, e.target.value)}
                         className="text-input text-orig" rows={2} />
-                      <button className="btn-tiny btn-retrans" onClick={() => handleSingleTranslate(i)} title="この行だけ再翻訳">🔄</button>
+                      <div className="text-row-actions">
+                        <button className="btn-retrans" onClick={() => handleSingleTranslate(i)} disabled={translatingRow === i} title="この行だけ再翻訳">
+                          {translatingRow === i ? <span className="animate-spin" style={{fontSize: '9px'}}>◉</span> : '🔄'}
+                        </button>
+                        <button className="btn-clear" onClick={() => updateTranslation(i, '')} disabled={translatingRow === i} title="英訳を消去">🧹</button>
+                      </div>
                       <span className="text-arrow">→</span>
                       <textarea value={t.translated}
                         onChange={(e) => updateTranslation(i, e.target.value)}
@@ -396,6 +472,84 @@ const App = () => {
                 </div>
               </div>
             )}
+
+            {/* 再生成オプションビルダー */}
+            <div className="builder-panel">
+              <div className="builder-header" onClick={() => setShowBuilder(!showBuilder)}>
+                <span>✨ 再生成オプション (修正詳細の指示)</span>
+                <span>{showBuilder ? '▲' : '▼'}</span>
+              </div>
+              
+              {showBuilder && (
+                <div className="builder-content">
+                  <p className="builder-desc">画像を確認後、修正が必要なコマと内容を選んで追加してください。</p>
+                  
+                  <div className="builder-controls">
+                    <div className="builder-row">
+                      <label>1. 対象 (複数可):</label>
+                      <div className="panel-checkboxes">
+                        {['全体', 'タイトル', '1コマ目', '2コマ目', '3コマ目', '4コマ目', '欄外'].map(p => (
+                          <label key={p} className="panel-checkbox">
+                            <input type="checkbox" checked={panelTargets.includes(p)} onChange={() => handleTogglePanelTarget(p)} />
+                            <span>{p}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="builder-row mt-2">
+                      <label>2. 内容:</label>
+                      <select value={presetIssue} onChange={e => handlePresetSelect(e.target.value)} className="preset-select">
+                        <option value="">-- 選択肢にない場合は自由に入力してください --</option>
+                        <option value="絶対に水平（横書き）で描画し直すこと">絶対に水平（横書き）で描画し直すこと</option>
+                        <option value="文字が枠からはみ出しているので、改行を増やし文字を小さくして枠内に収めること">文字が枠からはみ出ているので、改行し小さく収める</option>
+                        <option value="文字が背景と同化して読めないので、黒または白のフチ取りをつけて読みやすくすること">文字にフチ取りをつけて読みやすくする</option>
+                        <option value="無駄な文字やゴミのような線が生成されているので消すこと">無駄なゴミや変な線を消す</option>
+                        <option value="一部の翻訳文字が描画されていないので、漏れなく確実に描画すること">消えている文字を漏れなく確実に描画</option>
+                        <option value="フキダシの中に元の日本語の跡が残っているので、白く塗りつぶしてから描くこと">フキダシを白く綺麗に塗りつぶしてから描く</option>
+                        <option value="擬音語・効果音はアメコミ風のポップでダイナミックなスタイルで大きく描画すること">擬音・効果音をアメコミ風に大きく描画</option>
+                      </select>
+                    </div>
+
+                    <div className="builder-row mt-2">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.1rem' }}>
+                        <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)' }}>3. 自由入力（上記の補足、修正、もしくは詳細な指示など）:</label>
+                        {customPrompt && (
+                          <button className="btn-tiny" onClick={() => { setCustomPrompt(''); setPresetIssue(''); }} title="入力内容をクリア" style={{ border: 'none', background: 'transparent' }}>🧹</button>
+                        )}
+                      </div>
+                      <textarea 
+                        className="text-input" rows={2} 
+                        placeholder="例: 1コマ目右のフキダシは・・・・　3コマ目の擬音を……"
+                        value={customPrompt} onChange={e => { setCustomPrompt(e.target.value); if(!e.target.value) setPresetIssue(''); }} 
+                      />
+                    </div>
+                    
+                    <button className="btn-add-rule mt-2" onClick={handleAddInstructionRule}>➕ ルールをリストに追加する</button>
+                  </div>
+                  
+                  {instructionRules.length > 0 && (
+                    <div className="rule-list">
+                      <label className="builder-label-sub">【現在の修正ルールリスト】</label>
+                      {instructionRules.map((r, i) => (
+                        <div key={i} className="rule-item">
+                          <span>{r}</span>
+                          <button className="btn-remove-rule" onClick={() => handleRemoveInstructionRule(i)}>❌</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <button className="btn-generate btn-regenerate" onClick={handleGenerate} disabled={!canGenerate}>
+                    {isGenerating
+                      ? <><span className="animate-spin">◉</span> 処理中...</>
+                      : <>🔄 このリストの指示で画像を再生成する</>
+                    }
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </div>

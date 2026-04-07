@@ -192,7 +192,7 @@ export const translateSingleText = async (originalText) => {
  * @param {function} onStatus ステータス更新コールバック
  * @returns {{ base64Img: string, usedModel: string }}
  */
-export const generateTranslatedImage = async (base64FlippedImage, translations, selectedModel, onStatus) => {
+export const generateTranslatedImage = async (base64FlippedImage, translations, selectedModel, onStatus, instructionRules = [], customPrompt = "") => {
   if (!currentApiKey) throw new Error("API Key が設定されていません。");
 
   // 翻訳テキストをプロンプトに組み込む
@@ -200,7 +200,7 @@ export const generateTranslatedImage = async (base64FlippedImage, translations, 
     .map((t, i) => `${i + 1}. [${t.type}] "${t.original}" → "${t.translated}"`)
     .join("\n");
 
-  const prompt = `あなたは漫画の英語ローカライズ専門家です。
+  let basePrompt = `あなたは漫画の英語ローカライズ専門家です。
 この日本語漫画画像を英語版に変換してください。
 
 以下の翻訳テキストを使用して、画像内の全ての日本語テキストを英語に置き換えた画像を生成してください:
@@ -213,6 +213,19 @@ ${translationList}
 3. 【吹き出しの変形】上記でも収まらない場合は、元の縦長吹き出しの枠線を完全に無視して、テキストが枠外にはみ出すことを許可します。あるいは既存の吹き出しの上に巨大な横長の吹き出しを上書きしてください。
 4. 【フォントスタイル】アメコミ風の大文字（ALL CAPS）フォントを使用すること。
 5. 擬音・効果音も同様に、元の位置にアメコミ風の水平レタリングで配置すること。`;
+
+  // ユーザーからの追加指示（再生成時など）
+  if (instructionRules.length > 0 || customPrompt.trim()) {
+    basePrompt += `\n\n【重要なユーザー追加修正指示】\n以下はユーザーから指定された修正依頼です。全体のルールよりもこの指示を最優先に適用して描画してください。\n`;
+    if (instructionRules.length > 0) {
+      basePrompt += instructionRules.map(r => `- ${r}`).join('\n') + `\n`;
+    }
+    if (customPrompt.trim()) {
+      basePrompt += `- 詳細指示: ${customPrompt.trim()}\n`;
+    }
+  }
+
+  const prompt = basePrompt;
 
   const imagePayload = {
     inlineData: {
