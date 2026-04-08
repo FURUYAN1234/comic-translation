@@ -50,11 +50,24 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
 .api-gate-btn:hover { background: var(--indigo-light); }
 .api-gate-note { font-size: 0.6rem; color: var(--text-dim); margin-top: 0.8rem; line-height: 1.6; }
 
+/* === 固定ヘッダー+ステータスエリア === */
+.sticky-top {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--bg-base);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+/* ステータスバーのmargin調整（sticky内では下マージン不要） */
+.sticky-top .inline-status,
+.sticky-top .error-bar {
+  margin-bottom: 0;
+}
+
 /* === ヘッダー === */
 .app-header {
   display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.8rem;
+  padding-bottom: 0.6rem; flex-wrap: wrap; gap: 0.8rem;
 }
 .header-brand { display: flex; align-items: center; gap: 0.8rem; }
 .header-icon {

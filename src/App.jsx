@@ -9,7 +9,7 @@ import {
   translateSingleText
 } from './lib/gemini';
 
-const SYSTEM_VERSION = "1.2.0";
+const SYSTEM_VERSION = "1.2.1";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -154,11 +154,14 @@ const App = () => {
     const item = translations[index];
     if (!item.original) return;
     setTranslatingRow(index);
+    showStatus(`🔄 テキスト #${index + 1} を翻訳中...`);
     try {
       const translated = await translateSingleText(item.original);
       updateTranslation(index, translated);
+      showStatus(`✅ テキスト #${index + 1} 翻訳完了`, true);
     } catch (err) {
       setErrorMessage(`個別翻訳エラー: ${err.message}`);
+      showStatus('', false);
     } finally {
       setTranslatingRow(null);
     }
@@ -316,36 +319,38 @@ const App = () => {
       )}
 
       <div className={!isUnlocked ? 'app-locked' : ''}>
-        {/* ヘッダー */}
-        <header className="app-header">
-          <div className="header-brand">
-            <div className="header-icon">🌐</div>
-            <div>
-              <h1 className="header-title">{APP_NAME} <span>V{SYSTEM_VERSION}</span></h1>
-              <p className="header-subtitle">COMIC TRANSLATION TOOL</p>
+        {/* ─── 固定ヘッダー＋ステータスエリア ─── */}
+        <div className="sticky-top">
+          <header className="app-header">
+            <div className="header-brand">
+              <div className="header-icon">🌐</div>
+              <div>
+                <h1 className="header-title">{APP_NAME} <span>V{SYSTEM_VERSION}</span></h1>
+                <p className="header-subtitle">COMIC TRANSLATION TOOL</p>
+              </div>
             </div>
-          </div>
-          <div className="header-actions">
-            <div className="model-select-wrap">
-              <label className="model-label">生成モデル</label>
-              <select className="model-select" value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)} disabled={isWorking}>
-                {IMAGE_MODEL_OPTIONS.map(m => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
+            <div className="header-actions">
+              <div className="model-select-wrap">
+                <label className="model-label">生成モデル</label>
+                <select className="model-select" value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)} disabled={isWorking}>
+                  {IMAGE_MODEL_OPTIONS.map(m => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+              <button className="btn-icon-only" onClick={handleFullReset} title="API含む全リセット">⏻</button>
             </div>
-            <button className="btn-icon-only" onClick={handleFullReset} title="API含む全リセット">⏻</button>
-          </div>
-        </header>
+          </header>
 
-        {/* ステータス */}
-        {statusMessage && (
-          <div className="inline-status"><span>{statusMessage}</span><button onClick={() => setStatusMessage('')}>✕</button></div>
-        )}
-        {errorMessage && (
-          <div className="error-bar"><span>⚠️ {errorMessage}</span><button onClick={() => setErrorMessage('')}>✕</button></div>
-        )}
+          {/* ステータス */}
+          {statusMessage && (
+            <div className="inline-status"><span>{statusMessage}</span><button onClick={() => setStatusMessage('')}>✕</button></div>
+          )}
+          {errorMessage && (
+            <div className="error-bar"><span>⚠️ {errorMessage}</span><button onClick={() => setErrorMessage('')}>✕</button></div>
+          )}
+        </div>
 
         {/* ════ メイン2カラム ════ */}
         <div className="main-grid">
