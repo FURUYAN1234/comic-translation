@@ -9,7 +9,7 @@ import {
   translateSingleText
 } from './lib/gemini';
 
-const SYSTEM_VERSION = "1.2.2";
+const SYSTEM_VERSION = "1.2.3";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -91,6 +91,9 @@ const App = () => {
     reader.readAsDataURL(file);
   }, []);
 
+  // セッション管理用（裏での処理衝突・情報の累積を防ぐ）
+  const extractionSessionRef = useRef(0);
+
   // ── テキスト抽出 ──
   const runExtraction = async (imageDataUrl) => {
     const dataUrl = imageDataUrl || originalImage;
@@ -98,9 +101,19 @@ const App = () => {
     setIsExtracting(true);
     setErrorMessage('');
     showStatus('📖 テキスト抽出中...');
+
+    extractionSessionRef.current += 1;
+    const currentSession = extractionSessionRef.current;
+
     try {
       const base64 = dataUrl.split(',')[1];
-      const result = await extractTranslations(base64, (s) => showStatus(s));
+      const result = await extractTranslations(base64, (s) => {
+        if (currentSession === extractionSessionRef.current) showStatus(s);
+      });
+      
+      // もし抽出中に別の画像がドロップされセッションが変わっていたら、古い結果は画面に反映せず破棄する
+      if (currentSession !== extractionSessionRef.current) return;
+
       // 新形式 {layout, texts} を分離して保存
       if (result.layout && result.texts) {
         setPanelLayout(result.layout);
@@ -113,10 +126,14 @@ const App = () => {
         showStatus(`✅ 検出完了`, true);
       }
     } catch (err) {
+      if (currentSession !== extractionSessionRef.current) return;
       setErrorMessage(`テキスト抽出エラー: ${err.message}`);
       showStatus('', false);
     } finally {
-      setIsExtracting(false);
+      // 自分が最新のセッションである場合のみ Loading を解除
+      if (currentSession === extractionSessionRef.current) {
+        setIsExtracting(false);
+      }
     }
   };
 
@@ -184,18 +201,22 @@ const App = () => {
   };
 
   const handleAddInstructionRule = () => {
-    if (panelTargets.length === 0) {
-      setErrorMessage('対象のコマを選択してください。');
-      return;
-    }
     if (!customPrompt.trim()) {
       setErrorMessage('内容を選択するか、自由入力欄に指示をご記入ください。');
       return;
     }
     
-    // 全体が選ばれている場合は「全体」として統合
-    let targetText = panelTargets.includes('全体') ? '全体' : panelTargets.sort().join('と');
-    const ruleText = `【${targetText}】${customPrompt.trim()}`;
+    const isGlobalExcludeRule = customPrompt.includes('指定したコマ以外のコマは');
+    
+    let targetText = '';
+    if (isGlobalExcludeRule) {
+      targetText = '全体';
+    } else if (panelTargets.length > 0) {
+      targetText = panelTargets.includes('全体') ? '全体' : panelTargets.sort().join('と');
+    }
+    
+    // コマ指定があれば【対象】を付加、なければそのまま（自由入力）
+    const ruleText = targetText ? `【${targetText}】${customPrompt.trim()}` : customPrompt.trim();
     
     if (!instructionRules.includes(ruleText)) {
       setInstructionRules([...instructionRules, ruleText]);
@@ -359,8 +380,9 @@ const App = () => {
           <div className="col-input">
             {/* 画像D&D */}
             <div className={`drop-zone ${isDragging ? 'dragging' : ''} ${originalImage ? 'has-image' : ''}`}
+              title="クリックまたはドラッグ＆ドロップで画像を変更"
               onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
-              onClick={() => !originalImage && fileInputRef.current?.click()}>
+              onClick={() => fileInputRef.current?.click()}>
               <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileSelect} />
               {originalImage ? (
                 <div className="preview-wrap">
@@ -530,6 +552,7 @@ const App = () => {
                         <option value="このコマのフキダシ内に元の日本語の痕跡が残っているため、完全に白く塗りつぶした上で英語テキストを描くこと">⬜ フキダシの日本語痕跡を白塗りしてから描く</option>
                         <option value="このコマの擬音語・効果音を、アメコミ風のポップでダイナミックなスタイルで大きく力強く描画すること">💥 擬音・効果音をアメコミ風に大きく描画</option>
                         <option value="このコマの吹き出し全体を一度白く塗りつぶし、元の形を維持しつつ内部を完全にリセットしてから英語テキストを再描画すること">🔄 吹き出しをリセットして英語を再描画</option>
+                        <option value="このコマの [対象の人物・吹き出し等] の [書き直す前の問題・状態] を、 [どうしたいか] のように修正すること">📝 【テンプレート】〇〇を××に修正する（選択後、入力欄で編集）</option>
                         <option value="" disabled>──────────────────────</option>
                         <option value="指定したコマ以外のコマは、テキスト・レイアウト・背景など全て一切変更しないこと">⛔ このコマ以外は一切変更しない（コマ限定修正用）</option>
                       </select>
@@ -554,14 +577,17 @@ const App = () => {
                   
                   {instructionRules.length > 0 && (
                     <div className="rule-list">
-                      <label className="builder-label-sub">【現在の修正ルールリスト】</label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                        <label className="builder-label-sub" style={{ marginBottom: 0 }}>【現在の修正ルールリスト】</label>
+                        <button className="btn-tiny" onClick={() => setInstructionRules([])} title="ルールを全て消去">🧹 全てクリア</button>
+                      </div>
                       {instructionRules.map((r, i) => (
                         <div key={i} className="rule-item">
                           <span>{r}</span>
                           <button className="btn-remove-rule" onClick={() => handleRemoveInstructionRule(i)}>❌</button>
                         </div>
                       ))}
-                      <p className="rule-hint">💡 コマ限定修正の場合は、最後に「このコマ以外は変更しない」をリストに追加すると効果的です</p>
+                      <p className="rule-hint">💡 コマ限定修正の場合は、最後にプルダウンメニューから「このコマ以外は変更しない」をリストに追加すると効果的です</p>
                     </div>
                   )}
 

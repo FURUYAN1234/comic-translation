@@ -36,6 +36,16 @@ This tool automates the process of translating Japanese manga pages into English
 
 ---
 
+## 🔄 Changelog / 更新履歴
+
+### v1.2.3 (Current)
+- Added specific presets and templates to the regeneration instruction builder. / 再生成指示ビルダーに詳細なプリセットと自由記述用のテンプレートを追加しました。
+- Implemented extraction session management to prevent text overlap bugs when dropping new images during processing. / 抽出中の別画像ドロップによるテキスト情報の累積・混在バグを防ぐためのセッション管理を実装しました。
+- Made the entire loaded image clickable for changing files (consistent with drag-and-drop behavior). / ドラッグ＆ドロップと一貫性を持たせるため、読込後のプレビュー画像全体のクリックでファイル変更ができるように改善しました。
+- Added a "Clear All" button to easily reset the instruction list. / 指示リストを簡単にリセットするための「全てクリア」ボタンを追加しました。
+
+---
+
 ## 💻 Tech Stack / 技術スタック
 
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS
