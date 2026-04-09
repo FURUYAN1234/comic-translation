@@ -9,7 +9,7 @@ import {
   translateSingleText
 } from './lib/gemini';
 
-const SYSTEM_VERSION = "1.2.1";
+const SYSTEM_VERSION = "1.2.2";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -521,14 +521,17 @@ const App = () => {
                     <div className="builder-row mt-2">
                       <label>2. 内容:</label>
                       <select value={presetIssue} onChange={e => handlePresetSelect(e.target.value)} className="preset-select">
-                        <option value="">-- 選択肢にない場合は自由に入力してください --</option>
-                        <option value="絶対に水平（横書き）で描画し直すこと">絶対に水平（横書き）で描画し直すこと</option>
-                        <option value="文字が枠からはみ出しているので、改行を増やし文字を小さくして枠内に収めること">文字が枠からはみ出ているので、改行し小さく収める</option>
-                        <option value="文字が背景と同化して読めないので、黒または白のフチ取りをつけて読みやすくすること">文字にフチ取りをつけて読みやすくする</option>
-                        <option value="無駄な文字やゴミのような線が生成されているので消すこと">無駄なゴミや変な線を消す</option>
-                        <option value="一部の翻訳文字が描画されていないので、漏れなく確実に描画すること">消えている文字を漏れなく確実に描画</option>
-                        <option value="フキダシの中に元の日本語の跡が残っているので、白く塗りつぶしてから描くこと">フキダシを白く綺麗に塗りつぶしてから描く</option>
-                        <option value="擬音語・効果音はアメコミ風のポップでダイナミックなスタイルで大きく描画すること">擬音・効果音をアメコミ風に大きく描画</option>
+                        <option value="">-- よくある問題を選択 / または下の欄に自由記述 --</option>
+                        <option value="このコマのセリフ・テキストが縦書きや斜めになっているため、全て完全に横書き（水平・左右方向）で描き直すこと">📐 文字が縦/斜め → 完全横書きで描き直す</option>
+                        <option value="このコマの吹き出し内の文字が枠からはみ出しているため、フォントを小さくし改行を増やして吹き出し枠内に収めること">📦 文字が枠からはみ出し → 縮小・改行して収める</option>
+                        <option value="このコマのテキストが背景と同化して読みにくいため、黒または白のフチ取り（アウトライン）をつけて視認性を上げること">🔲 文字が読みにくい → フチ取りで視認性を上げる</option>
+                        <option value="このコマに描画された不要な文字・ゴミのような線・汚れを全て消去すること">🧹 不要なゴミ・変な線・汚れを消去する</option>
+                        <option value="このコマで一部の英訳テキストが描画されていないため、全てのテキストを漏れなく確実に描画すること">✏️ 消えている文字を漏れなく確実に描画する</option>
+                        <option value="このコマのフキダシ内に元の日本語の痕跡が残っているため、完全に白く塗りつぶした上で英語テキストを描くこと">⬜ フキダシの日本語痕跡を白塗りしてから描く</option>
+                        <option value="このコマの擬音語・効果音を、アメコミ風のポップでダイナミックなスタイルで大きく力強く描画すること">💥 擬音・効果音をアメコミ風に大きく描画</option>
+                        <option value="このコマの吹き出し全体を一度白く塗りつぶし、元の形を維持しつつ内部を完全にリセットしてから英語テキストを再描画すること">🔄 吹き出しをリセットして英語を再描画</option>
+                        <option value="" disabled>──────────────────────</option>
+                        <option value="指定したコマ以外のコマは、テキスト・レイアウト・背景など全て一切変更しないこと">⛔ このコマ以外は一切変更しない（コマ限定修正用）</option>
                       </select>
                     </div>
 
@@ -558,6 +561,7 @@ const App = () => {
                           <button className="btn-remove-rule" onClick={() => handleRemoveInstructionRule(i)}>❌</button>
                         </div>
                       ))}
+                      <p className="rule-hint">💡 コマ限定修正の場合は、最後に「このコマ以外は変更しない」をリストに追加すると効果的です</p>
                     </div>
                   )}
 
