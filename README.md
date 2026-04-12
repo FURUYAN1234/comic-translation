@@ -38,11 +38,13 @@ This tool automates the process of translating Japanese manga pages into English
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.2.4 (Current)
-- Overhauled regeneration instruction presets: reordered by frequency, strengthened AI instruction text, and improved menu labels for clarity. / 再生成指示プリセットを全面改訂。使用頻度順に並べ替え、AI指示文を強化し、メニューラベルを明確化しました。
-- Added new preset for element deletion (people, objects, noise, etc.) with background inpainting. / 不要な要素（人物・物体・ゴミ等）の消去＋背景補完プリセットを新規追加しました。
-- Added new preset for element replacement (swap one element for another). / 要素の置き換え（AをBに変更）テンプレートを新規追加しました。
-- Removed redundant "vertical/diagonal text" preset (already covered by base prompt). Replaced with targeted "fix vertical text" correction preset. / ベースプロンプトと重複していた「縦書き/斜め」プリセットを削除し、的を絞った「縦書き修正」プリセットに置き換えました。
+### v1.4.8 (Current)
+- Complete UI bilingualization: Full English/Japanese support for all buttons, toggles, prompts, and status messages. / UIの完全な日英併記化（ボタン、トグルスイッチ、メニュー、ステータス表示等すべてを日英対応）。
+- Automated Image Flip Logic: Accurately defaults the "Flip Image" switch ON or OFF automatically based on the native reading direction (RTL/LTR) of both input and target translation languages (e.g. Japanese ⇄ Korean, Japanese ⇄ Traditional Chinese). / 翻訳元・先の言語ごとの本来の読み方向（右から左／左から右）に基づく、自然な左右反転スイッチの自動オン・オフ判定アルゴリズムを実装しました。
+- Manual Flip Override: Once manually set by the user, the Flip preference locks in and refuses to be overwritten by the auto-detection feature during generation. / 左右反転トグルを手動で操作した場合、言語判定機能による自動書き換えからユーザー操作を優先して保護する機能を追加しました。
+- UI Responsiveness Updates: Simplified state locks on specific processes, removing stale states closures from previous versions. / 古い言語設定の引き継ぎバグなどを完全に修正・排除しました。
+
+### v1.2.4
 
 ### v1.2.3
 - Added specific presets and templates to the regeneration instruction builder. / 再生成指示ビルダーに詳細なプリセットと自由記述用のテンプレートを追加しました。
