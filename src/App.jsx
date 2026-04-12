@@ -1,4 +1,4 @@
-// AI漫画翻訳ツール V1.3.0 — 多言語対応
+// AI Comic Translation Tool V1.4.0 — 多言語相互翻訳対応 / Universal Comic Translation
 import React, { useState, useRef, useCallback } from 'react';
 import './App.css';
 import {
@@ -8,9 +8,9 @@ import {
   generateTranslatedImage,
   translateSingleText
 } from './lib/gemini';
-import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel } from './lib/languages';
+import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.3.0";
+const SYSTEM_VERSION = "1.4.0";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -19,14 +19,21 @@ const App = () => {
   const [selectedModel, setSelectedModel] = useState(IMAGE_MODEL_OPTIONS[0].value);
 
   // 多言語設定
+  const [sourceLanguage, setSourceLanguage] = useState('auto');  // ソース言語（デフォルト: 自動検出）
   const [targetLanguage, setTargetLanguage] = useState('en');
-  const [flipEnabled, setFlipEnabled] = useState(true); // デフォルト: 英語なのでON
+  const [flipEnabled, setFlipEnabled] = useState(false); // デフォルト: autoなのでOFF
 
-  // 言語変更ハンドラ（デフォルトの反転設定も連動更新）
-  const handleLanguageChange = useCallback((langCode) => {
+  // ソース言語変更ハンドラ
+  const handleSourceLanguageChange = useCallback((langCode) => {
+    setSourceLanguage(langCode);
+    setFlipEnabled(getDefaultFlip(langCode, targetLanguage));
+  }, [targetLanguage]);
+
+  // ターゲット言語変更ハンドラ
+  const handleTargetLanguageChange = useCallback((langCode) => {
     setTargetLanguage(langCode);
-    setFlipEnabled(getDefaultFlip(langCode));
-  }, []);
+    setFlipEnabled(getDefaultFlip(sourceLanguage, langCode));
+  }, [sourceLanguage]);
 
   // 入力
   const [originalImage, setOriginalImage] = useState(null);
@@ -122,7 +129,7 @@ const App = () => {
       const base64 = dataUrl.split(',')[1];
       const result = await extractTranslations(base64, (s) => {
         if (currentSession === extractionSessionRef.current) showStatus(s);
-      }, lang);
+      }, lang, sourceLanguage);
       
       // もし抽出中に別の画像がドロップされセッションが変わっていたら、古い結果は画面に反映せず破棄する
       if (currentSession !== extractionSessionRef.current) return;
@@ -187,7 +194,7 @@ const App = () => {
     showStatus(`🔄 テキスト #${index + 1} を翻訳中...`);
     try {
       const langInfo = getLanguageInfo(targetLanguage);
-      const translated = await translateSingleText(item.original, targetLanguage);
+      const translated = await translateSingleText(item.original, targetLanguage, sourceLanguage);
       updateTranslation(index, translated);
       showStatus(`✅ テキスト #${index + 1} → ${langInfo.nativeName} 翻訳完了`, true);
     } catch (err) {
@@ -286,7 +293,7 @@ const App = () => {
       }
       showStatus(`🌐 ${langInfo.nativeName}画像を生成中...`);
       const result = await generateTranslatedImage(
-        inputBase64, translations, selectedModel, (s) => showStatus(s), instructionRules, customPrompt, targetLanguage
+        inputBase64, translations, selectedModel, (s) => showStatus(s), instructionRules, customPrompt, targetLanguage, sourceLanguage
       );
       const imgSrc = `data:image/png;base64,${result.base64Img}`;
       setTranslatedImage(imgSrc);
@@ -375,16 +382,25 @@ const App = () => {
             </div>
             <div className="header-actions">
               <div className="model-select-wrap">
-                <label className="model-label">翻訳先</label>
-                <select className="lang-select" value={targetLanguage}
-                  onChange={(e) => handleLanguageChange(e.target.value)} disabled={isWorking}>
-                  {LANGUAGES.map(l => (
+                <label className="model-label">入力言語 / Source</label>
+                <select className="lang-select" value={sourceLanguage}
+                  onChange={(e) => handleSourceLanguageChange(e.target.value)} disabled={isWorking}>
+                  {getSourceLanguageOptions().map(l => (
                     <option key={l.code} value={l.code}>{getLanguageLabel(l)}</option>
                   ))}
                 </select>
               </div>
               <div className="model-select-wrap">
-                <label className="model-label">生成モデル</label>
+                <label className="model-label">翻訳先 / Target</label>
+                <select className="lang-select" value={targetLanguage}
+                  onChange={(e) => handleTargetLanguageChange(e.target.value)} disabled={isWorking}>
+                  {getTargetLanguageOptions(sourceLanguage).map(l => (
+                    <option key={l.code} value={l.code}>{getLanguageLabel(l)}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="model-select-wrap">
+                <label className="model-label">生成モデル / Model</label>
                 <select className="model-select" value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)} disabled={isWorking}>
                   {IMAGE_MODEL_OPTIONS.map(m => (
@@ -392,7 +408,7 @@ const App = () => {
                   ))}
                 </select>
               </div>
-              <button className="btn-icon-only" onClick={handleFullReset} title="API含む全リセット">⏻</button>
+              <button className="btn-icon-only" onClick={handleFullReset} title="全リセット / Full Reset">⏻</button>
             </div>
           </header>
 
@@ -428,8 +444,8 @@ const App = () => {
               ) : (
                 <div className="drop-content">
                   <div className="drop-icon">📁</div>
-                  <p className="drop-text">漫画画像をドラッグ&ドロップ</p>
-                  <p className="drop-sub">または クリックして選択</p>
+                  <p className="drop-text">漫画画像をドラッグ＆ドロップ / Drop comic image here</p>
+                  <p className="drop-sub">または クリックして選択 / or click to select</p>
                 </div>
               )}
             </div>
@@ -455,8 +471,8 @@ const App = () => {
             {translations.length > 0 && (
               <div className="text-panel">
                 <div className="text-panel-header">
-                  <span className="text-panel-title">📋 抽出テキスト ({translations.length}件)</span>
-                  <span className="text-panel-hint">英訳を修正可能</span>
+                  <span className="text-panel-title">📋 抽出テキスト / Extracted Text ({translations.length})</span>
+                  <span className="text-panel-hint">翻訳を修正可 / Editable</span>
                 </div>
                 <div className="text-list">
                   {translations.map((t, i) => (
@@ -500,7 +516,7 @@ const App = () => {
                 </button>
               </label>
               <span className="flip-hint">
-                {flipEnabled ? '左→右読み（西洋式）' : '右→左読み（日本式）'}
+                {flipEnabled ? 'LTR (左→右 / Left-to-Right)' : 'RTL (右→左 / Right-to-Left)'}
               </span>
             </div>
             <button className="btn-generate" onClick={handleGenerate} disabled={!canGenerate}>
