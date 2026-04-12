@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.4.1";
+const SYSTEM_VERSION = "1.4.2";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -26,7 +26,12 @@ const App = () => {
   // ソース言語変更ハンドラ
   const handleSourceLanguageChange = useCallback((langCode) => {
     setSourceLanguage(langCode);
-    setFlipEnabled(getDefaultFlip(langCode, targetLanguage));
+    let newTarget = targetLanguage;
+    if (langCode === targetLanguage) {
+      newTarget = getTargetLanguageOptions(langCode)[0].code;
+      setTargetLanguage(newTarget);
+    }
+    setFlipEnabled(getDefaultFlip(langCode, newTarget));
   }, [targetLanguage]);
 
   // ターゲット言語変更ハンドラ
@@ -72,6 +77,13 @@ const App = () => {
     if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
     setStatusMessage(msg);
     if (autoHide) statusTimerRef.current = setTimeout(() => setStatusMessage(''), 6000);
+  };
+
+  const getBilingualPanelLabel = (p) => {
+    if (p === '全体') return '全体 / All';
+    if (p === 'タイトル') return 'タイトル / Title';
+    if (p === '欄外') return '欄外 / Margin';
+    return p.replace(/コマ目?/g, 'コマ / Panel ').replace(/段目?/g, '段 / Row ').replace(/左/g, ' (左/L)').replace(/右/g, ' (右/R)').replace(/上/g, ' (上/T)').replace(/下/g, ' (下/B)').replace(/中/g, ' (中/M)');
   };
 
   // ── API認証 ──
@@ -484,15 +496,15 @@ const App = () => {
                   {translations.map((t, i) => (
                     <div key={i} className="text-row">
                       <span className="text-type" title={t.type}>{typeIcon(t.type)}</span>
-                      {t.panel && <span className="panel-badge" title={`所属: ${t.panel}`}>{t.panel}</span>}
+                      {t.panel && <span className="panel-badge" title={`所属 / Panel: ${t.panel}`}>{getBilingualPanelLabel(t.panel)}</span>}
                       <textarea value={t.original}
                         onChange={(e) => updateOriginalText(i, e.target.value)}
                         className="text-input text-orig" rows={2} />
                       <div className="text-row-actions">
-                        <button className="btn-retrans" onClick={() => handleSingleTranslate(i)} disabled={translatingRow === i} title="この行だけ再翻訳">
+                        <button className="btn-retrans" onClick={() => handleSingleTranslate(i)} disabled={translatingRow === i} title="この行だけ再翻訳 / Retranslate this line">
                           {translatingRow === i ? <span className="animate-spin" style={{fontSize: '9px'}}>◉</span> : '🔄'}
                         </button>
-                        <button className="btn-clear" onClick={() => updateTranslation(i, '')} disabled={translatingRow === i} title="英訳を消去">🧹</button>
+                        <button className="btn-clear" onClick={() => updateTranslation(i, '')} disabled={translatingRow === i} title="英訳を消去 / Clear translation">🧹</button>
                       </div>
                       <span className="text-arrow">→</span>
                       <textarea value={t.translated}
@@ -561,7 +573,7 @@ const App = () => {
                         <p className="gen-sub">{flipEnabled ? '反転 → ' : ''}テキスト翻訳 → 画像再構築</p>
                       </div>
                     ) : (
-                      <p>画像をD&Dして<br />上のボタンで生成</p>
+                      <p>画像をD&Dして上のボタンで生成<br /><span style={{fontSize: '0.85em', opacity: 0.8}}>Drop image & click Generate</span></p>
                     )}
                   </div>
                 )}
@@ -608,7 +620,7 @@ const App = () => {
                         {['全体', 'タイトル', ...(panelLayout?.panels || ['1コマ目', '2コマ目', '3コマ目', '4コマ目']), '欄外'].map(p => (
                           <label key={p} className="panel-checkbox">
                             <input type="checkbox" checked={panelTargets.includes(p)} onChange={() => handleTogglePanelTarget(p)} />
-                            <span>{p}</span>
+                            <span>{getBilingualPanelLabel(p)}</span>
                           </label>
                         ))}
                       </div>
@@ -667,14 +679,14 @@ const App = () => {
                           <button className="btn-remove-rule" onClick={() => handleRemoveInstructionRule(i)}>❌</button>
                         </div>
                       ))}
-                      <p className="rule-hint">💡 コマ限定修正の場合は、最後にプルダウンメニューから「このコマ以外は変更しない」をリストに追加すると効果的です</p>
+                      <p className="rule-hint">💡 コマ限定修正の場合は、最後にプルダウンメニューから「このコマ以外は変更しない」をリストに追加すると効果的です / For panel-specific edits, adding 'Do NOT modify other panels' is recommended.</p>
                     </div>
                   )}
 
                   <button className="btn-generate btn-regenerate" onClick={handleGenerate} disabled={!canGenerate}>
                     {isGenerating
-                      ? <><span className="animate-spin">◉</span> 処理中...</>
-                      : <>🔄 このリストの指示で画像を再生成する</>
+                      ? <><span className="animate-spin">◉</span> 処理中... / Processing...</>
+                      : <>🔄 このリストの指示で画像を再生成する / Regenerate with these rules</>
                     }
                   </button>
                 </div>
