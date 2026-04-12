@@ -38,7 +38,13 @@ This tool automates the process of translating Japanese manga pages into English
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.2.3 (Current)
+### v1.2.4 (Current)
+- Overhauled regeneration instruction presets: reordered by frequency, strengthened AI instruction text, and improved menu labels for clarity. / 再生成指示プリセットを全面改訂。使用頻度順に並べ替え、AI指示文を強化し、メニューラベルを明確化しました。
+- Added new preset for element deletion (people, objects, noise, etc.) with background inpainting. / 不要な要素（人物・物体・ゴミ等）の消去＋背景補完プリセットを新規追加しました。
+- Added new preset for element replacement (swap one element for another). / 要素の置き換え（AをBに変更）テンプレートを新規追加しました。
+- Removed redundant "vertical/diagonal text" preset (already covered by base prompt). Replaced with targeted "fix vertical text" correction preset. / ベースプロンプトと重複していた「縦書き/斜め」プリセットを削除し、的を絞った「縦書き修正」プリセットに置き換えました。
+
+### v1.2.3
 - Added specific presets and templates to the regeneration instruction builder. / 再生成指示ビルダーに詳細なプリセットと自由記述用のテンプレートを追加しました。
 - Implemented extraction session management to prevent text overlap bugs when dropping new images during processing. / 抽出中の別画像ドロップによるテキスト情報の累積・混在バグを防ぐためのセッション管理を実装しました。
 - Made the entire loaded image clickable for changing files (consistent with drag-and-drop behavior). / ドラッグ＆ドロップと一貫性を持たせるため、読込後のプレビュー画像全体のクリックでファイル変更ができるように改善しました。
