@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.4.7";
+const SYSTEM_VERSION = "1.4.8";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -235,14 +235,14 @@ const App = () => {
     const item = translations[index];
     if (!item.original) return;
     setTranslatingRow(index);
-    showStatus(`🔄 テキスト #${index + 1} を翻訳中...`);
+    showStatus(`🔄 テキスト #${index + 1} を翻訳中... / Translating text #${index + 1}...`);
     try {
       const langInfo = getLanguageInfo(targetLanguage);
       const translated = await translateSingleText(item.original, targetLanguage, sourceLanguage);
       updateTranslation(index, translated);
-      showStatus(`✅ テキスト #${index + 1} → ${langInfo.nativeName} 翻訳完了`, true);
+      showStatus(`✅ テキスト #${index + 1} → ${langInfo.nativeName} 翻訳完了 / Translation complete`, true);
     } catch (err) {
-      setErrorMessage(`個別翻訳エラー: ${err.message}`);
+      setErrorMessage(`個別翻訳エラー / Translation Error: ${err.message}`);
       showStatus('', false);
     } finally {
       setTranslatingRow(null);
