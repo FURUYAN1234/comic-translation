@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.4.6";
+const SYSTEM_VERSION = "1.4.7";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -22,6 +22,7 @@ const App = () => {
   const [sourceLanguage, setSourceLanguage] = useState('auto');  // ソース言語（デフォルト: 自動検出）
   const [targetLanguage, setTargetLanguage] = useState('en');
   const [flipEnabled, setFlipEnabled] = useState(false); // デフォルト: autoなのでOFF
+  const flipManualOverrideRef = useRef(false);
 
   // ソース言語変更ハンドラ
   const handleSourceLanguageChange = useCallback((langCode) => {
@@ -31,12 +32,15 @@ const App = () => {
       newTarget = getTargetLanguageOptions(langCode)[0].code;
       setTargetLanguage(newTarget);
     }
-    setFlipEnabled(getDefaultFlip(langCode, newTarget));
+    if (!flipManualOverrideRef.current) {
+      setFlipEnabled(getDefaultFlip(langCode, newTarget));
+    }
   }, [targetLanguage]);
 
   // ターゲット言語変更ハンドラ
   const handleTargetLanguageChange = useCallback((langCode) => {
     setTargetLanguage(langCode);
+    flipManualOverrideRef.current = false;
     setFlipEnabled(getDefaultFlip(sourceLanguage, langCode));
   }, [sourceLanguage]);
 
@@ -178,8 +182,8 @@ const App = () => {
 
         setTranslations(result.texts);
 
-        const layoutLabel = result.layout.type === '4koma' ? '四コマ' : `一般漫画(${result.layout.panels.length}コマ)`;
-        showStatus(`✅ ${result.texts.length}件検出 / ${layoutLabel}`, true);
+        const layoutLabel = result.layout.type === '4koma' ? '四コマ / 4-koma' : `一般漫画 / Comic (${result.layout.panels.length}コマ/panels)`;
+        showStatus(`✅ ${result.texts.length}件検出 / ${result.texts.length} texts detected | ${layoutLabel}`, true);
       } else {
         // 万一旧形式が返った場合のフォールバック
         setTranslations(Array.isArray(result) ? result : []);
@@ -547,7 +551,10 @@ const App = () => {
                 <span className="flip-label">🔄 左右反転 / Flip:</span>
                 <button
                   className={`toggle-switch ${flipEnabled ? 'toggle-on' : 'toggle-off'}`}
-                  onClick={() => setFlipEnabled(!flipEnabled)}
+                  onClick={() => {
+                    flipManualOverrideRef.current = true;
+                    setFlipEnabled(!flipEnabled);
+                  }}
                   disabled={isWorking}
                   title={flipEnabled ? '反転ON — 画像を左右反転して生成' : '反転OFF — 原画の向きのまま生成'}
                 >
