@@ -4,8 +4,10 @@
  * 
  * 2つの機能:
  * 1. extractTranslations() — テキストモデルで漫画テキスト抽出+翻訳
- * 2. generateTranslatedImage() — 画像モデルで英訳済み画像を生成
+ * 2. generateTranslatedImage() — 画像モデルで翻訳済み画像を生成
  */
+
+import { getLanguageInfo } from './languages';
 
 // ── APIキー管理（メモリ限定・localStorage永続化なし） ──
 let currentApiKey = "";
@@ -48,16 +50,29 @@ export const diagnoseConnection = async () => {
 
 /**
  * STEP 1: テキスト抽出+翻訳
- * 画像から日本語テキスト（タイトル、吹き出し、擬音）を検出し英訳を生成
+ * 画像から日本語テキスト（タイトル、吹き出し、擬音）を検出し翻訳を生成
  * @param {string} base64Image base64エンコードされた画像データ
  * @param {function} onStatus ステータス更新コールバック
- * @returns {Array<{type: string, original: string, translated: string}>}
+ * @param {string} targetLang 翻訳先言語コード（デフォルト: 'en'）
+ * @returns {Object} {layout, texts}
  */
-export const extractTranslations = async (base64Image, onStatus) => {
+export const extractTranslations = async (base64Image, onStatus, targetLang = 'en') => {
   if (!currentApiKey) throw new Error("API Key が設定されていません。");
 
+  const langInfo = getLanguageInfo(targetLang);
+  const langName = langInfo.name; // 例: "English", "Korean"
+
+  // 言語別の擬音翻訳ガイド
+  const sfxGuide = targetLang === 'en'
+    ? '擬音は英語の効果音表現に変換すること (例: ドキドキ→BA-DUMP, ザァァ→WHOOOOSH, ゴゴゴ→RUMBLE)'
+    : `擬音は${langName}の自然な効果音表現に変換すること`;
+
+  const translationGuide = targetLang === 'en'
+    ? 'セリフは自然な英語に翻訳すること'
+    : `セリフは自然な${langName}に翻訳すること`;
+
   const prompt = `あなたは日本語漫画の翻訳専門家です。
-この漫画画像に含まれる全てのテキスト要素を検出し、英訳してください。
+この漫画画像に含まれる全てのテキスト要素を検出し、${langName}に翻訳してください。
 同時に、画像のコマ構造（パネルレイアウト）も解析してください。
 
 【STEP 1: コマ構造の解析】
@@ -94,8 +109,8 @@ export const extractTranslations = async (base64Image, onStatus) => {
 }
 
 ルール:
-- 擬音は英語の効果音表現に変換すること (例: ドキドキ→BA-DUMP, ザァァ→WHOOOOSH, ゴゴゴ→RUMBLE)
-- セリフは自然な英語に翻訳すること
+- ${sfxGuide}
+- ${translationGuide}
 - 全テキスト要素を漏れなく検出すること
 - 出力はJSONオブジェクトのみ。マークダウンコードブロックは使わないこと`;
 
@@ -185,11 +200,25 @@ export const extractTranslations = async (base64Image, onStatus) => {
 
 /**
  * STEP 1.5: 単一テキストの再翻訳
- * ユーザーが日本語を修正した際に個別に英訳を取得する
+ * ユーザーが日本語を修正した際に個別に翻訳を取得する
+ * @param {string} originalText 原文テキスト
+ * @param {string} targetLang 翻訳先言語コード（デフォルト: 'en'）
  */
-export const translateSingleText = async (originalText) => {
+export const translateSingleText = async (originalText, targetLang = 'en') => {
   if (!currentApiKey) throw new Error("API Key が設定されていません。");
-  const prompt = `あなたは漫画の翻訳家です。以下の日本語のセリフまたは擬音を、アメコミ風の自然でダイナミックな短い英語に翻訳してください。出力は翻訳された英語の文字列のみとしてください。
+  const langInfo = getLanguageInfo(targetLang);
+  const langName = langInfo.name;
+
+  // 言語別のスタイル指示
+  const styleHint = {
+    comic: 'アメコミ風の自然でダイナミックな短い',
+    webtoon: '韓国ウェブトゥーン風の自然な',
+    manhua: '中国漫画風の自然な',
+    european: 'バンドデシネ風の自然な',
+    general: '自然で読みやすい',
+  }[langInfo.style] || '自然な';
+
+  const prompt = `あなたは漫画の翻訳家です。以下の日本語のセリフまたは擬音を、${styleHint}${langName}に翻訳してください。出力は翻訳された${langName}の文字列のみとしてください。
 
 テキスト: ${originalText}`;
   
@@ -220,34 +249,38 @@ export const translateSingleText = async (originalText) => {
 
 /**
  * STEP 2: 翻訳済み画像生成
- * 反転済み画像 + 翻訳テキスト → 英訳済み漫画画像
- * @param {string} base64FlippedImage 左右反転済みの画像 (base64)
+ * 入力画像 + 翻訳テキスト → 翻訳済み漫画画像
+ * @param {string} base64Image 画像 (base64)
  * @param {Array} translations 翻訳テキストリスト
  * @param {string} selectedModel 使用するモデルID
  * @param {function} onStatus ステータス更新コールバック
+ * @param {Array} instructionRules 再生成ルール
+ * @param {string} customPrompt カスタムプロンプト
+ * @param {string} targetLang 翻訳先言語コード（デフォルト: 'en'）
  * @returns {{ base64Img: string, usedModel: string }}
  */
-export const generateTranslatedImage = async (base64FlippedImage, translations, selectedModel, onStatus, instructionRules = [], customPrompt = "") => {
+export const generateTranslatedImage = async (base64Image, translations, selectedModel, onStatus, instructionRules = [], customPrompt = "", targetLang = 'en') => {
   if (!currentApiKey) throw new Error("API Key が設定されていません。");
+
+  const langInfo = getLanguageInfo(targetLang);
+  const langName = langInfo.name;
 
   // 翻訳テキストをプロンプトに組み込む
   const translationList = translations
     .map((t, i) => `${i + 1}. [${t.type}] "${t.original}" → "${t.translated}"`)
     .join("\n");
 
-  let basePrompt = `あなたは漫画の英語ローカライズ専門家です。
-この日本語漫画画像を英語版に変換してください。
+  // 言語別のスタイル指示を構築
+  const styleInstructions = buildStyleInstructions(langInfo);
 
-以下の翻訳テキストを使用して、画像内の全ての日本語テキストを英語に置き換えた画像を生成してください:
+  let basePrompt = `あなたは漫画の${langName}ローカライズ専門家です。
+この日本語漫画画像を${langName}版に変換してください。
+
+以下の翻訳テキストを使用して、画像内の全ての日本語テキストを${langName}に置き換えた画像を生成してください:
 
 ${translationList}
 
-【絶対に守るべき物理的制約・ルール】
-1. 【角度・方向の絶対指定】英語テキストは全て完全に「水平（0度）」かつ「横書き」(strict horizontal left-to-right) で描画すること。縦長の吹き出しの形に合わせて文字全体を90度回転させたり、T,h,eのように縦に1文字ずつ積むスタッキングは《絶対禁止》です。
-2. 【サイズと改行】日本の縦長吹き出しに水平の英語を収めるため、**フォントサイズを大幅に小さくし**、単語ごとに**大量の改行（折り返し）**を入れて横幅を圧縮すること。
-3. 【吹き出しの変形】上記でも収まらない場合は、元の縦長吹き出しの枠線を完全に無視して、テキストが枠外にはみ出すことを許可します。あるいは既存の吹き出しの上に巨大な横長の吹き出しを上書きしてください。
-4. 【フォントスタイル】アメコミ風の大文字（ALL CAPS）フォントを使用すること。
-5. 擬音・効果音も同様に、元の位置にアメコミ風の水平レタリングで配置すること。`;
+${styleInstructions}`;
 
   // ユーザーからの追加指示（再生成時など）
   if (instructionRules.length > 0 || customPrompt.trim()) {
@@ -265,7 +298,7 @@ ${translationList}
   const imagePayload = {
     inlineData: {
       mimeType: "image/png",
-      data: base64FlippedImage
+      data: base64Image
     }
   };
 
@@ -274,7 +307,7 @@ ${translationList}
 
   for (const modelId of modelsToTry) {
     try {
-      if (onStatus) onStatus(`> [生成] ${modelId} で英訳画像を生成中...`);
+      if (onStatus) onStatus(`> [生成] ${modelId} で${langName}画像を生成中...`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分タイムアウト
@@ -330,7 +363,7 @@ ${translationList}
       let msg = err.message;
       if (err.name === "AbortError") msg = "Timeout (180s)";
       console.warn(`[ImageGen] ${modelId} failed:`, msg);
-      if (onStatus) onStatus(`> [生成] ${modelId} 失敗: ${msg.substring(0, 80)}`);
+      if (onStatus) onStatus(`> [生成] ${modelId} 失敗: ${msg.substring(0, 80)}...`);
     }
   }
 
@@ -344,4 +377,69 @@ ${translationList}
     errorMsg = "【コンテンツ制限】安全フィルターにより画像生成がブロックされました。";
   }
   throw new Error(errorMsg);
+};
+
+/**
+ * 言語別のスタイル指示を構築
+ * 画像生成プロンプトに埋め込むレタリング・テキスト描画ルール
+ * @param {Object} langInfo languages.js の言語情報オブジェクト
+ * @returns {string} プロンプトに挿入するスタイル指示テキスト
+ */
+const buildStyleInstructions = (langInfo) => {
+  const langName = langInfo.name;
+
+  // 共通: 全テキストを置換する基本ルール
+  const commonRules = `- 元の日本語テキスト箇所を完全に消去し、翻訳テキストを同じ位置に描画すること
+- フキダシの形状・位置・デザインは元画像を忠実に維持すること
+- 背景やキャラクターのアートワークは一切変更しないこと`;
+
+  switch (langInfo.style) {
+    case 'comic':
+      // 英語: アメコミ風 ALL CAPS + 縦書き禁止
+      return `【絶対に守るべき物理的制約・ルール】
+1. 【角度・方向の絶対指定】${langName}テキストは全て完全に「水平（0度）」かつ「横書き」(strict horizontal left-to-right) で描画すること。縦長の吹き出しの形に合わせて文字全体を90度回転させたり、T,h,eのように縦に1文字ずつ積むスタッキングは《絶対禁止》です。
+2. 【サイズと改行】日本の縦長吹き出しに水平の${langName}を収めるため、**フォントサイズを大幅に小さくし**、単語ごとに**大量の改行（折り返し）**を入れて横幅を圧縮すること。
+3. 【吹き出しの変形】上記でも収まらない場合は、元の縦長吹き出しの枠線を完全に無視して、テキストが枠外にはみ出すことを許可します。あるいは既存の吹き出しの上に巨大な横長の吹き出しを上書きしてください。
+4. 【フォントスタイル】アメコミ風の大文字（ALL CAPS）フォントを使用すること。
+5. 擬音・効果音も同様に、元の位置にアメコミ風の水平レタリングで配置すること。
+${commonRules}`;
+
+    case 'webtoon':
+      // 韓国語: ウェブトゥーン風横書き
+      return `【絶対に守るべき物理的制約・ルール】
+1. 【テキスト方向】${langName}テキストは全て「水平横書き」(horizontal left-to-right) で描画すること。
+2. 【サイズと改行】吹き出し内に収まるよう、適切なフォントサイズと改行で調整すること。吹き出しの形状に合わせて自然にレイアウトすること。
+3. 【フォントスタイル】韓国のウェブトゥーン・漫画で使われる自然で読みやすいフォントスタイルを使用すること。
+4. 擬音・効果音は${langName}の自然な表現で、元の位置に力強いレタリングスタイルで配置すること。
+${commonRules}`;
+
+    case 'manhua':
+      // 中国語: 簡潔で明確なスタイル
+      return `【絶対に守るべき物理的制約・ルール】
+1. 【テキスト方向】${langName}テキストは「水平横書き」(horizontal left-to-right) で描画すること。
+2. 【サイズと改行】吹き出し内に収まるよう、適切なフォントサイズと改行で調整すること。漢字は英語より横幅が広いため、フォントサイズの調整に注意すること。
+3. 【フォントスタイル】中国の漫画（漫画/マンファ）で使われる明確で読みやすいフォントスタイルを使用すること。
+4. 擬音・効果音は${langName}の自然な表現で、元の位置に配置すること。
+${commonRules}`;
+
+    case 'european':
+      // 欧州系: バンドデシネ風
+      return `【絶対に守るべき物理的制約・ルール】
+1. 【角度・方向の絶対指定】${langName}テキストは全て完全に「水平（0度）」かつ「横書き」(strict horizontal left-to-right) で描画すること。縦書き・スタッキングは《絶対禁止》です。
+2. 【サイズと改行】日本の縦長吹き出しに水平の${langName}を収めるため、**フォントサイズを小さくし**、**改行（折り返し）**を入れて横幅を圧縮すること。
+3. 【吹き出しの変形】収まらない場合は、テキストが枠外にはみ出すことを許可します。
+4. 【フォントスタイル】ヨーロッパのコミック・バンドデシネで使われる読みやすいフォントスタイルを使用すること。
+5. 擬音・効果音は${langName}の自然な表現で、元の位置にレタリングスタイルで配置すること。
+${commonRules}`;
+
+    default:
+      // 汎用（インドネシア語、タイ語など）
+      return `【絶対に守るべき物理的制約・ルール】
+1. 【テキスト方向】${langName}テキストは全て「水平横書き」(horizontal left-to-right) で描画すること。縦書き・スタッキングは禁止。
+2. 【サイズと改行】吹き出し内に収まるよう、適切なフォントサイズと改行で調整すること。
+3. 【吹き出しの変形】収まらない場合は、テキストが枠外にはみ出すことを許可します。
+4. 【フォントスタイル】読みやすく明確なフォントスタイルを使用すること。
+5. 擬音・効果音は${langName}の自然な表現で、元の位置に配置すること。
+${commonRules}`;
+  }
 };

@@ -92,6 +92,15 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
 }
 .model-select:focus { border-color: var(--indigo); }
 
+/* 言語セレクト */
+.lang-select {
+  min-width: 180px; padding: 0.4rem 2rem 0.4rem 0.7rem;
+  font-size: 0.72rem; font-weight: 600;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); color: var(--text-primary);
+}
+.lang-select:focus { border-color: var(--cyan); }
+
 .btn-icon-only {
   width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
   background: var(--bg-surface); border: 1px solid var(--border);
@@ -354,6 +363,71 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
 .btn-retrans:hover:not(:disabled) { background: var(--indigo-dim); border-color: var(--indigo); color: white; transform: rotate(15deg); }
 .btn-clear:hover { background: rgba(225,29,72,0.1); border-color: var(--rose); color: var(--rose); }
 
+/* === 反転トグル行 === */
+.flip-toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.5rem 0.8rem;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+}
+.flip-toggle {
+  display: flex; align-items: center; gap: 0.5rem; cursor: pointer;
+}
+.flip-label {
+  font-size: 0.72rem; font-weight: 800; color: var(--text-secondary);
+}
+.toggle-switch {
+  position: relative;
+  width: 52px; height: 26px;
+  border-radius: 13px; border: none;
+  cursor: pointer; transition: all 0.3s;
+  display: flex; align-items: center;
+  padding: 0 3px;
+}
+.toggle-on {
+  background: linear-gradient(135deg, var(--indigo), #4f46e5);
+  box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+}
+.toggle-off {
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+}
+.toggle-knob {
+  position: absolute;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease;
+}
+.toggle-on .toggle-knob {
+  transform: translateX(26px);
+}
+.toggle-off .toggle-knob {
+  transform: translateX(2px);
+}
+.toggle-text {
+  position: absolute;
+  font-size: 0.5rem; font-weight: 900;
+  letter-spacing: 0.05em;
+  color: white;
+}
+.toggle-on .toggle-text {
+  left: 7px;
+}
+.toggle-off .toggle-text {
+  right: 6px;
+  color: var(--text-muted);
+}
+.toggle-switch:disabled {
+  opacity: 0.5; cursor: not-allowed;
+}
+.flip-hint {
+  font-size: 0.55rem; color: var(--text-muted);
+  font-weight: 600;
+}
+
 /* === 反転+画像生成ボタン（右カラム最上部） === */
 .btn-generate {
   width: 100%; padding: 0.7rem 1rem;
@@ -451,6 +525,7 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
   .app-container { padding: 0.8rem; }
   .header-actions { width: 100%; }
   .model-select { min-width: unset; width: 100%; }
+  .lang-select { min-width: unset; width: 100%; }
   .text-row { flex-wrap: wrap; }
   .text-arrow { display: none; }
 }

@@ -1,4 +1,4 @@
-// AI漫画翻訳ツール V1.2.0
+// AI漫画翻訳ツール V1.3.0 — 多言語対応
 import React, { useState, useRef, useCallback } from 'react';
 import './App.css';
 import {
@@ -8,14 +8,25 @@ import {
   generateTranslatedImage,
   translateSingleText
 } from './lib/gemini';
+import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel } from './lib/languages';
 
-const SYSTEM_VERSION = "1.2.4";
+const SYSTEM_VERSION = "1.3.0";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [selectedModel, setSelectedModel] = useState(IMAGE_MODEL_OPTIONS[0].value);
+
+  // 多言語設定
+  const [targetLanguage, setTargetLanguage] = useState('en');
+  const [flipEnabled, setFlipEnabled] = useState(true); // デフォルト: 英語なのでON
+
+  // 言語変更ハンドラ（デフォルトの反転設定も連動更新）
+  const handleLanguageChange = useCallback((langCode) => {
+    setTargetLanguage(langCode);
+    setFlipEnabled(getDefaultFlip(langCode));
+  }, []);
 
   // 入力
   const [originalImage, setOriginalImage] = useState(null);
@@ -85,8 +96,8 @@ const App = () => {
     reader.onload = async (e) => {
       const dataUrl = e.target.result;
       setOriginalImage(dataUrl);
-      // 自動でテキスト抽出
-      await runExtraction(dataUrl);
+      // 自動でテキスト抽出（現在の翻訳先言語を使用）
+      await runExtraction(dataUrl, targetLanguage);
     };
     reader.readAsDataURL(file);
   }, []);
@@ -95,12 +106,14 @@ const App = () => {
   const extractionSessionRef = useRef(0);
 
   // ── テキスト抽出 ──
-  const runExtraction = async (imageDataUrl) => {
+  const runExtraction = async (imageDataUrl, langOverride) => {
     const dataUrl = imageDataUrl || originalImage;
     if (!dataUrl) return;
     setIsExtracting(true);
     setErrorMessage('');
-    showStatus('📖 テキスト抽出中...');
+    const lang = langOverride || targetLanguage;
+    const langInfo = getLanguageInfo(lang);
+    showStatus(`📖 テキスト抽出中... (→${langInfo.nativeName})`);
 
     extractionSessionRef.current += 1;
     const currentSession = extractionSessionRef.current;
@@ -109,7 +122,7 @@ const App = () => {
       const base64 = dataUrl.split(',')[1];
       const result = await extractTranslations(base64, (s) => {
         if (currentSession === extractionSessionRef.current) showStatus(s);
-      });
+      }, lang);
       
       // もし抽出中に別の画像がドロップされセッションが変わっていたら、古い結果は画面に反映せず破棄する
       if (currentSession !== extractionSessionRef.current) return;
@@ -173,9 +186,10 @@ const App = () => {
     setTranslatingRow(index);
     showStatus(`🔄 テキスト #${index + 1} を翻訳中...`);
     try {
-      const translated = await translateSingleText(item.original);
+      const langInfo = getLanguageInfo(targetLanguage);
+      const translated = await translateSingleText(item.original, targetLanguage);
       updateTranslation(index, translated);
-      showStatus(`✅ テキスト #${index + 1} 翻訳完了`, true);
+      showStatus(`✅ テキスト #${index + 1} → ${langInfo.nativeName} 翻訳完了`, true);
     } catch (err) {
       setErrorMessage(`個別翻訳エラー: ${err.message}`);
       showStatus('', false);
@@ -259,18 +273,26 @@ const App = () => {
     // UIを自動で閉じる
     setShowBuilder(false);
 
-    showStatus('🔄 画像を左右反転中...');
+    const langInfo = getLanguageInfo(targetLanguage);
+
     try {
-      const flippedBase64 = await flipImageHorizontally(originalImage);
-      showStatus('🌐 英訳画像を生成中...');
+      let inputBase64;
+      if (flipEnabled) {
+        showStatus('🔄 画像を左右反転中...');
+        inputBase64 = await flipImageHorizontally(originalImage);
+      } else {
+        showStatus('📋 画像を準備中...');
+        inputBase64 = originalImage.split(',')[1];
+      }
+      showStatus(`🌐 ${langInfo.nativeName}画像を生成中...`);
       const result = await generateTranslatedImage(
-        flippedBase64, translations, selectedModel, (s) => showStatus(s), instructionRules, customPrompt
+        inputBase64, translations, selectedModel, (s) => showStatus(s), instructionRules, customPrompt, targetLanguage
       );
       const imgSrc = `data:image/png;base64,${result.base64Img}`;
       setTranslatedImage(imgSrc);
       setUsedModel(result.usedModel);
       setHistory(prev => [{ translated: imgSrc, model: result.usedModel, fileName: originalFileName, timestamp: Date.now() }, ...prev]);
-      showStatus(`✅ 翻訳完了 (${result.usedModel})`, true);
+      showStatus(`✅ ${langInfo.nativeName}翻訳完了 (${result.usedModel})`, true);
     } catch (err) {
       setErrorMessage(err.message);
       showStatus('', false);
@@ -282,9 +304,10 @@ const App = () => {
   // ── ダウンロード ──
   const handleDownload = () => {
     if (!translatedImage) return;
+    const langCode = targetLanguage.toUpperCase().replace('-', '_');
     const link = document.createElement('a');
     link.href = translatedImage;
-    link.download = `${(originalFileName || 'manga').replace(/\.[^.]+$/, '')}_EN_${Date.now()}.png`;
+    link.download = `${(originalFileName || 'manga').replace(/\.[^.]+$/, '')}_${langCode}_${Date.now()}.png`;
     link.click();
   };
 
@@ -329,7 +352,7 @@ const App = () => {
           <div className="api-gate-card">
             <div className="api-gate-icon">🌐</div>
             <h1 className="api-gate-title">{APP_NAME}</h1>
-            <p className="api-gate-sub">V{SYSTEM_VERSION} — Comic Translation Tool</p>
+            <p className="api-gate-sub">V{SYSTEM_VERSION} — Multilingual Comic Translation Tool</p>
             <input type="password" className="api-gate-input" placeholder="Gemini API キーを入力..."
               value={apiKeyInput} onChange={(e) => setApiKeyInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleApiKeySubmit()} />
@@ -351,6 +374,15 @@ const App = () => {
               </div>
             </div>
             <div className="header-actions">
+              <div className="model-select-wrap">
+                <label className="model-label">翻訳先</label>
+                <select className="lang-select" value={targetLanguage}
+                  onChange={(e) => handleLanguageChange(e.target.value)} disabled={isWorking}>
+                  {LANGUAGES.map(l => (
+                    <option key={l.code} value={l.code}>{getLanguageLabel(l)}</option>
+                  ))}
+                </select>
+              </div>
               <div className="model-select-wrap">
                 <label className="model-label">生成モデル</label>
                 <select className="model-select" value={selectedModel}
@@ -453,11 +485,31 @@ const App = () => {
 
           {/* ═══ 右: 出力カラム ═══ */}
           <div className="col-output">
-            {/* 反転+画像生成ボタン（結果画像の上） */}
+            {/* 反転トグル + 画像生成ボタン */}
+            <div className="flip-toggle-row">
+              <label className="flip-toggle">
+                <span className="flip-label">🔄 左右反転:</span>
+                <button
+                  className={`toggle-switch ${flipEnabled ? 'toggle-on' : 'toggle-off'}`}
+                  onClick={() => setFlipEnabled(!flipEnabled)}
+                  disabled={isWorking}
+                  title={flipEnabled ? '反転ON — 画像を左右反転して生成' : '反転OFF — 原画の向きのまま生成'}
+                >
+                  <span className="toggle-knob" />
+                  <span className="toggle-text">{flipEnabled ? 'ON' : 'OFF'}</span>
+                </button>
+              </label>
+              <span className="flip-hint">
+                {flipEnabled ? '左→右読み（西洋式）' : '右→左読み（日本式）'}
+              </span>
+            </div>
             <button className="btn-generate" onClick={handleGenerate} disabled={!canGenerate}>
               {isGenerating
                 ? <><span className="animate-spin">◉</span> 画像生成中...</>
-                : <>{translatedImage ? '🌐 英訳画像を再生成する' : '🌐 反転 + 英訳画像 生成'}</>
+                : <>{translatedImage
+                    ? `🌐 ${getLanguageInfo(targetLanguage).nativeName}画像を再生成`
+                    : `🌐 ${flipEnabled ? '反転 + ' : ''}${getLanguageInfo(targetLanguage).nativeName}画像 生成`
+                  }</>
               }
             </button>
 
@@ -483,8 +535,8 @@ const App = () => {
                     {isGenerating ? (
                       <div className="gen-indicator">
                         <span className="animate-spin gen-spin">◉</span>
-                        <p>英訳画像を生成中...</p>
-                        <p className="gen-sub">反転 → テキスト英訳 → 画像再構築</p>
+                        <p>{getLanguageInfo(targetLanguage).nativeName}画像を生成中...</p>
+                        <p className="gen-sub">{flipEnabled ? '反転 → ' : ''}テキスト翻訳 → 画像再構築</p>
                       </div>
                     ) : (
                       <p>画像をD&Dして<br />上のボタンで生成</p>
@@ -544,18 +596,18 @@ const App = () => {
                       <label>2. 内容:</label>
                       <select value={presetIssue} onChange={e => handlePresetSelect(e.target.value)} className="preset-select">
                         <option value="">-- よくある問題を選択 / または下の欄に自由記述 --</option>
-                        <option value="このコマのテキストが縦書き（垂直方向）で描画されている。全てのテキストを水平方向の横書き（left-to-right）に修正して再描画すること。文字を縦に1文字ずつ積む描画も禁止">📐 テキストが縦書きになっている</option>
-                        <option value="このコマのフキダシ内に日本語テキストの痕跡が残っている。フキダシ内部を完全に白く塗りつぶしてから、英語テキストのみを描画し直すこと">⬜ フキダシに日本語が残っている</option>
-                        <option value="このコマで翻訳テキストの一部が描画されていない。翻訳リストにある全テキストを対応する位置に1つ残らず漏れなく描画すること">✏️ 英訳テキストが一部描画されていない</option>
-                        <option value="このコマの吹き出しからテキストがはみ出している。フォントサイズを縮小し改行を増やして、全テキストを吹き出し枠内に完全に収めること">📦 文字が枠からはみ出している</option>
-                        <option value="このコマの吹き出し全体を一度白く塗りつぶし、吹き出しの外形は維持したまま内部を完全にリセットした上で、英語テキストをゼロから再描画すること">🔄 吹き出しを完全リセットして再描画</option>
-                        <option value="このコマのテキストが背景と同化して判読困難なため、文字に白または黒の縁取り（アウトライン）を追加して確実に判読できるようにすること">👁️ 文字が背景と同化して見えない</option>
-                        <option value="このコマの擬音・効果音（SFX）を、アメコミ風の大きく力強いレタリングスタイルで再描画すること">💥 擬音・効果音をアメコミ風に強調</option>
-                        <option value="このコマに含まれる不要な要素を完全に消去し、周囲の背景・パターンで自然に補完すること。消去対象: ">🧹 不要な要素を消去（※対象を下記で指定）</option>
-                        <option value="このコマ内の指定要素を別の要素に置き換え、周囲との整合性を保ちつつ自然に描画すること。変更: [元] → [新]">🔀 要素を別のものに置き換え（※内容を下記で指定）</option>
-                        <option value="このコマの [対象] の [現状の問題] を [望む状態] に修正すること">📝 自由テンプレート（〇〇を××に修正）</option>
+                        <option value={`このコマのテキストが縦書き（垂直方向）で描画されている。全てのテキストを水平方向の横書き（left-to-right）に修正して再描画すること。文字を縦に1文字ずつ積む描画も禁止`}>📐 テキストが縦書きになっている</option>
+                        <option value={`このコマのフキダシ内に日本語テキストの痕跡が残っている。フキダシ内部を完全に白く塗りつぶしてから、${getLanguageInfo(targetLanguage).name}テキストのみを描画し直すこと`}>⬜ フキダシに日本語が残っている</option>
+                        <option value={`このコマで翻訳テキストの一部が描画されていない。翻訳リストにある全テキストを対応する位置に1つ残らず漏れなく描画すること`}>✏️ 翻訳テキストが一部描画されていない</option>
+                        <option value={`このコマの吹き出しからテキストがはみ出している。フォントサイズを縮小し改行を増やして、全テキストを吹き出し枠内に完全に収めること`}>📦 文字が枠からはみ出している</option>
+                        <option value={`このコマの吹き出し全体を一度白く塗りつぶし、吹き出しの外形は維持したまま内部を完全にリセットした上で、${getLanguageInfo(targetLanguage).name}テキストをゼロから再描画すること`}>🔄 吹き出しを完全リセットして再描画</option>
+                        <option value={`このコマのテキストが背景と同化して判読困難なため、文字に白または黒の縁取り（アウトライン）を追加して確実に判読できるようにすること`}>👁️ 文字が背景と同化して見えない</option>
+                        <option value={`このコマの擬音・効果音（SFX）を、大きく力強いレタリングスタイルで再描画すること`}>💥 擬音・効果音を力強く強調</option>
+                        <option value={`このコマに含まれる不要な要素を完全に消去し、周囲の背景・パターンで自然に補完すること。消去対象: `}>🧹 不要な要素を消去（※対象を下記で指定）</option>
+                        <option value={`このコマ内の指定要素を別の要素に置き換え、周囲との整合性を保ちつつ自然に描画すること。変更: [元] → [新]`}>🔀 要素を別のものに置き換え（※内容を下記で指定）</option>
+                        <option value={`このコマの [対象] の [現状の問題] を [望む状態] に修正すること`}>📝 自由テンプレート（〇〇を××に修正）</option>
                         <option value="" disabled>──────────────────────</option>
-                        <option value="指定したコマ以外のコマは、テキスト・レイアウト・背景など全て一切変更しないこと">⛔ 指定コマ以外は一切変更しない</option>
+                        <option value={`指定したコマ以外のコマは、テキスト・レイアウト・背景など全て一切変更しないこと`}>⛔ 指定コマ以外は一切変更しない</option>
                       </select>
                     </div>
 
