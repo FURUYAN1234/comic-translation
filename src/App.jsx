@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.4.4";
+const SYSTEM_VERSION = "1.4.5";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -563,8 +563,8 @@ const App = () => {
               {isGenerating
                 ? <><span className="animate-spin">◉</span> 画像生成中... / Generating...</>
                 : <>{translatedImage
-                    ? `🌐 ${getLanguageInfo(targetLanguage).nativeName}画像を再生成 / Regenerate`
-                    : `🌐 ${flipEnabled ? '反転 + ' : ''}${getLanguageInfo(targetLanguage).nativeName}画像 生成 / Generate`
+                    ? `🌐 ${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName} 画像を再生成 / Regenerate`
+                    : `🌐 ${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName} 画像生成 / Generate`
                   }</>
               }
             </button>
