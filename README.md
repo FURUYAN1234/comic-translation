@@ -1,7 +1,7 @@
 # AI Comic Translation Tool / AI漫画翻訳ツール
 
-> **Translate manga into 50+ languages with one click.**
-> **漫画をワンクリックで50以上の言語に翻訳する実験的Webアプリケーション。**
+> **Translate manga into 10 languages with one click.**
+> **漫画をワンクリックで10言語に翻訳する実験的Webアプリケーション。**
 >
 > Powered by Google Gemini API — Automatic text extraction, translation, horizontal flip, and image regeneration.
 > Google Gemini APIを活用し、テキスト抽出・多言語翻訳・左右反転・画像再生成を自動化。
@@ -10,8 +10,8 @@
 
 ## 🚀 Overview / 概要
 
-This tool automates the process of translating manga pages into 50+ languages (English, Japanese, Chinese, Korean, French, Spanish, etc.) using a two-stage AI pipeline.
-漫画のページをAIの2段階パイプラインで50以上の言語（英語、日本語、中国語、韓国語、フランス語、スペイン語など）に翻訳するツールです。
+This tool automates the process of translating manga pages into 10 languages (English, Japanese, Chinese, Korean, French, Spanish, etc.) using a two-stage AI pipeline.
+漫画のページをAIの2段階パイプラインで10言語（英語、日本語、中国語、韓国語、フランス語、スペイン語など）に翻訳するツールです。
 
 ### Translation Pipeline / 翻訳パイプライン
 
@@ -230,8 +230,8 @@ An assistant for designing detailed character sheets and settings.
 - [Code / コード](https://github.com/FURUYAN1234/character-sheet-maker)
 
 #### 4. AI Comic Translation Tool
-A tool for translating manga into 50+ languages using AI.
-AIを使って漫画を多言語に翻訳するツールです。
+A tool for translating manga into 10 languages using AI.
+AIを使って漫画を10言語に翻訳するツールです。
 - [Explanation / 解説](https://note.com/happy_duck780/n/nbdf826604ce7)
 - [Demo / デモ](https://furuyan1234.github.io/comic-translation/)
 - [Code / コード](https://github.com/FURUYAN1234/comic-translation)
