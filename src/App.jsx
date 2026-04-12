@@ -1,4 +1,4 @@
-// AI Comic Translation Tool V1.4.0 — 多言語相互翻訳対応 / Universal Comic Translation
+// AI Comic Translation Tool V1.5.0 — 多言語相互翻訳対応 / Universal Comic Translation
 import React, { useState, useRef, useCallback } from 'react';
 import './App.css';
 import {
@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.4.8";
+const SYSTEM_VERSION = "1.5.0";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -326,24 +326,31 @@ const App = () => {
 
     const langInfo = getLanguageInfo(targetLanguage);
 
+    // 修正モード判定: ルールありかつ翻訳済み画像がある → 翻訳画像ベースで修正
+    const isRefinement = instructionRules.length > 0 && translatedImage !== null;
+
     try {
       let inputBase64;
-      if (flipEnabled) {
+      if (isRefinement) {
+        // 修正モード: 翻訳済み画像（右側）をベースにする（既にFlip適用済み）
+        showStatus('🔧 翻訳済み画像をベースに修正中... / Refining translated image...');
+        inputBase64 = translatedImage.split(',')[1];
+      } else if (flipEnabled) {
         showStatus('🔄 画像を左右反転中...');
         inputBase64 = await flipImageHorizontally(originalImage);
       } else {
         showStatus('📋 画像を準備中...');
         inputBase64 = originalImage.split(',')[1];
       }
-      showStatus(`🌐 ${langInfo.nativeName}画像を生成中...`);
+      showStatus(`🌐 ${langInfo.nativeName}画像を${isRefinement ? '修正' : '生成'}中...`);
       const result = await generateTranslatedImage(
-        inputBase64, translations, selectedModel, (s) => showStatus(s), instructionRules, customPrompt, targetLanguage, sourceLanguage
+        inputBase64, translations, selectedModel, (s) => showStatus(s), instructionRules, customPrompt, targetLanguage, sourceLanguage, isRefinement
       );
       const imgSrc = `data:image/png;base64,${result.base64Img}`;
       setTranslatedImage(imgSrc);
       setUsedModel(result.usedModel);
       setHistory(prev => [{ translated: imgSrc, model: result.usedModel, fileName: originalFileName, timestamp: Date.now() }, ...prev]);
-      showStatus(`✅ ${langInfo.nativeName}翻訳完了 (${result.usedModel})`, true);
+      showStatus(`✅ ${langInfo.nativeName}${isRefinement ? '修正' : '翻訳'}完了 (${result.usedModel})`, true);
     } catch (err) {
       setErrorMessage(err.message);
       showStatus('', false);
@@ -710,8 +717,12 @@ const App = () => {
                       ))}
                     </div>
                   )}
-                  <p className="rule-hint" style={{ marginTop: instructionRules.length > 0 ? '0.5rem' : '1rem', marginBottom: '1rem' }}>
+                  <p className="rule-hint" style={{ marginTop: instructionRules.length > 0 ? '0.5rem' : '1rem', marginBottom: '0.5rem' }}>
                     💡 コマ限定修正の場合は、最後にプルダウンメニューから「このコマ以外は変更しない」をリストに追加すると効果的です / For panel-specific edits, adding 'Do NOT modify other panels' is recommended.
+                  </p>
+                  <p className="rule-hint" style={{ marginBottom: '1rem', color: '#ffaa00' }}>
+                    ⚠️ 修正ルール使用時は右側の翻訳済み画像をベースに再生成します。繰り返すと画質が低下する場合があります。上の「📜 履歴」から以前の結果に戻せます。
+                    <br /><span style={{fontSize: '0.85em', opacity: 0.8}}>Refinement uses the translated image as base. Use 📜 History to restore previous results if quality degrades.</span>
                   </p>
 
                   <button className="btn-generate btn-regenerate" onClick={handleGenerate} disabled={!canGenerate}>

@@ -276,7 +276,7 @@ export const translateSingleText = async (originalText, targetLang = 'en', sourc
  * @param {string} sourceLang ソース言語コード（デフォルト: 'auto'）
  * @returns {{ base64Img: string, usedModel: string }}
  */
-export const generateTranslatedImage = async (base64Image, translations, selectedModel, onStatus, instructionRules = [], customPrompt = "", targetLang = 'en', sourceLang = 'auto') => {
+export const generateTranslatedImage = async (base64Image, translations, selectedModel, onStatus, instructionRules = [], customPrompt = "", targetLang = 'en', sourceLang = 'auto', isRefinement = false) => {
   if (!currentApiKey) throw new Error("API Key が設定されていません。");
 
   const langInfo = getLanguageInfo(targetLang);
@@ -292,7 +292,37 @@ export const generateTranslatedImage = async (base64Image, translations, selecte
   // 言語別のスタイル指示を構築
   const styleInstructions = buildStyleInstructions(langInfo, srcInfo);
 
-  let basePrompt = `あなたは漫画の${langName}ローカライズ専門家です。
+  let basePrompt;
+
+  if (isRefinement) {
+    // ── 修正モード: 翻訳済み画像をベースに部分修正 ──
+    // Gemini向け最適プロンプト: 自然言語で「何を変えないか」を具体的に制約する
+    basePrompt = `あなたはプロの漫画レタリング・ローカライズ専門家です。
+この画像は既に${langName}に翻訳済みの漫画画像です。以下のユーザー修正指示に従って、この画像を部分的に修正してください。
+
+【最重要: 未指定箇所の保護ルール — Preservation Rules】
+修正指示で明示的に指定された箇所以外は、以下の全要素を元画像と完全に同一に維持してください:
+- キャラクターの顔・体・ポーズ・表情を一切変更しないこと
+- 背景のアートワーク、スクリーントーン、パターンの密度と配置をそのまま維持すること
+- 線画（ライン）の太さ・質感・シャープさを元画像と同一レベルに保つこと
+- 元画像のカラーパレット、ライティング、シェーディング技法を正確に維持すること
+- 吹き出しの形状・位置・枠線デザインは、修正対象でない限り一切変形しないこと
+- コマ割り（パネルレイアウト）の構図・境界線を変更しないこと
+- 画像全体の解像度・鮮明さ・コントラストを元画像と同等に維持すること
+
+【翻訳テキスト参照リスト（現在の正しいテキスト内容）】
+${translationList}
+
+【ユーザー修正指示 — 以下の指示のみを適用してください】`;
+    if (instructionRules.length > 0) {
+      basePrompt += `\n` + instructionRules.map(r => `- ${r}`).join('\n');
+    }
+    if (customPrompt.trim()) {
+      basePrompt += `\n- 詳細指示: ${customPrompt.trim()}`;
+    }
+  } else {
+    // ── 初回生成モード: 原画から翻訳画像を新規生成 ──
+    basePrompt = `あなたは漫画の${langName}ローカライズ専門家です。
 この${srcName}漫画画像を${langName}版に変換してください。
 
 以下の翻訳テキストを使用して、画像内の全てのテキストを${langName}に置き換えた画像を生成してください:
@@ -301,14 +331,15 @@ ${translationList}
 
 ${styleInstructions}`;
 
-  // ユーザーからの追加指示（再生成時など）
-  if (instructionRules.length > 0 || customPrompt.trim()) {
-    basePrompt += `\n\n【重要なユーザー追加修正指示】\n以下はユーザーから指定された修正依頼です。全体のルールよりもこの指示を最優先に適用して描画してください。\n`;
-    if (instructionRules.length > 0) {
-      basePrompt += instructionRules.map(r => `- ${r}`).join('\n') + `\n`;
-    }
-    if (customPrompt.trim()) {
-      basePrompt += `- 詳細指示: ${customPrompt.trim()}\n`;
+    // ユーザーからの追加指示（初回生成時のカスタムプロンプト）
+    if (instructionRules.length > 0 || customPrompt.trim()) {
+      basePrompt += `\n\n【重要なユーザー追加修正指示】\n以下はユーザーから指定された修正依頼です。全体のルールよりもこの指示を最優先に適用して描画してください。\n`;
+      if (instructionRules.length > 0) {
+        basePrompt += instructionRules.map(r => `- ${r}`).join('\n') + `\n`;
+      }
+      if (customPrompt.trim()) {
+        basePrompt += `- 詳細指示: ${customPrompt.trim()}\n`;
+      }
     }
   }
 
