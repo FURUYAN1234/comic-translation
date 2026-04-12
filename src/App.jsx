@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.4.2";
+const SYSTEM_VERSION = "1.4.3";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -149,12 +149,34 @@ const App = () => {
       // 新形式 {layout, texts, detectedSourceLang} を分離して保存
       if (result.layout && result.texts) {
         setPanelLayout(result.layout);
-        setTranslations(result.texts);
+        
+        let isConflict = false;
+        let finalTarget = lang;
         
         // 自動検出または異なる言語が検出された場合はUIに反映
         if (result.detectedSourceLang && result.detectedSourceLang !== sourceLanguage && getLanguageInfo(result.detectedSourceLang).code !== 'auto') {
+          if (result.detectedSourceLang === lang) {
+            isConflict = true;
+            finalTarget = getTargetLanguageOptions(result.detectedSourceLang)[0].code;
+          }
           handleSourceLanguageChange(result.detectedSourceLang);
         }
+
+        if (isConflict) {
+          showStatus(`⚠️ 入力と翻訳先の重複を検知。自動的に再翻訳します... / Retranslating to avoid conflict...`);
+          try {
+             const retranslated = await Promise.all(result.texts.map(async t => {
+                if (!t.original) return t;
+                const translated = await translateSingleText(t.original, finalTarget, result.detectedSourceLang);
+                return { ...t, translated };
+             }));
+             result.texts = retranslated;
+          } catch(e) {
+             console.warn("Retranslation failed:", e);
+          }
+        }
+
+        setTranslations(result.texts);
 
         const layoutLabel = result.layout.type === '4koma' ? '四コマ' : `一般漫画(${result.layout.panels.length}コマ)`;
         showStatus(`✅ ${result.texts.length}件検出 / ${layoutLabel}`, true);
@@ -679,9 +701,11 @@ const App = () => {
                           <button className="btn-remove-rule" onClick={() => handleRemoveInstructionRule(i)}>❌</button>
                         </div>
                       ))}
-                      <p className="rule-hint">💡 コマ限定修正の場合は、最後にプルダウンメニューから「このコマ以外は変更しない」をリストに追加すると効果的です / For panel-specific edits, adding 'Do NOT modify other panels' is recommended.</p>
                     </div>
                   )}
+                  <p className="rule-hint" style={{ marginTop: instructionRules.length > 0 ? '0.5rem' : '1rem', marginBottom: '1rem' }}>
+                    💡 コマ限定修正の場合は、最後にプルダウンメニューから「このコマ以外は変更しない」をリストに追加すると効果的です / For panel-specific edits, adding 'Do NOT modify other panels' is recommended.
+                  </p>
 
                   <button className="btn-generate btn-regenerate" onClick={handleGenerate} disabled={!canGenerate}>
                     {isGenerating
