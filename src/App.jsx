@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.4.3";
+const SYSTEM_VERSION = "1.4.4";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -93,7 +93,7 @@ const App = () => {
   };
 
   // ── 画像読み込み（D&D時は自動抽出） ──
-  const loadImage = useCallback((file) => {
+  const loadImage = (file) => {
     if (!file || !file.type.startsWith('image/')) {
       setErrorMessage('画像ファイルを選択してください。 / Please select an image file.'); return;
     }
@@ -119,7 +119,7 @@ const App = () => {
       await runExtraction(dataUrl, targetLanguage);
     };
     reader.readAsDataURL(file);
-  }, []);
+  };
 
   // セッション管理用（裏での処理衝突・情報の累積を防ぐ）
   const extractionSessionRef = useRef(0);
