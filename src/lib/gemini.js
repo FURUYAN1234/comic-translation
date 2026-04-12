@@ -105,6 +105,7 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
 
 以下のJSONオブジェクト形式で出力してください（他の説明は一切不要）:
 {
+  "detectedLanguage": "ja", // 検出したソース言語の言語コード（ja, en, ko, zh-CN, zh-TW, es, fr, de, id, th のいずれか）
   "layout": {
     "type": "4koma",
     "panels": ["1コマ目", "2コマ目", "3コマ目", "4コマ目"]
@@ -131,7 +132,7 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
 
   for (const modelId of TEXT_MODEL_IDS) {
     try {
-      if (onStatus) onStatus(`> [抽出] ${modelId} でテキスト解析中...`);
+      if (onStatus) onStatus(`> [抽出/Extract] ${modelId} でテキスト解析中... / Analyzing...`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
@@ -175,22 +176,24 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
       
       const parsed = JSON.parse(text);
 
-      // 新形式 {layout, texts} か旧形式 [配列] かを判定して正規化
-      let layout, texts;
+      // 新形式 {detectedLanguage, layout, texts} か旧形式 [配列] かを判定して正規化
+      let layout, texts, detectedSourceLang;
       if (Array.isArray(parsed)) {
         // 旧形式フォールバック: 配列のみ返った場合は4コマデフォルト
         layout = { type: "4koma", panels: ["1コマ目", "2コマ目", "3コマ目", "4コマ目"] };
         texts = parsed.map(t => ({ ...t, panel: t.panel || "不明" }));
+        detectedSourceLang = sourceLang;
       } else if (parsed.texts && parsed.layout) {
-        // 新形式: そのまま使用
+        // 新形式
         layout = parsed.layout;
         texts = parsed.texts;
+        detectedSourceLang = parsed.detectedLanguage || sourceLang;
       } else {
         throw new Error("予期しないレスポンス形式");
       }
 
-      if (onStatus) onStatus(`> [抽出] 完了 ✓ ${texts.length}件検出 / ${layout.type === "4koma" ? "四コマ" : "一般漫画"}(${layout.panels.length}コマ) (${modelId})`);
-      return { layout, texts };
+      if (onStatus) onStatus(`> [抽出/Extract] 完了 / Complete ✓ ${texts.length}件検出 / ${layout.type === "4koma" ? "四コマ(4-koma)" : "一般漫画(Comic)"}(${layout.panels.length}コマ) (${modelId})`);
+      return { layout, texts, detectedSourceLang };
 
     } catch (err) {
       let msg = err.message;
@@ -320,10 +323,11 @@ ${styleInstructions}`;
 
   // 選択モデル → フォールバックリスト構築
   const modelsToTry = [selectedModel, ...IMAGE_MODEL_OPTIONS.map(m => m.value).filter(m => m !== selectedModel)];
+  const tgtLangName = langInfo.name;
 
   for (const modelId of modelsToTry) {
     try {
-      if (onStatus) onStatus(`> [生成] ${modelId} で${langName}画像を生成中...`);
+      if (onStatus) onStatus(`> [生成/Generate] ${modelId} で${tgtLangName}画像を生成中... / Generating image...`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分タイムアウト
@@ -365,11 +369,10 @@ ${styleInstructions}`;
         throw new Error("No response candidates");
       }
 
-      // 画像パーツを検索
       const parts = candidates[0]?.content?.parts || [];
       const imagePart = parts.find(p => p.inlineData);
       if (imagePart?.inlineData?.data) {
-        if (onStatus) onStatus(`> [生成] 完了 ✓ (${modelId})`);
+        if (onStatus) onStatus(`> [生成/Generate] 完了 / Complete ✓ (${modelId})`);
         return { base64Img: imagePart.inlineData.data, usedModel: modelId };
       }
 

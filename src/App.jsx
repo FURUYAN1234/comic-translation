@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.4.0";
+const SYSTEM_VERSION = "1.4.1";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -83,7 +83,7 @@ const App = () => {
   // ── 画像読み込み（D&D時は自動抽出） ──
   const loadImage = useCallback((file) => {
     if (!file || !file.type.startsWith('image/')) {
-      setErrorMessage('画像ファイルを選択してください。'); return;
+      setErrorMessage('画像ファイルを選択してください。 / Please select an image file.'); return;
     }
     setErrorMessage('');
     setTranslations([]);
@@ -134,16 +134,22 @@ const App = () => {
       // もし抽出中に別の画像がドロップされセッションが変わっていたら、古い結果は画面に反映せず破棄する
       if (currentSession !== extractionSessionRef.current) return;
 
-      // 新形式 {layout, texts} を分離して保存
+      // 新形式 {layout, texts, detectedSourceLang} を分離して保存
       if (result.layout && result.texts) {
         setPanelLayout(result.layout);
         setTranslations(result.texts);
+        
+        // 自動検出または異なる言語が検出された場合はUIに反映
+        if (result.detectedSourceLang && result.detectedSourceLang !== sourceLanguage && getLanguageInfo(result.detectedSourceLang).code !== 'auto') {
+          handleSourceLanguageChange(result.detectedSourceLang);
+        }
+
         const layoutLabel = result.layout.type === '4koma' ? '四コマ' : `一般漫画(${result.layout.panels.length}コマ)`;
         showStatus(`✅ ${result.texts.length}件検出 / ${layoutLabel}`, true);
       } else {
         // 万一旧形式が返った場合のフォールバック
         setTranslations(Array.isArray(result) ? result : []);
-        showStatus(`✅ 検出完了`, true);
+        showStatus(`✅ 検出完了 / Extraction Complete`, true);
       }
     } catch (err) {
       if (currentSession !== extractionSessionRef.current) return;
@@ -223,7 +229,7 @@ const App = () => {
 
   const handleAddInstructionRule = () => {
     if (!customPrompt.trim()) {
-      setErrorMessage('内容を選択するか、自由入力欄に指示をご記入ください。');
+      setErrorMessage('内容を選択するか、自由入力欄に指示をご記入ください。 / Please select an issue or type an instruction.');
       return;
     }
     
@@ -360,11 +366,11 @@ const App = () => {
             <div className="api-gate-icon">🌐</div>
             <h1 className="api-gate-title">{APP_NAME}</h1>
             <p className="api-gate-sub">V{SYSTEM_VERSION} — Multilingual Comic Translation Tool</p>
-            <input type="password" className="api-gate-input" placeholder="Gemini API キーを入力..."
+            <input type="password" className="api-gate-input" placeholder="Gemini API キーを入力... / Enter API Key..."
               value={apiKeyInput} onChange={(e) => setApiKeyInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleApiKeySubmit()} />
-            <button className="api-gate-btn" onClick={handleApiKeySubmit}>🔓 起動する</button>
-            <p className="api-gate-note">※ APIキーはセッション限定（ブラウザに保存されません）<br />Google AI Studio: ai.google.dev で取得</p>
+            <button className="api-gate-btn" onClick={handleApiKeySubmit}>🔓 起動する / Start</button>
+            <p className="api-gate-note">※ APIキーはセッション限定（ブラウザに保存されません） / Session-only (Not saved)<br />Google AI Studio: ai.google.dev で取得 / Get key from ai.google.dev</p>
           </div>
         </div>
       )}
@@ -436,8 +442,8 @@ const App = () => {
                 <div className="preview-wrap">
                   <img src={originalImage} alt="元画像" className="preview-img" />
                   <div className="preview-actions">
-                    <button className="btn-sm" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>📁 変更</button>
-                    <button className="btn-sm btn-sm-danger" onClick={(e) => { e.stopPropagation(); handleImageReset(); }}>🗑️ リセット</button>
+                    <button className="btn-sm" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>🔄 変更 / Change</button>
+                    <button className="btn-sm btn-sm-danger" onClick={(e) => { e.stopPropagation(); handleImageReset(); }}>🗑️ リセット / Reset</button>
                   </div>
                   <div className="preview-filename">{originalFileName}</div>
                 </div>
@@ -454,8 +460,8 @@ const App = () => {
             {originalImage && (
               <button className="btn-extract" onClick={() => runExtraction()} disabled={isExtracting || !originalImage}>
                 {isExtracting
-                  ? <><span className="animate-spin">◉</span> テキスト抽出中...</>
-                  : <>📖 テキスト再抽出</>
+                  ? <><span className="animate-spin">◉</span> テキスト解析中... / Extracting...</>
+                  : <>📖 テキスト再抽出 / Re-extract Text</>
                 }
               </button>
             )}
@@ -504,7 +510,7 @@ const App = () => {
             {/* 反転トグル + 画像生成ボタン */}
             <div className="flip-toggle-row">
               <label className="flip-toggle">
-                <span className="flip-label">🔄 左右反転:</span>
+                <span className="flip-label">🔄 左右反転 / Flip:</span>
                 <button
                   className={`toggle-switch ${flipEnabled ? 'toggle-on' : 'toggle-off'}`}
                   onClick={() => setFlipEnabled(!flipEnabled)}
@@ -521,10 +527,10 @@ const App = () => {
             </div>
             <button className="btn-generate" onClick={handleGenerate} disabled={!canGenerate}>
               {isGenerating
-                ? <><span className="animate-spin">◉</span> 画像生成中...</>
+                ? <><span className="animate-spin">◉</span> 画像生成中... / Generating...</>
                 : <>{translatedImage
-                    ? `🌐 ${getLanguageInfo(targetLanguage).nativeName}画像を再生成`
-                    : `🌐 ${flipEnabled ? '反転 + ' : ''}${getLanguageInfo(targetLanguage).nativeName}画像 生成`
+                    ? `🌐 ${getLanguageInfo(targetLanguage).nativeName}画像を再生成 / Regenerate`
+                    : `🌐 ${flipEnabled ? '反転 + ' : ''}${getLanguageInfo(targetLanguage).nativeName}画像 生成 / Generate`
                   }</>
               }
             </button>
@@ -532,7 +538,7 @@ const App = () => {
             {/* 結果画像 */}
             <div className="result-panel">
               <div className="result-header">
-                <span className="result-label">🎯 翻訳結果</span>
+                <span className="result-label">🎯 翻訳結果 / Result</span>
                 {usedModel && <span className="result-model"><span className="dot-ok">●</span> {usedModel}</span>}
               </div>
               <div className="result-img-box">
@@ -542,7 +548,7 @@ const App = () => {
                     {isGenerating && (
                       <div className="gen-overlay">
                         <span className="animate-spin gen-spin">◉</span>
-                        <p>画像を再生成中...</p>
+                        <p>画像を再生成中... / Regenerating...</p>
                       </div>
                     )}
                   </div>
@@ -551,7 +557,7 @@ const App = () => {
                     {isGenerating ? (
                       <div className="gen-indicator">
                         <span className="animate-spin gen-spin">◉</span>
-                        <p>{getLanguageInfo(targetLanguage).nativeName}画像を生成中...</p>
+                        <p>{getLanguageInfo(targetLanguage).nativeName}画像を生成中... / Generating...</p>
                         <p className="gen-sub">{flipEnabled ? '反転 → ' : ''}テキスト翻訳 → 画像再構築</p>
                       </div>
                     ) : (
@@ -564,14 +570,14 @@ const App = () => {
 
             {/* ダウンロードボタン */}
             <button className="btn-download" onClick={handleDownload} disabled={!translatedImage}>
-              📥 ダウンロード
+              📥 ダウンロード / Download
             </button>
 
             {/* 履歴 */}
             {history.length > 0 && (
               <div className="history-panel">
                 <div className="history-head">
-                  <span>📜 履歴 ({history.length})</span>
+                  <span>📜 履歴 ({history.length}) / History</span>
                   <button className="btn-tiny" onClick={() => setHistory([])}>🗑️</button>
                 </div>
                 <div className="history-grid">
@@ -587,17 +593,17 @@ const App = () => {
             {/* 再生成オプションビルダー */}
             <div className="builder-panel">
               <div className="builder-header" onClick={() => setShowBuilder(!showBuilder)}>
-                <span>✨ 再生成オプション (修正詳細の指示)</span>
+                <span>✨ 再生成オプション / Regeneration Options</span>
                 <span>{showBuilder ? '▲' : '▼'}</span>
               </div>
               
               {showBuilder && (
                 <div className="builder-content">
-                  <p className="builder-desc">画像を確認後、修正が必要なコマと内容を選んで追加してください。</p>
+                  <p className="builder-desc">画像を確認後、修正が必要なコマと内容を選んで追加してください。 / Select issue targets and describe the problem to regenerate.</p>
                   
                   <div className="builder-controls">
                     <div className="builder-row">
-                      <label>1. 対象 (複数可):</label>
+                      <label>1. 対象 / Target (複数可):</label>
                       <div className="panel-checkboxes">
                         {['全体', 'タイトル', ...(panelLayout?.panels || ['1コマ目', '2コマ目', '3コマ目', '4コマ目']), '欄外'].map(p => (
                           <label key={p} className="panel-checkbox">
@@ -609,45 +615,50 @@ const App = () => {
                     </div>
                     
                     <div className="builder-row mt-2">
-                      <label>2. 内容:</label>
+                      <label>2. 内容 / Issue:</label>
                       <select value={presetIssue} onChange={e => handlePresetSelect(e.target.value)} className="preset-select">
-                        <option value="">-- よくある問題を選択 / または下の欄に自由記述 --</option>
-                        <option value={`このコマのテキストが縦書き（垂直方向）で描画されている。全てのテキストを水平方向の横書き（left-to-right）に修正して再描画すること。文字を縦に1文字ずつ積む描画も禁止`}>📐 テキストが縦書きになっている</option>
-                        <option value={`このコマのフキダシ内に日本語テキストの痕跡が残っている。フキダシ内部を完全に白く塗りつぶしてから、${getLanguageInfo(targetLanguage).name}テキストのみを描画し直すこと`}>⬜ フキダシに日本語が残っている</option>
-                        <option value={`このコマで翻訳テキストの一部が描画されていない。翻訳リストにある全テキストを対応する位置に1つ残らず漏れなく描画すること`}>✏️ 翻訳テキストが一部描画されていない</option>
-                        <option value={`このコマの吹き出しからテキストがはみ出している。フォントサイズを縮小し改行を増やして、全テキストを吹き出し枠内に完全に収めること`}>📦 文字が枠からはみ出している</option>
-                        <option value={`このコマの吹き出し全体を一度白く塗りつぶし、吹き出しの外形は維持したまま内部を完全にリセットした上で、${getLanguageInfo(targetLanguage).name}テキストをゼロから再描画すること`}>🔄 吹き出しを完全リセットして再描画</option>
-                        <option value={`このコマのテキストが背景と同化して判読困難なため、文字に白または黒の縁取り（アウトライン）を追加して確実に判読できるようにすること`}>👁️ 文字が背景と同化して見えない</option>
-                        <option value={`このコマの擬音・効果音（SFX）を、大きく力強いレタリングスタイルで再描画すること`}>💥 擬音・効果音を力強く強調</option>
-                        <option value={`このコマに含まれる不要な要素を完全に消去し、周囲の背景・パターンで自然に補完すること。消去対象: `}>🧹 不要な要素を消去（※対象を下記で指定）</option>
-                        <option value={`このコマ内の指定要素を別の要素に置き換え、周囲との整合性を保ちつつ自然に描画すること。変更: [元] → [新]`}>🔀 要素を別のものに置き換え（※内容を下記で指定）</option>
-                        <option value={`このコマの [対象] の [現状の問題] を [望む状態] に修正すること`}>📝 自由テンプレート（〇〇を××に修正）</option>
+                        <option value="">-- よくある問題を選択 / Select Quick Issue --</option>
+                        <option value={`このコマのテキストが縦書き（垂直方向）で描画されている。全てのテキストを水平方向の横書き（left-to-right）に修正して再描画すること。文字を縦に1文字ずつ積む描画も禁止`}>📐 テキストが縦書きになっている / Text is drawn vertically</option>
+                        <option value={`このコマのテキストが横書きで描画されている。全てのテキストを日本の漫画のような縦書き（上から下、右行から左行）に修正して再描画すること。`}>📏 テキストが横書きになっている / Text is drawn horizontally</option>
+                        <option value={`このコマのフキダシ内に元のテキストの痕跡が残っている。フキダシ内部を完全に白く塗りつぶしてから、${getLanguageInfo(targetLanguage).name}テキストのみを描画し直すこと`}>⬜ フキダシに元の文字が残っている / Original text remains in bubble</option>
+                        <option value={`このコマで翻訳テキストの一部が描画されていない。翻訳リストにある全テキストを対応する位置に1つ残らず漏れなく描画すること`}>✏️ 翻訳テキストが一部描画されていない / Missing translated text</option>
+                        <option value={`このコマの吹き出しからテキストがはみ出している。フォントサイズを縮小し改行を増やして、全テキストを吹き出し枠内に完全に収めること`}>📦 文字が枠からはみ出している / Text overflows the bubble</option>
+                        <option value={`このコマの吹き出し全体を一度白く塗りつぶし、吹き出しの外形は維持したまま内部を完全にリセットした上で、${getLanguageInfo(targetLanguage).name}テキストをゼロから再描画すること`}>🔄 吹き出しを完全リセットして再描画 / Completely reset bubble inner</option>
+                        <option value={`このコマのテキストが背景と同化して判読困難なため、文字に白または黒の縁取り（アウトライン）を追加して確実に判読できるようにすること`}>👁️ 文字が背景と同化して見えない / Text is hard to read against background</option>
+                        <option value={`このコマの擬音・効果音（SFX）を、大きく力強いレタリングスタイルで再描画すること`}>💥 擬音・効果音を力強く強調 / Enhance SFX dynamically</option>
+                        <option value={`このコマに含まれる不要な要素を完全に消去し、周囲の背景・パターンで自然に補完すること。消去対象: `}>🧹 不要な要素を消去 / Erase specific elements (specify below)</option>
+                        <option value={`このコマ内の指定要素を別の要素に置き換え、周囲との整合性を保ちつつ自然に描画すること。変更: [元] → [新]`}>🔀 要素を別のものに置き換え / Replace elements (specify below)</option>
+                        <option value={`このコマの [対象] の [現状の問題] を [望む状態] に修正すること`}>📝 自由テンプレート / Custom Template (〇〇を××に修正)</option>
                         <option value="" disabled>──────────────────────</option>
-                        <option value={`指定したコマ以外のコマは、テキスト・レイアウト・背景など全て一切変更しないこと`}>⛔ 指定コマ以外は一切変更しない</option>
+                        <option value={`指定したコマ以外のコマは、テキスト・レイアウト・背景など全て一切変更しないこと`}>⛔ 指定コマ以外は一切変更しない / Do NOT modify other panels</option>
                       </select>
                     </div>
 
                     <div className="builder-row mt-2">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.1rem' }}>
-                        <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)' }}>3. 自由入力（上記の補足、修正、もしくは詳細な指示など）:</label>
+                        <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)' }}>3. 自由入力 / Free Input (補足 / Supplement):</label>
                         {customPrompt && (
-                          <button className="btn-tiny" onClick={() => { setCustomPrompt(''); setPresetIssue(''); }} title="入力内容をクリア" style={{ border: 'none', background: 'transparent' }}>🧹</button>
+                          <button className="btn-tiny" onClick={() => { setCustomPrompt(''); setPresetIssue(''); }} title="入力内容をクリア / Clear" style={{ border: 'none', background: 'transparent' }}>🧹</button>
                         )}
                       </div>
                       <textarea 
                         className="text-input" rows={2} 
-                        placeholder="例: 1コマ目右のフキダシは・・・・　3コマ目の擬音を……"
+                        placeholder="例: フキダシは白く… / e.g., Bubble color..."
                         value={customPrompt} onChange={e => { setCustomPrompt(e.target.value); if(!e.target.value) setPresetIssue(''); }} 
                       />
                     </div>
                     
-                    <button className="btn-add-rule mt-2" onClick={handleAddInstructionRule}>➕ ルールをリストに追加する</button>
+                    <div className="builder-actions" style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+                      <button className="btn-sm" onClick={handleAddInstructionRule} disabled={!customPrompt.trim()}>
+                        ➕ ルールをリストに追加する / Add to Rule List
+                      </button>
+                    </div>
                   </div>
                   
                   {instructionRules.length > 0 && (
                     <div className="rule-list">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                        <label className="builder-label-sub" style={{ marginBottom: 0 }}>【現在の修正ルールリスト】</label>
+                        <label className="builder-label-sub" style={{ marginBottom: 0 }}>【現在の修正ルールリスト / Current Rules】</label>
                         <button className="btn-tiny" onClick={() => setInstructionRules([])} title="ルールを全て消去">🧹 全てクリア</button>
                       </div>
                       {instructionRules.map((r, i) => (
