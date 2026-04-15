@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.5.0";
+const SYSTEM_VERSION = "1.5.1";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -316,7 +316,7 @@ const App = () => {
   };
 
   // ── 画像生成 ──
-  const handleGenerate = async () => {
+  const handleGenerate = async (forceOriginal = false) => {
     if (!originalImage || isGenerating) return;
     setIsGenerating(true);
     setErrorMessage('');
@@ -327,7 +327,8 @@ const App = () => {
     const langInfo = getLanguageInfo(targetLanguage);
 
     // 修正モード判定: ルールありかつ翻訳済み画像がある → 翻訳画像ベースで修正
-    const isRefinement = instructionRules.length > 0 && translatedImage !== null;
+    // forceOriginal=true → 常に原画ベース / forceOriginal=false かつルールあり → 翻訳画像ベース修正
+    const isRefinement = !forceOriginal && instructionRules.length > 0 && translatedImage !== null;
 
     try {
       let inputBase64;
@@ -351,6 +352,14 @@ const App = () => {
       setUsedModel(result.usedModel);
       setHistory(prev => [{ translated: imgSrc, model: result.usedModel, fileName: originalFileName, timestamp: Date.now() }, ...prev]);
       showStatus(`✅ ${langInfo.nativeName}${isRefinement ? '修正' : '翻訳'}完了 (${result.usedModel})`, true);
+      // 修正モード成功後: ビルダーを自動リセット（次の修正は白紙から）
+      if (isRefinement) {
+        setInstructionRules([]);
+        setPanelTargets([]);
+        setPresetIssue('');
+        setCustomPrompt('');
+        setShowBuilder(false);
+      }
     } catch (err) {
       setErrorMessage(err.message);
       showStatus('', false);
@@ -573,12 +582,12 @@ const App = () => {
                 {flipEnabled ? 'LTR (左→右 / Left-to-Right)' : 'RTL (右→左 / Right-to-Left)'}
               </span>
             </div>
-            <button className="btn-generate" onClick={handleGenerate} disabled={!canGenerate}>
+            <button className="btn-generate" onClick={() => handleGenerate(true)} disabled={!canGenerate}>
               {isGenerating
                 ? <><span className="animate-spin">◉</span> 画像生成中... / Generating...</>
                 : <>{translatedImage
-                    ? `🌐 ${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName} 画像を再生成 / Regenerate`
-                    : `🌐 ${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName} 画像生成 / Generate`
+                    ? `🌐 原画(左)から${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName}再生成 / Regenerate ${flipEnabled ? 'Flipped ' : ''}${getLanguageInfo(targetLanguage).name} from Original(Left)`
+                    : `🌐 ${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName} 画像生成 / Generate ${flipEnabled ? 'Flipped ' : ''}${getLanguageInfo(targetLanguage).name} Image`
                   }</>
               }
             </button>
@@ -725,10 +734,10 @@ const App = () => {
                     <br /><span style={{fontSize: '0.85em', opacity: 0.8}}>Refinement uses the translated image as base. Use 📜 History to restore previous results if quality degrades.</span>
                   </p>
 
-                  <button className="btn-generate btn-regenerate" onClick={handleGenerate} disabled={!canGenerate}>
+                  <button className="btn-generate btn-regenerate" onClick={() => handleGenerate(false)} disabled={!canGenerate || !translatedImage || instructionRules.length === 0}>
                     {isGenerating
                       ? <><span className="animate-spin">◉</span> 処理中... / Processing...</>
-                      : <>🔄 このリストの指示で画像を再生成する / Regenerate with these rules</>
+                      : <>🔄 翻訳画像(右)をベースに修正再生成 / Refine from Translated(Right)</>
                     }
                   </button>
                 </div>

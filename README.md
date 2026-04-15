@@ -38,7 +38,11 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.5.0 (Current)
+### v1.5.1 (Current)
+- **UI Clarification for Regeneration**: Improved button wording and descriptions to clearly indicate whether the regeneration will use the original input image (left) or the already translated image (right) as the base source. / 生成ボタンのラベルの語順と説明文を変更し、左右どちらの画像をベースとして使用するかがより明確に伝わるように改善しました。
+- **Auto-reset Regeneration Builder**: The instruction builder now automatically clears its rules and inputs upon a successful image refinement, preventing stale instructions from unintentionally affecting subsequent generations. / 右側の翻訳画像をベースとした再生成（修正指示）が成功した際、次回使用時に以前の指示が意図せず残ったままにならないよう、ビルダーの入力内容を全自動でリセットする仕様に変更しました。
+
+### v1.5.0
 - **Regeneration now uses the translated image**: When using regeneration rules, the translated (right-side) image is sent to the API instead of the original, enabling true iterative refinement. / 再生成ルール使用時、翻訳済み画像（右側）をベースにAPIへ送信するように修正。従来は原画を送っていたため修正指示が効かなかった致命的バグを修正。
 - **Anti-degradation prompt**: Added Gemini-optimized quality preservation instructions to prevent line-art, screen-tone, and color palette degradation during iterative refinements. / 再生成時の画質劣化防止プロンプトを追加（線画・スクリーントーン・カラーパレットの保護指示）。
 - **History restore hint**: Added a visual hint in the regeneration builder reminding users that previous results can be restored from the History panel. / 再生成ビルダーに「📜 履歴から以前の結果に戻せます」のヒントを追加。
