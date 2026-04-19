@@ -38,7 +38,11 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.5.1 (Current)
+### v1.5.2 (Current)
+- **URL/ISBN Casing Protection**: URLs, ISBNs, and email addresses in margin text are now preserved with their original casing instead of being forced to ALL CAPS. Comic-style ALL CAPS is still applied to dialogue, titles, and SFX. / 欄外のURL・ISBN・メールアドレス等の技術的文字列が全大文字化されないよう保護機能を追加。吹き出し内セリフ・タイトル・擬音は従来通りALL CAPSを維持。
+- **Pre-applied Casing Control**: Instead of relying on the AI model to decide casing, the translation list now pre-applies ALL CAPS to dialogue/title/SFX items and preserves original casing for other text types, giving deterministic control over text rendering. / ケーシング判断をAIモデル任せにせず、コード側で翻訳リストに事前適用する方式に変更。URLなどのtype:otherは⚠EXACT CASEマーク付きで原文ケーシングを厳密に保護。
+
+### v1.5.1
 - **UI Clarification for Regeneration**: Improved button wording and descriptions to clearly indicate whether the regeneration will use the original input image (left) or the already translated image (right) as the base source. / 生成ボタンのラベルの語順と説明文を変更し、左右どちらの画像をベースとして使用するかがより明確に伝わるように改善しました。
 - **Auto-reset Regeneration Builder**: The instruction builder now automatically clears its rules and inputs upon a successful image refinement, preventing stale instructions from unintentionally affecting subsequent generations. / 右側の翻訳画像をベースとした再生成（修正指示）が成功した際、次回使用時に以前の指示が意図せず残ったままにならないよう、ビルダーの入力内容を全自動でリセットする仕様に変更しました。
 

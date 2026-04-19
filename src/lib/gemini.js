@@ -121,6 +121,7 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
 - ${sfxGuide}
 - ${translationGuide}
 - 全テキスト要素を漏れなく検出すること
+- URL、ISBN、メールアドレスなどの技術的文字列は、翻訳せず原文のまま（大文字・小文字もそのまま）"translated"フィールドに転記すること。これらは大文字化してはならない
 - 出力はJSONオブジェクトのみ。マークダウンコードブロックは使わないこと`;
 
   const imagePayload = {
@@ -285,8 +286,19 @@ export const generateTranslatedImage = async (base64Image, translations, selecte
   const srcName = sourceLang === 'auto' ? 'ソース言語の' : `${srcInfo.name}の`;
 
   // 翻訳テキストをプロンプトに組み込む
+  // comicスタイル（英語等）: dialogue/title/sfx は事前ALL CAPS化、other（URL等）は原文ケーシング維持
+  const isComicStyle = langInfo.style === 'comic';
   const translationList = translations
-    .map((t, i) => `${i + 1}. [${t.type}] "${t.original}" → "${t.translated}"`)
+    .map((t, i) => {
+      let displayTranslated = t.translated;
+      if (isComicStyle && t.type !== 'other' && t.type !== 'narration') {
+        // アメコミ風: セリフ・タイトル・擬音はALL CAPSに事前変換
+        displayTranslated = t.translated.toUpperCase();
+      }
+      // otherタイプにはケーシング保護注記を付加
+      const caseNote = (isComicStyle && t.type === 'other') ? ' ⚠EXACT CASE' : '';
+      return `${i + 1}. [${t.type}${caseNote}] "${t.original}" → "${displayTranslated}"`;
+    })
     .join("\n");
 
   // 言語別のスタイル指示を構築
@@ -462,12 +474,12 @@ const buildStyleInstructions = (langInfo, srcInfo = {}) => {
 ${commonRules}`;
 
     case 'comic':
-      // 英語: アメコミ風 ALL CAPS + 縦書き禁止
+      // 英語: アメコミ風 ALL CAPS + 縦書き禁止（URL等は原文ケーシング維持）
       return `【絶対に守るべき物理的制約・ルール】
 1. 【角度・方向の絶対指定】${langName}テキストは全て完全に「水平（0度）」かつ「横書き」(strict horizontal left-to-right) で描画すること。縦長の吹き出しの形に合わせて文字全体を90度回転させたり、T,h,eのように縦に1文字ずつ積むスタッキングは《絶対禁止》です。
 2. 【サイズと改行】${verticalBubbleHint}
 3. 【吹き出しの変形】上記でも収まらない場合は、元の吹き出しの枠線を完全に無視して、テキストが枠外にはみ出すことを許可します。あるいは既存の吹き出しの上に巨大な横長の吹き出しを上書きしてください。
-4. 【フォントスタイル】アメコミ風の大文字（ALL CAPS）フォントを使用すること。
+4. 【フォントスタイル・ケーシング】翻訳リストに記載されたテキストは、大文字・小文字が既に正しく設定済みです。各テキストをリストに記載された通りの文字（大文字・小文字）でそのまま忠実に描画してください。勝手に大文字化や小文字化をしないこと。特に「⚠EXACT CASE」マーク付きの項目（URL、ISBN等）は1文字も変えずに原文通りに描画すること。
 5. 擬音・効果音も同様に、元の位置にアメコミ風の水平レタリングで配置すること。
 ${commonRules}`;
 

@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.5.1";
+const SYSTEM_VERSION = "1.5.2";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
