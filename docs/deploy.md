@@ -21,3 +21,14 @@ npm run deploy
 ## Not Applicable
 - Hugging Face Spaces (HFへのデプロイスクリプト `deploy:hf` や `.git` 保護ルールは**一切不要**)
 - Vercel / Netlify / Cloudflare Pages / Firebase Hosting
+
+## Local Deployment Cleanup (ローカル環境同期)
+デプロイ（GitHub Releaseの作成・ZIPの検証）完了後、最終工程として必ず以下の処理を行い、ローカルの検証用・運用環境を更新すること。
+
+1. **古い環境の削除**: 既存の `C:\comic-translation-main` ディレクトリを完全に削除する。
+   ```powershell
+   Remove-Item -Recurse -Force C:\comic-translation-main -ErrorAction SilentlyContinue
+   ```
+2. **最新版の配置**: 
+   最新の `comic-translation-main`（ZIP形式でダウンロード・展開したもの等）を `C:\` 直下に配置（コピー）し、パスが `C:\comic-translation-main` となるようにする。
+   ※展開時に `C:\comic-translation-main\comic-translation-main` のような二重フォルダにならないよう注意すること。
