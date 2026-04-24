@@ -1,17 +1,58 @@
 # PROJECT RULES: comic-translation
 
 ## Project Overview
-Gemini などの生成AIを用いて、マンガ画像内のテキストをOCR抽出し、翻訳を行うアプリケーション。
+`comic-translation` is the real product app in this workspace.
 
-## Architecture Guardrails (絶対防衛ライン)
-AI（Codex等）の過剰な最適化によるシステム破壊を絶対に防ぐこと。以下のロジックは、推測で削除・短縮・単純化してはいけない。
+It is not disposable scaffolding, not a temporary shell, and not a place to build unrelated UI experiments by overwriting the current app.
 
-### 1. API特有のエラーハンドリング
-- Gemini API 等の `429 Too Many Requests` 回避や、非同期処理担保のための `wait loop`, `retry` 処理は、泥臭く見えても勝手に削らないこと。
+## Architecture Guardrails
 
-### 2. プロンプトの物理強制力
-- OCR抽出や翻訳時の「出力フォーマット（JSON形式等の厳密な指定）」はシステムの中核である。長大な制約プロンプトがあっても、冗長だと判断して要約・省略してはならない。
+### 1. API handling
+- Keep defensive handling for Gemini-style API limits such as `429 Too Many Requests`.
+- Do not remove retry loops, wait handling, OCR-related fallback behavior, or translation recovery logic without an explicit task.
 
-## Forbidden Files / Settings (変更禁止)
-- `package.json` や UI上のバージョン表記は連動させること。
-- API Key などの機密情報をフロントエンドコードにハードコードしないこと。
+### 2. OCR / translation logic
+- Treat OCR extraction, translation formatting, and output structure as product behavior.
+- Do not simplify or replace core behavior just because another app or prototype wants a lighter UI.
+
+### 3. Version / config handling
+- Keep any user-visible versioning aligned with `package.json` and the intended release flow.
+- Do not make isolated version tweaks without an explicit request.
+
+## Forbidden Changes
+
+### Protected product files
+Unless the user explicitly says to modify `comic-translation` itself, do not edit:
+
+- `src/App.jsx`
+- `src/App.css`
+- `src/index.css`
+- `src/lib/**`
+- `public/**`
+- `README.md`
+- `package.json`
+- `package-lock.json`
+- `vite.config.js`
+- `dist/**`
+
+### Sensitive settings
+- Never hardcode API keys, secrets, or private credentials into frontend files.
+- Keep runtime secrets in user input flow or proper environment handling.
+
+### Separate-app rule
+- If the user asks for a separate app, public-safe clone, mock UI, experiment, prototype, or rewrite not explicitly for `comic-translation`, create a new subfolder.
+- Never satisfy those requests by replacing this app's root files.
+
+### No-assumption rule
+- Similarity of visible UI, category structure, OCR layout, or workflow is not permission to overwrite this app.
+- If it is not explicit that `comic-translation` is the target, do not edit product files.
+- If the target app cannot be identified with confidence, stop and clarify before editing.
+
+## Build / Deploy Safety
+- Do not run `npm run build`, `npm run deploy`, or any command that rewrites `dist/` unless `comic-translation` is the confirmed target.
+- Do not infer deploy behavior from any other app in OneDrive.
+
+## Recovery Rule
+- If the wrong app is modified by mistake, stop all feature work immediately.
+- Restore the changed files first.
+- Restore generated outputs such as `dist/` if they were rewritten.

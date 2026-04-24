@@ -25,6 +25,57 @@ All apps should use this four-file structure for multi-agent development.
 
 **Never infer deploy targets or platform rules from another app.**
 
+## App Targeting Guardrail
+
+Before editing any code, the agent must classify the request into exactly one of these buckets:
+
+1. Edit the current existing app in this workspace
+2. Create a separate new app or prototype in a new subfolder
+3. Read-only investigation with no code changes
+
+If the bucket is not explicit from the user request and local files, the agent must stop and clarify before editing.
+
+### Strict No-Assumption Rules
+- Never assume that a request for a "similar UI", "clone", "public version", "rewrite", "separate app", or "prototype" means replacing the current app.
+- Never replace, overwrite, or repurpose the current app as a shortcut for building a different app.
+- Never treat this workspace's root app as disposable.
+- Never infer from screenshots, nearby folders, or previous conversations that editing the current app is allowed.
+
+### Mandatory Pre-Edit Declaration
+Before any file edit, the agent must state in commentary:
+- target app
+- whether the work is existing-app edit or separate-app creation
+- exact files or folders that will be edited
+
+If the actual edit scope would differ from that declaration, the agent must stop and re-confirm before proceeding.
+
+### Separate-App Default
+If the user wants a separate app, a public-safe clone, a mock UI, an experiment, a prototype, or a rewrite that is not clearly meant to modify the current app, the default action is:
+
+- create a new subfolder
+- do not edit the existing app's root `src/`, `public/`, `README.md`, `package.json`, or `dist/`
+
+### Protected Root Files
+Unless the user explicitly says to modify the current app itself, the following are protected and must not be edited:
+
+- `src/App.jsx`
+- `src/App.css`
+- `src/index.css`
+- `src/lib/**`
+- `public/**`
+- `README.md`
+- `package.json`
+- `package-lock.json`
+- `vite.config.js`
+- `dist/**`
+
+### Dist Safety Rule
+- Never run `npm run build`, `npm run deploy`, or any command that rewrites `dist/` unless the current app is confirmed as the intended target.
+
+### Recovery Rule
+- If the agent accidentally edits the wrong app, all further feature work stops immediately.
+- The first priority becomes restoring the modified files to their previous contents and restoring generated outputs that were affected.
+
 ---
 
 ## 常駐基本ルール (Resident Rules)

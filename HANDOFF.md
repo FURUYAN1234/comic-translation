@@ -48,3 +48,36 @@
 ```bash
 git pull origin main
 ```
+
+---
+
+## Root App Protection Rule
+
+This workspace root app is an active product app and must not be treated as a scratchpad, disposable shell, or temporary target for unrelated UI experiments.
+
+### Protected Existing App
+- `C:\Users\sx717\OneDrive\Documents\Codex_App\comic-translation`
+
+### Protected Files
+- `src/App.jsx`
+- `src/App.css`
+- `src/index.css`
+- `src/lib/`
+- `public/`
+- `README.md`
+- `package.json`
+- `package-lock.json`
+- `vite.config.js`
+- `dist/`
+
+### Mandatory Interpretation
+- Requests for a separate app, clone-like UI, prototype, experiment, mock, or public-safe rewrite must be implemented in a new subfolder.
+- Do not satisfy those requests by replacing the current app.
+- If the target app is not explicit, do not edit anything until the target is clarified.
+
+### Build / Deploy Guardrail
+- Do not run `npm run build`, `npm run deploy`, or any command that rewrites `dist/` unless the current root app is explicitly the intended target.
+
+### Multi-Agent / Multi-PC Guardrail
+- These protection rules apply equally in Codex and Antigravity.
+- Opening the correct folder is required but not sufficient; agents must still respect the protected-file and separate-subfolder rules above.
