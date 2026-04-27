@@ -31,6 +31,9 @@ This tool automates the process of translating manga pages into 10 languages (En
 This system goes beyond simple machine translation by implementing strict controls to preserve the original artistic intent while adapting to different languages.
 本システムは単純な機械翻訳にとどまらず、言語の適応を行いながらもオリジナルの芸術的意図を維持するための厳密な制御を実装しています。
 
+* **Context-Aware Multimodal Translation / コンテキストを維持したマルチモーダル翻訳**: Unlike standard OCR+GPT workflows that translate text line-by-line, this tool leverages Gemini's massive context window and native vision capabilities. It reads the entire manga page as a single cohesive unit, understanding the flow of conversation, character tone, and visual context simultaneously. This prevents awkward literal translations and maintains character voice across the scene.
+  単純に文字を抽出して一行ずつ翻訳する従来のOCR＋GPT方式とは異なり、Geminiの巨大なコンテキストウィンドウとネイティブな視覚能力（Vision）を活用します。漫画のページ全体をひとつの繋がりとして読み取り、前後の会話の文脈、キャラクターの口調、視覚的な状況（誰がどんな表情で話しているか）を同時に理解することで、直訳による不自然さを防ぎ、シーン全体で一貫したキャラクターのトーンを維持します。
+
 * **Casing Protection Protocol / ケーシング保護プロトコル**: Automatically protects technical strings like URLs, ISBNs, and email addresses in margin text from being forced to ALL CAPS, while maintaining comic-style ALL CAPS for dialogue, titles, and SFX.
   欄外のURL・ISBN・メールアドレス等の技術的文字列が全大文字化されないよう保護しつつ、吹き出し内セリフ・タイトル・擬音はコミックスタイルの大文字を維持します。
 
