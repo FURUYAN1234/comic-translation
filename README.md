@@ -207,7 +207,7 @@ This project is part of an integrated ecosystem designed to support AI-powered m
 
 ### Ecosystem Components / 構成システム
 
-#### 1. Nano Banana 2 and ChatGPT image 2.0 Powered Super AI 4-koma System
+#### 1. Nano Banana 2 and ChatGPT Images 2.0 Powered Super AI 4-koma System
 A system specialized in creating 4-panel manga with AI.
 AIを活用した4コマ漫画制作に特化したシステムです。
 - [Explanation / 解説](https://note.com/happy_duck780/n/ndf063558c1f5)
