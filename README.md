@@ -239,7 +239,10 @@ AIを使って漫画を10言語に翻訳するツールです。
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.5.3 (Current)
+### v1.5.4 (Current)
+- **[UI]** Fixed an issue where the displayed filename overlapped the preview image. / 画像プレビュー表示時に、元ファイル名が画像に被って表示される問題を修正。
+
+### v1.5.3
 - **[Docs]** Updated README to reflect technical architecture and ecosystem changes. / READMEを更新し、技術的アーキテクチャの解説追加とエコシステム名称の実態合わせを実施。
 
 ### v1.5.2

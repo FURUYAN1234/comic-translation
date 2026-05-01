@@ -283,10 +283,13 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border); }
 .preview-filename {
-  position: absolute; bottom: 6px; left: 6px;
-  padding: 0.1rem 0.4rem; background: rgba(0,0,0,0.7);
-  border-radius: 4px; font-size: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.4rem; background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px; font-size: 0.55rem;
   font-family: var(--font-mono); color: var(--text-muted);
+  text-align: center;
+  word-break: break-all;
 }
 
 /* === テキスト抽出ボタン === */
