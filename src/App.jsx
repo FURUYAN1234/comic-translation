@@ -1,5 +1,5 @@
 // AI Comic Translation Tool V1.5.0 — 多言語相互翻訳対応 / Universal Comic Translation
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 import {
   setApiKey,
@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.5.4";
+const SYSTEM_VERSION = "1.5.5";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -69,6 +69,13 @@ const App = () => {
   const statusTimerRef = useRef(null);
   const [history, setHistory] = useState([]);
 
+  // 汎用プロンプト表示
+  const [showUniversalPrompt, setShowUniversalPrompt] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
+  const [promptSourceLang, setPromptSourceLang] = useState('ja');
+  const [promptTargetLang, setPromptTargetLang] = useState('en');
+  const [promptFlip, setPromptFlip] = useState(true);
+
   // 再生成指示ビルダー
   const [instructionRules, setInstructionRules] = useState([]);
   const [panelTargets, setPanelTargets] = useState([]);
@@ -88,6 +95,117 @@ const App = () => {
     if (p === 'タイトル') return 'タイトル / Title';
     if (p === '欄外') return '欄外 / Margin';
     return p.replace(/コマ目?/g, 'コマ / Panel ').replace(/段目?/g, '段 / Row ').replace(/左/g, ' (左/L)').replace(/右/g, ' (右/R)').replace(/上/g, ' (上/T)').replace(/下/g, ' (下/B)').replace(/中/g, ' (中/M)');
+  };
+
+  // ── 汎用プロンプト生成 ──
+  const universalPrompt = useMemo(() => {
+    const srcInfo = getLanguageInfo(promptSourceLang);
+    const tgtInfo = getLanguageInfo(promptTargetLang);
+    const srcName = srcInfo.name;
+    const tgtName = tgtInfo.name;
+    const srcNative = srcInfo.nativeName;
+    const tgtNative = tgtInfo.nativeName;
+    const isRtlSource = srcInfo.readingDirection === 'rtl';
+    const isRtlTarget = tgtInfo.readingDirection === 'rtl';
+    const needsFlip = promptFlip;
+
+    // テキスト方向指示
+    let textDirectionRule;
+    if (tgtInfo.style === 'manga') {
+      textDirectionRule = `- **Text Direction**: Use vertical writing (top-to-bottom) inside tall/narrow speech bubbles, and horizontal writing where appropriate, matching natural Japanese manga typography.`;
+    } else {
+      textDirectionRule = `- **Text Direction**: ALL ${tgtName} text must be rendered **strictly horizontal (left-to-right)**. NEVER rotate text vertically, NEVER stack characters vertically (e.g., T-h-e stacked top-to-bottom is FORBIDDEN). Even inside tall/narrow bubbles, keep text horizontal — shrink the font and add line breaks instead.`;
+    }
+
+    // レタリングスタイル
+    let letteringStyle;
+    switch (tgtInfo.style) {
+      case 'comic':
+        letteringStyle = `- **Lettering Style**: Use American comic lettering conventions. Dialogue and SFX should be rendered in **ALL CAPS** bold lettering. Sound effects should be dramatic and expressive (e.g., ドキドキ→BA-DUMP, ザァァ→WHOOOOSH, ゴゴゴ→RUMBLE).`;
+        break;
+      case 'manga':
+        letteringStyle = `- **Lettering Style**: Use natural Japanese manga fonts. Gothic or Mincho typeface for dialogue. Sound effects should use bold Japanese onomatopoeia.`;
+        break;
+      case 'webtoon':
+        letteringStyle = `- **Lettering Style**: Use clean, modern Korean webtoon typography. Sound effects should use natural Korean expressions.`;
+        break;
+      case 'manhua':
+        letteringStyle = `- **Lettering Style**: Use clear Chinese manga (manhua) typography. Note that CJK characters are wider than Latin text — adjust font size accordingly.`;
+        break;
+      case 'european':
+        letteringStyle = `- **Lettering Style**: Use European bande dessinée (BD) comic typography with clean, readable fonts.`;
+        break;
+      default:
+        letteringStyle = `- **Lettering Style**: Use clean, readable fonts appropriate for ${tgtName} text.`;
+    }
+
+    // ケーシングルール
+    const casingRule = tgtInfo.style === 'comic'
+      ? `- **Casing Rules**: Dialogue, titles, and SFX should be in ALL CAPS. However, URLs, email addresses, ISBNs, and any technical strings in margins must preserve their **exact original casing** (typically lowercase). Do NOT capitalize URLs.`
+      : `- **Casing Rules**: URLs, email addresses, ISBNs, and any technical strings in margins must preserve their **exact original casing**. Do NOT alter the capitalization of these elements.`;
+
+    // 反転指示
+    const flipSection = needsFlip
+      ? `\n## STEP 0: Mirror/Flip the Image\nBefore translating any text, **horizontally flip (mirror) the entire image**. This converts the ${isRtlSource ? 'right-to-left' : 'left-to-right'} reading order of the original ${srcName} layout to ${isRtlTarget ? 'right-to-left' : 'left-to-right'} reading order for ${tgtName} readers. All subsequent text replacement must be done on the flipped image.\n`
+      : '';
+
+    return `You are a professional manga/comic localization and lettering specialist. I am attaching a ${srcName} comic/manga page image. Your task is to produce a fully translated ${tgtName} version of this image.
+${flipSection}
+## STEP 1: Detect and Translate ALL Text
+Scan the entire image and identify every text element:
+- **Title** text (usually at the top or in decorative frames)
+- **Dialogue** in speech bubbles
+- **Narration** boxes
+- **Sound effects (SFX)** / onomatopoeia
+- **Margin text** (author notes, URLs, page numbers, copyright, ISBN, etc.)
+
+Translate all detected ${srcName} text into natural, contextually appropriate ${tgtName}.
+
+## STEP 2: Replace Text in the Image
+For each detected text element:
+1. **Completely erase** the original ${srcName} text from its location (fill with the surrounding background color/pattern — typically white for speech bubbles).
+2. **Render the ${tgtName} translation** in the exact same position.
+3. Ensure no traces of the original text remain visible beneath the translation.
+
+## Critical Rules
+
+### Text Rendering
+${textDirectionRule}
+- **Bubble Overflow**: If ${tgtName} text doesn't fit inside a speech bubble (especially tall/narrow ones originally designed for vertical ${srcName} text), you may: (a) reduce font size and add line breaks, or (b) allow text to overflow the bubble boundary, or (c) redraw the bubble larger/wider. Do NOT sacrifice readability.
+${letteringStyle}
+${casingRule}
+
+### Art Preservation
+- **DO NOT modify** any artwork, character faces, bodies, poses, expressions, or background art.
+- **DO NOT change** panel layouts, borders, screen tones, or shading.
+- **Preserve** the original image resolution, contrast, and overall visual quality.
+- **Speech bubble shapes** must remain identical (only text inside changes).
+- **DO NOT add** any border, frame, outline, or black edge around the output image. The output must have the same boundaries as the original.
+
+### Completeness
+- Translate **100% of visible text** — missing even one speech bubble is unacceptable.
+- Include margin annotations, small print, and any text outside panels.
+- Sound effects (SFX) drawn as part of the artwork should be overlaid with ${tgtName} equivalents in a matching bold/dynamic style.
+
+Output the final translated image only. No explanations needed.`;
+  }, [promptSourceLang, promptTargetLang, promptFlip]);
+
+  const handleCopyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(universalPrompt);
+      setPromptCopied(true);
+      setTimeout(() => setPromptCopied(false), 2500);
+    } catch (e) {
+      // フォールバック: テキストエリアからコピー
+      const ta = document.createElement('textarea');
+      ta.value = universalPrompt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setPromptCopied(true);
+      setTimeout(() => setPromptCopied(false), 2500);
+    }
   };
 
   // ── API認証 ──
@@ -425,6 +543,73 @@ const App = () => {
               onKeyDown={(e) => e.key === 'Enter' && handleApiKeySubmit()} />
             <button className="api-gate-btn" onClick={handleApiKeySubmit}>🔓 起動する / Start</button>
             <p className="api-gate-note">※ APIキーはセッション限定（ブラウザに保存されません） / Session-only (Not saved)<br />Google AI Studio: ai.google.dev で取得 / Get key from ai.google.dev</p>
+            <div className="prompt-divider">── or ──</div>
+            <button className="btn-show-prompt" onClick={() => setShowUniversalPrompt(!showUniversalPrompt)}>
+              <span className="btn-prompt-icon">📋</span>
+              <span className="btn-prompt-main">汎用翻訳プロンプトを表示<br /><span className="btn-prompt-en">Show Universal Translation Prompt</span></span>
+            </button>
+            <p className="api-gate-prompt-note">※ OpenAI等のAPIキーは不要です。ChatGPT等のWebチャット画面で画像を添付して使えます。<br />（Gemini webでも使用可能ですが、左右反転には非対応です）<br /><span style={{opacity: 0.7}}>No API key needed. Works with ChatGPT web, etc.<br />(Also works with Gemini web, but mirror flip is not supported)</span></p>
+          </div>
+        </div>
+      )}
+
+      {/* 汎用プロンプト モーダル */}
+      {showUniversalPrompt && (
+        <div className="prompt-modal-overlay" onClick={() => setShowUniversalPrompt(false)}>
+          <div className="prompt-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="prompt-modal-header">
+              <h2>📋 汎用翻訳プロンプト / Universal Translation Prompt</h2>
+              <button className="prompt-close" onClick={() => setShowUniversalPrompt(false)}>✕</button>
+            </div>
+            <p className="prompt-modal-desc">
+              ChatGPT版などのように、APIによるImage-to-Image処理が不可能で、Webサービスのチャット画面でしか画像添付による元画像参照ができないAIサービス向けの汎用プロンプトです。翻訳したい漫画画像と一緒にこのプロンプトを貼り付けてください。OpenAIのAPIは不要です。
+              <br /><span style={{opacity: 0.7}}>A universal prompt for AI services (like ChatGPT) where API-based Image-to-Image is unavailable. Attach your manga image with this prompt. No OpenAI API key required.</span>
+              <br /><br /><span className="prompt-caveat-inline">⚠️ 画像生成の品質はサービスのモデル性能に依存します。本ツール（Gemini API直接連携）ほどの細密な制御は得られない場合があります。</span>
+              <br /><span style={{opacity: 0.5, fontSize: '0.6rem'}}>Image quality depends on the AI service's model capabilities. Results may vary compared to this tool's direct Gemini API integration.</span>
+            </p>
+            <div className="prompt-flip-warning">
+              <p><strong>⚠️ 左右反転（読み順変換）の対応状況はサービスによって異なります / Flip support varies by service:</strong></p>
+              <p>✅ ChatGPT — プロンプト指示で反転可能 / Flip via prompt supported</p>
+              <p>❌ Gemini web — プロンプトでの反転は非対応。事前に画像編集ソフト等で反転してからアップロードしてください<br /><span style={{opacity: 0.7}}>Cannot flip via prompt. Please flip the image manually before uploading.</span></p>
+            </div>
+
+            <div className="prompt-options">
+              <div className="prompt-opt-group">
+                <label>入力言語 / Source:</label>
+                <select value={promptSourceLang} onChange={(e) => { setPromptSourceLang(e.target.value); const src = getLanguageInfo(e.target.value); const tgt = getLanguageInfo(promptTargetLang); setPromptFlip(src.readingDirection && tgt.readingDirection && src.readingDirection !== tgt.readingDirection); }}>
+                  {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.nativeName} / {l.name}</option>)}
+                </select>
+              </div>
+              <div className="prompt-opt-group">
+                <label>翻訳先 / Target:</label>
+                <select value={promptTargetLang} onChange={(e) => { setPromptTargetLang(e.target.value); const src = getLanguageInfo(promptSourceLang); const tgt = getLanguageInfo(e.target.value); setPromptFlip(src.readingDirection && tgt.readingDirection && src.readingDirection !== tgt.readingDirection); }}>
+                  {LANGUAGES.filter(l => l.code !== promptSourceLang).map(l => <option key={l.code} value={l.code}>{l.nativeName} / {l.name}</option>)}
+                </select>
+              </div>
+              <div className="prompt-opt-group">
+                <label className="flip-check-label">
+                  <input type="checkbox" checked={promptFlip} onChange={(e) => setPromptFlip(e.target.checked)} />
+                  🔄 左右反転 / Mirror Flip
+                </label>
+              </div>
+            </div>
+
+            <div className="prompt-text-wrap">
+              <pre className="prompt-text-content">{universalPrompt}</pre>
+            </div>
+
+            <button className={`btn-copy-prompt ${promptCopied ? 'copied' : ''}`} onClick={handleCopyPrompt}>
+              {promptCopied ? '✅ コピーしました! / Copied!' : '📋 プロンプトをコピー / Copy Prompt'}
+            </button>
+
+            <div className="prompt-usage-hint">
+              <p><strong>💡 使い方 / How to use:</strong></p>
+              <ol>
+                <li>上のボタンでプロンプトをコピー / Copy the prompt above</li>
+                <li>ChatGPT等を開き、翻訳したい漫画画像を添付 / Open ChatGPT etc. and attach your manga image</li>
+                <li>コピーしたプロンプトを貼り付けて送信 / Paste the prompt and send</li>
+              </ol>
+            </div>
           </div>
         </div>
       )}
@@ -468,7 +653,14 @@ const App = () => {
                   ))}
                 </select>
               </div>
-              <button className="btn-icon-only" onClick={handleFullReset} title="全リセット / Full Reset">⏻</button>
+              <div className="btn-icon-labeled">
+                <span className="btn-icon-label">汎用プロンプト<br />Universal Prompt</span>
+                <button className="btn-icon-only" onClick={() => setShowUniversalPrompt(true)} title="汎用プロンプト / Universal Prompt">📋</button>
+              </div>
+              <div className="btn-icon-labeled">
+                <span className="btn-icon-label">全リセット<br />Full Reset</span>
+                <button className="btn-icon-only" onClick={handleFullReset} title="全リセット / Full Reset">⏻</button>
+              </div>
             </div>
           </header>
 

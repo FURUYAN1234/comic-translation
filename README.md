@@ -55,6 +55,8 @@ This system goes beyond simple machine translation by implementing strict contro
 - **Bilingual UI / 完全日英対応UI**: Full English/Japanese support for all buttons, toggles, prompts, and status messages.
 - **Download / ダウンロード**: Save the translated image with one click.
 - **Session-Only API Key / セッション限定APIキー**: API key is stored in memory only — never saved to disk or localStorage.
+- **Universal Prompt Generator / 汎用プロンプト生成**: Generate a copy-paste translation prompt for ChatGPT and other web AI services — no API key required. Supports language selection, flip toggle, and per-service compatibility notes.
+  ChatGPTなどのWebサービスで使える翻訳プロンプトをワンクリック生成。APIキー不要。言語選択・反転トグル・サービス別対応状況の注記付き。
 
 ---
 
@@ -239,7 +241,11 @@ AIを使って漫画を10言語に翻訳するツールです。
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.5.4 (Current)
+### v1.5.5 (Current)
+- **[Feature]** Universal Translation Prompt: Added a copy-paste prompt generator for AI web services (ChatGPT, Gemini web) where API-based image editing is unavailable. No API key required. Includes language/flip options, per-service flip compatibility notes, and quality caveats. / 汎用翻訳プロンプト機能を追加。ChatGPTやGemini webなど、APIによる画像編集が不可能なWebサービス向けに、コピペで使える翻訳プロンプトを生成。APIキー不要。サービス別反転対応状況の注記付き。
+- **[UI]** Added bilingual labels (JP/EN) to header icon buttons (Universal Prompt, Full Reset) for consistency with other controls. / ヘッダーのアイコンボタン（汎用プロンプト、全リセット）に日英併記のラベルを追加し、他のコントロールとの統一性を向上。
+
+### v1.5.4
 - **[UI]** Fixed an issue where the displayed filename overlapped the preview image. / 画像プレビュー表示時に、元ファイル名が画像に被って表示される問題を修正。
 
 ### v1.5.3

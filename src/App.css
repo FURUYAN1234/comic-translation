@@ -532,3 +532,258 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
   .text-row { flex-wrap: wrap; }
   .text-arrow { display: none; }
 }
+
+/* ヘッダーのアイコンボタン + ラベル */
+.btn-icon-labeled {
+  display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+}
+.btn-icon-label {
+  font-size: 0.45rem; font-weight: 700;
+  color: var(--text-muted); letter-spacing: 0.05em;
+  white-space: nowrap; text-align: center; line-height: 1.4;
+}
+
+/* 品質注記（モーダル説明文内インライン） */
+.prompt-caveat-inline {
+  color: var(--amber); font-size: 0.62rem; font-weight: 600;
+}
+
+/* === 汎用プロンプト機能 === */
+
+/* APIゲート内の区切り線 */
+.prompt-divider {
+  margin: 1.2rem 0 0.8rem; font-size: 0.65rem;
+  color: var(--text-dim); letter-spacing: 0.15em;
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+}
+.prompt-divider::before, .prompt-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+/* プロンプト表示ボタン（APIゲート内） */
+.btn-show-prompt {
+  width: 100%; padding: 0.8rem 1.2rem;
+  background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(34,211,238,0.18));
+  border: 1px solid rgba(99,102,241,0.5);
+  color: var(--text-primary); font-weight: 800; font-size: 0.85rem;
+  border-radius: var(--radius-lg);
+  transition: all 0.3s; cursor: pointer;
+  display: flex; align-items: center; gap: 0.8rem;
+  text-align: left;
+}
+.btn-show-prompt:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(34,211,238,0.3));
+  border-color: var(--indigo-light);
+  box-shadow: 0 4px 20px rgba(99,102,241,0.25);
+  transform: translateY(-1px);
+}
+.btn-prompt-icon {
+  font-size: 1.5rem; flex-shrink: 0;
+}
+.btn-prompt-main {
+  font-size: 0.82rem; font-weight: 800; line-height: 1.5;
+  color: var(--text-primary);
+}
+.btn-prompt-en {
+  font-size: 0.65rem; font-weight: 600;
+  color: var(--indigo-light); letter-spacing: 0.02em;
+}
+
+/* API不要の注釈テキスト */
+.api-gate-prompt-note {
+  font-size: 0.58rem; color: var(--cyan);
+  margin-top: 0.6rem; line-height: 1.6;
+  text-align: center; font-weight: 600;
+}
+
+/* モーダルオーバーレイ */
+.prompt-modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0, 0, 0, 0.85);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* モーダル本体 */
+.prompt-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  max-width: 780px; width: 100%;
+  max-height: 90vh; overflow-y: auto;
+  padding: 1.8rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(99,102,241,0.1);
+  animation: slideUp 0.3s ease-out;
+}
+.prompt-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+.prompt-modal-header h2 {
+  font-size: 1.1rem; font-weight: 900; color: var(--text-primary);
+  margin: 0;
+}
+.prompt-close {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 50%; color: var(--text-muted);
+  font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+}
+.prompt-close:hover { background: var(--rose); color: white; border-color: var(--rose); }
+
+.prompt-modal-desc {
+  font-size: 0.7rem; color: var(--text-secondary);
+  line-height: 1.6; margin-bottom: 1rem;
+}
+
+/* オプション行 */
+.prompt-options {
+  display: flex; gap: 0.8rem; flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.8rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.prompt-opt-group {
+  display: flex; flex-direction: column; gap: 0.2rem;
+}
+.prompt-opt-group > label {
+  font-size: 0.55rem; font-weight: 700; color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+.prompt-opt-group select {
+  padding: 0.35rem 1.5rem 0.35rem 0.5rem;
+  font-size: 0.7rem; font-weight: 600;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  min-width: 160px;
+}
+.prompt-opt-group select:focus { border-color: var(--cyan); outline: none; }
+.flip-check-label {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
+  cursor: pointer; padding-top: 0.3rem;
+}
+.flip-check-label input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: var(--indigo);
+}
+
+/* プロンプトテキスト表示エリア */
+.prompt-text-wrap {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  max-height: 380px; overflow-y: auto;
+  margin-bottom: 1rem;
+}
+.prompt-text-content {
+  font-family: var(--font-mono);
+  font-size: 0.68rem; line-height: 1.7;
+  color: var(--text-primary);
+  white-space: pre-wrap; word-wrap: break-word;
+  margin: 0;
+}
+
+/* コピーボタン */
+.btn-copy-prompt {
+  width: 100%; padding: 0.8rem 1rem;
+  background: linear-gradient(135deg, var(--indigo), #4f46e5);
+  color: white; font-weight: 900; font-size: 0.85rem;
+  border-radius: var(--radius-md); border: none;
+  cursor: pointer; transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+  margin-bottom: 1rem;
+}
+.btn-copy-prompt:hover {
+  background: linear-gradient(135deg, var(--indigo-light), var(--indigo));
+  box-shadow: 0 6px 24px rgba(99,102,241,0.4);
+  transform: translateY(-1px);
+}
+.btn-copy-prompt.copied {
+  background: linear-gradient(135deg, var(--emerald), #10b981) !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
+  animation: copiedPulse 0.4s ease-out;
+}
+
+@keyframes copiedPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* 使い方ヒント */
+.prompt-usage-hint {
+  padding: 0.8rem;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: var(--radius-md);
+  font-size: 0.65rem; color: var(--text-secondary);
+  line-height: 1.7;
+}
+.prompt-usage-hint p { margin: 0 0 0.4rem 0; }
+.prompt-usage-hint ol {
+  margin: 0 0 0.6rem 0; padding-left: 1.4rem;
+}
+.prompt-usage-hint li { margin-bottom: 0.2rem; }
+.prompt-caveat {
+  color: var(--amber) !important; font-size: 0.6rem !important;
+  margin-top: 0.4rem !important; padding-top: 0.5rem;
+  border-top: 1px solid rgba(251,191,36,0.2);
+}
+
+/* 反転警告（モーダル上部） */
+.prompt-flip-warning {
+  padding: 0.6rem 0.8rem; margin-bottom: 1rem;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-left: 3px solid var(--amber);
+  border-radius: var(--radius-sm);
+  font-size: 0.62rem; color: var(--text-secondary);
+  line-height: 1.7;
+}
+.prompt-flip-warning p { margin: 0 0 0.2rem 0; }
+
+/* Flip対応状況ノート（オプション行の下） */
+.prompt-flip-note {
+  padding: 0.5rem 0.7rem; margin-bottom: 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.6rem; color: var(--text-secondary);
+  line-height: 1.6;
+}
+.prompt-flip-note p { margin: 0 0 0.15rem 0; }
+.prompt-flip-note-title {
+  font-weight: 800; color: var(--text-primary);
+  margin-bottom: 0.3rem !important;
+}
+
+/* 対応サービス表 */
+.prompt-services {
+  margin: 0.6rem 0; padding: 0.6rem 0.7rem;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 0.6rem; line-height: 1.6;
+}
+.prompt-services p { margin: 0 0 0.15rem 0; }
+
+/* アニメーション */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* レスポンシブ（プロンプトモーダル） */
+@media (max-width: 768px) {
+  .prompt-modal { padding: 1.2rem; }
+  .prompt-modal-header h2 { font-size: 0.9rem; }
+  .prompt-options { flex-direction: column; gap: 0.5rem; }
+  .prompt-opt-group select { min-width: unset; width: 100%; }
+}
