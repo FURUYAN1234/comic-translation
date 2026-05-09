@@ -241,7 +241,10 @@ AIを使って漫画を10言語に翻訳するツールです。
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.5.5 (Current)
+### v1.5.6 (Current)
+- **[Prompt Quality]** Major overhaul of the Universal Translation Prompt for ChatGPT/web AI services. Reframed the task as "IMAGE EDITING" instead of "image generation" to drastically reduce art degradation. Added Translation Accuracy Rules: preservation of literary references/wordplay, prohibition of re-interpretation and loose paraphrasing, accurate domain-specific term translation (e.g., 同人誌→doujinshi), and a pre-output verification checklist. Art preservation rules moved to top priority. / ChatGPT等のWebサービス向け汎用翻訳プロンプトを大幅改善。タスクを「画像生成」から「画像編集」に再定義し、アート劣化を大幅に低減。翻訳精度ルールを新設：文学的引用・パロディの保持、再解釈・意訳の禁止、専門用語の正確な翻訳、出力前検証チェックリストを追加。アート保護ルールを最優先に移動。
+
+### v1.5.5
 - **[Feature]** Universal Translation Prompt: Added a copy-paste prompt generator for AI web services (ChatGPT, Gemini web) where API-based image editing is unavailable. No API key required. Includes language/flip options, per-service flip compatibility notes, and quality caveats. / 汎用翻訳プロンプト機能を追加。ChatGPTやGemini webなど、APIによる画像編集が不可能なWebサービス向けに、コピペで使える翻訳プロンプトを生成。APIキー不要。サービス別反転対応状況の注記付き。
 - **[UI]** Added bilingual labels (JP/EN) to header icon buttons (Universal Prompt, Full Reset) for consistency with other controls. / ヘッダーのアイコンボタン（汎用プロンプト、全リセット）に日英併記のラベルを追加し、他のコントロールとの統一性を向上。
 

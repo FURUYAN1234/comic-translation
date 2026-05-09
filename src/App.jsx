@@ -10,7 +10,7 @@ import {
 } from './lib/gemini';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.5.5";
+const SYSTEM_VERSION = "1.5.6";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -149,43 +149,62 @@ const App = () => {
       ? `\n## STEP 0: Mirror/Flip the Image\nBefore translating any text, **horizontally flip (mirror) the entire image**. This converts the ${isRtlSource ? 'right-to-left' : 'left-to-right'} reading order of the original ${srcName} layout to ${isRtlTarget ? 'right-to-left' : 'left-to-right'} reading order for ${tgtName} readers. All subsequent text replacement must be done on the flipped image.\n`
       : '';
 
-    return `You are a professional manga/comic localization and lettering specialist. I am attaching a ${srcName} comic/manga page image. Your task is to produce a fully translated ${tgtName} version of this image.
+    return `You are a professional manga/comic localization and lettering specialist performing an IMAGE EDITING task. I am attaching a ${srcName} comic/manga page image.
+
+**Your task**: Edit this EXISTING image in-place to produce a fully translated ${tgtName} version. You must preserve the original artwork with pixel-level fidelity — ONLY the text content changes. Do NOT regenerate or redraw the artwork.
 ${flipSection}
-## STEP 1: Detect and Translate ALL Text
-Scan the entire image and identify every text element:
+## PRIORITY #1: Art Preservation (NON-NEGOTIABLE)
+These rules override ALL other instructions. Violation of any rule is a critical failure:
+- The output image must be **IDENTICAL** to the input except for text content.
+- **DO NOT** modify, redraw, or reinterpret any artwork, character faces, bodies, hair, clothing, poses, or expressions.
+- **DO NOT** change backgrounds, screen tones, shading, lighting, or color palette.
+- **DO NOT** alter panel layouts, borders, or compositions.
+- **DO NOT** change speech bubble shapes, positions, or outlines — only replace the text inside.
+- **DO NOT** add any border, frame, or edge around the output image.
+- Maintain the **EXACT** original image resolution, contrast, and visual sharpness.
+
+## STEP 1: Read and Translate ALL Text
+Before modifying the image, carefully scan and identify every text element:
 - **Title** text (usually at the top or in decorative frames)
 - **Dialogue** in speech bubbles
 - **Narration** boxes
 - **Sound effects (SFX)** / onomatopoeia
 - **Margin text** (author notes, URLs, page numbers, copyright, ISBN, etc.)
 
-Translate all detected ${srcName} text into natural, contextually appropriate ${tgtName}.
+### Translation Accuracy Rules
+- Translate all ${srcName} text into natural, contextually appropriate ${tgtName}.
+- **PRESERVE literary references and wordplay**: If a title or line parodies or references a famous quote, proverb, or cultural work, the ${tgtName} translation MUST also reference that same source material (e.g., a Hamlet parody → keep it as a Hamlet reference; a proverb → use the equivalent ${tgtName} proverb).
+- **DO NOT re-interpret, over-localize, or invent meaning** not present in the original. Translate what is actually written.
+- **Translate faithfully**: When the meaning is clear, translate it directly. Do not loosely paraphrase or substitute entirely different concepts.
+- **Proper nouns and specific terms**: Translate domain-specific terms accurately (e.g., 同人誌→doujinshi, 頒布→distribution, 印刷費→printing cost). Do not guess or approximate.
+- **Sound effects**: ${tgtInfo.style === 'comic' ? `Convert to dynamic English comic SFX (e.g., ドキドキ→BA-DUMP, ザァァ→WHOOOOSH, ゴゴゴ→RUMBLE).` : tgtInfo.style === 'manga' ? `Use natural Japanese onomatopoeia.` : `Convert to natural ${tgtName} equivalents.`}
+- **URLs, ISBNs, technical strings**: Preserve the EXACT original text and casing — do NOT translate or modify.
 
 ## STEP 2: Replace Text in the Image
-For each detected text element:
-1. **Completely erase** the original ${srcName} text from its location (fill with the surrounding background color/pattern — typically white for speech bubbles).
+For each text element:
+1. **Completely erase** the original ${srcName} text (fill with surrounding background color/pattern — typically white for speech bubbles).
 2. **Render the ${tgtName} translation** in the exact same position.
-3. Ensure no traces of the original text remain visible beneath the translation.
+3. Ensure **no traces** of the original text remain visible beneath the translation.
 
-## Critical Rules
-
-### Text Rendering
+### Text Rendering Rules
 ${textDirectionRule}
-- **Bubble Overflow**: If ${tgtName} text doesn't fit inside a speech bubble (especially tall/narrow ones originally designed for vertical ${srcName} text), you may: (a) reduce font size and add line breaks, or (b) allow text to overflow the bubble boundary, or (c) redraw the bubble larger/wider. Do NOT sacrifice readability.
+- **Bubble Overflow**: If ${tgtName} text doesn't fit (especially in tall/narrow bubbles designed for vertical ${srcName}), reduce font size and add line breaks. Do NOT sacrifice readability.
 ${letteringStyle}
 ${casingRule}
-
-### Art Preservation
-- **DO NOT modify** any artwork, character faces, bodies, poses, expressions, or background art.
-- **DO NOT change** panel layouts, borders, screen tones, or shading.
-- **Preserve** the original image resolution, contrast, and overall visual quality.
-- **Speech bubble shapes** must remain identical (only text inside changes).
-- **DO NOT add** any border, frame, outline, or black edge around the output image. The output must have the same boundaries as the original.
 
 ### Completeness
 - Translate **100% of visible text** — missing even one speech bubble is unacceptable.
 - Include margin annotations, small print, and any text outside panels.
-- Sound effects (SFX) drawn as part of the artwork should be overlaid with ${tgtName} equivalents in a matching bold/dynamic style.
+- Sound effects drawn as part of the artwork should be overlaid with ${tgtName} equivalents in a matching bold/dynamic style.
+
+## Pre-Output Verification
+Before outputting, you MUST verify:
+☑ Every visible text element has been translated — none missing.
+☑ All translations are faithful to the original meaning — no invented or reinterpreted content.
+☑ Literary references/wordplay in the original are preserved in translation.
+☑ Character artwork is IDENTICAL to the original — no faces, bodies, or poses changed.
+☑ Image quality (resolution, sharpness, color) matches the original exactly.
+☑ No original ${srcName} text remains visible beneath translations.
 
 Output the final translated image only. No explanations needed.`;
   }, [promptSourceLang, promptTargetLang, promptFlip]);
