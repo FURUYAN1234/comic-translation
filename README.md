@@ -235,6 +235,7 @@ A tool for translating manga into 10 languages using AI. / AIを使って漫画�
 
 #### 5. 360° AI Panorama Generator
 A tool that generates seamless 360-degree spatial backgrounds to provide background assets for manga and video. / シームレスな360度空間の背景を生成し、漫画や動画の背景素材として提供するツールです。
+- [Explanation / 解説](https://note.com/happy_duck780/n/nb53b121fef88)
 - [Demo / デモ](https://furuyan1234.github.io/panoforge/)
 - [Code / コード](https://github.com/FURUYAN1234/panoforge)
 ---
