@@ -1,5 +1,7 @@
 # AI Comic Translation Tool / AI漫画翻訳ツール
 
+[![Demo / デモ](https://img.shields.io/badge/Demo-Play_Now-blue?style=for-the-badge)](https://furuyan1234.github.io/comic-translation/)
+
 > **"Translate manga into 10 languages with one click."**
 > **「漫画をワンクリックで10言語に翻訳する実験的Webアプリケーション」**
 >
@@ -254,7 +256,10 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.6.5 (Current)
+### v1.6.6 (Current)
+- **[Docs]** Added a prominent Demo link at the top of the README. / READMEの冒頭にデモサイトへのリンクを追加しました。
+
+### v1.6.5
 - **[UI]** Renamed the "Full Reset" button in the top right to "API Switch" (API切替) and changed its icon to be more intuitive, as returning to the API gate is primarily used for switching engines or updating keys. / 右上の「全リセット」ボタンを「API切替」ボタンに変更し、アイコンをより直感的なものに変更しました。
 
 ### v1.6.4
