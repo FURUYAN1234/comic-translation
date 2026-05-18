@@ -420,10 +420,18 @@ VERIFICATION BEFORE OUTPUT:
   // アスペクト比からサイズ決定
   const outputSize = await detectOutputSize(base64Image);
 
-  if (onStatus) onStatus(`> [生成/Generate] gpt-image-2 で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}, 2〜4分) / Generating...`);
+  if (onStatus) onStatus(`> [生成/Generate] gpt-image-2 で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}) / Generating...`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 240000); // 4分タイムアウト（NBP準拠）
+
+  let seconds = 0;
+  const timerId = setInterval(() => {
+    seconds++;
+    if (onStatus) {
+      onStatus(`> [生成/Generate] gpt-image-2 で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}, ${seconds}秒経過) / Generating...`);
+    }
+  }, 1000);
 
   try {
     const formData = new FormData();
@@ -452,7 +460,7 @@ VERIFICATION BEFORE OUTPUT:
     const data = await response.json();
 
     if (data.data && data.data.length > 0 && data.data[0].b64_json) {
-      if (onStatus) onStatus(`> [生成/Generate] 完了 / Complete ✓ (gpt-image-2)`);
+      if (onStatus) onStatus(`> [生成/Generate] 完了 / Complete ✓ (gpt-image-2, ${seconds}秒)`);
       return { base64Img: data.data[0].b64_json, usedModel: "gpt-image-2" };
     }
 
@@ -468,5 +476,7 @@ VERIFICATION BEFORE OUTPUT:
       throw new Error("【コンテンツ制限】安全フィルターにより画像生成がブロックされました。");
     }
     throw err;
+  } finally {
+    clearInterval(timerId);
   }
 };

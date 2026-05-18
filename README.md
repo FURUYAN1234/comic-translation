@@ -254,7 +254,10 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.6.2 (Current)
+### v1.6.3 (Current)
+- **[Feature]** Added timer to OpenAI image generation (gpt-image-2) status bar to display elapsed seconds. / OpenAIの画像生成（gpt-image-2）時、ステータスバーに経過秒数を表示するタイマー機能を追加し、進捗状況を可視化しました。
+
+### v1.6.2
 - **[Deploy]** Routine maintenance and automated deployment pipeline execution. / メンテナンスと環境同期のための自動デプロイメントパイプラインを実行しました。
 
 ### v1.6.1
