@@ -247,7 +247,10 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.5.6 (Current)
+### v1.5.7 (Current)
+- **[Fix]** Updated dev server configuration in `vite.config.js` to use a strict port (5177). / `vite.config.js`の開発サーバー設定を更新し、ポート番号を5177に固定しました。
+
+### v1.5.6
 - **[Prompt Quality]** Major overhaul of the Universal Translation Prompt for ChatGPT/web AI services. Reframed the task as "IMAGE EDITING" instead of "image generation" to drastically reduce art degradation. Added Translation Accuracy Rules: preservation of literary references/wordplay, prohibition of re-interpretation and loose paraphrasing, accurate domain-specific term translation (e.g., 同人誌→doujinshi), and a pre-output verification checklist. Art preservation rules moved to top priority. / ChatGPT等のWebサービス向け汎用翻訳プロンプトを大幅改善。タスクを「画像生成」から「画像編集」に再定義し、アート劣化を大幅に低減。翻訳精度ルールを新設：文学的引用・パロディの保持、再解釈・意訳の禁止、専門用語の正確な翻訳、出力前検証チェックリストを追加。アート保護ルールを最優先に移動。
 
 ### v1.5.5
