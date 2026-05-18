@@ -13,7 +13,7 @@ import {
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.6.3";
+const SYSTEM_VERSION = "1.6.4";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -182,7 +182,7 @@ Before modifying the image, carefully scan and identify every text element:
 - **Translate faithfully**: When the meaning is clear, translate it directly. Do not loosely paraphrase or substitute entirely different concepts.
 - **Proper nouns and specific terms**: Translate domain-specific terms accurately (e.g., 同人誌→doujinshi, 頒布→distribution, 印刷費→printing cost). Do not guess or approximate.
 - **Sound effects**: ${tgtInfo.style === 'comic' ? `Convert to dynamic English comic SFX (e.g., ドキドキ→BA-DUMP, ザァァ→WHOOOOSH, ゴゴゴ→RUMBLE).` : tgtInfo.style === 'manga' ? `Use natural Japanese onomatopoeia.` : `Convert to natural ${tgtName} equivalents.`}
-- **URLs, ISBNs, technical strings**: Preserve the EXACT original text and casing — do NOT translate or modify.
+- **URLs, ISBNs, technical strings**: Preserve the EXACT original text and casing of the URL/ISBN itself — do NOT translate or modify it. However, you MUST translate any surrounding explanatory text (e.g., "Official site:").
 
 ## STEP 2: Replace Text in the Image
 For each text element:

@@ -254,7 +254,10 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.6.3 (Current)
+### v1.6.4 (Current)
+- **[Logic]** Refined the Casing Protection Protocol. The AI now accurately separates and translates descriptive text (e.g., "Official site:") while still perfectly preserving the exact casing and strings of adjacent URLs, ISBNs, or emails. / Casing Protection Protocol（ケーシング保護プロトコル）のロジックを改善。URL・ISBN・メールアドレスなどの技術的文字列は完全に原文のまま保護しつつ、その前後に付随する説明文（例：「公式サイト：」など）だけを正確に分離して翻訳できるようになりました。
+
+### v1.6.3
 - **[Feature]** Added timer to OpenAI image generation (gpt-image-2) status bar to display elapsed seconds. / OpenAIの画像生成（gpt-image-2）時、ステータスバーに経過秒数を表示するタイマー機能を追加し、進捗状況を可視化しました。
 
 ### v1.6.2

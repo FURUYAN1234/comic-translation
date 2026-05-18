@@ -121,7 +121,7 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
 - ${sfxGuide}
 - ${translationGuide}
 - 全テキスト要素を漏れなく検出すること
-- URL、ISBN、メールアドレスなどの技術的文字列は、翻訳せず原文のまま（大文字・小文字もそのまま）"translated"フィールドに転記すること。これらは大文字化してはならない
+- URL、ISBN、メールアドレスなどの技術的文字列が含まれる場合、そのURL等の文字列部分だけは翻訳・変更せず原文のまま維持し、それに付随する文章（例：「公式サイト：」など）は翻訳すること。また技術的文字列は大文字化してはならない
 - 出力はJSONオブジェクトのみ。マークダウンコードブロックは使わないこと`;
 
   const imagePayload = {
