@@ -8,8 +8,8 @@
 
 ---
 
-This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API.
-本プロジェクトは、Gemini APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
+This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API and OpenAI API.
+本プロジェクトは、Gemini APIおよびOpenAI APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
 
 ## 🚀 Overview / 概要
 
@@ -36,8 +36,8 @@ This system goes beyond simple machine translation by implementing strict contro
   * **🔵 Gemini Mode (Default)**: Extremely fast processing, zero intervention required. Free to use within Google AI Studio limits. / 圧倒的な処理速度。Google AI Studioの無料枠内で利用可能。
   * **🟢 ChatGPT Mode (OpenAI)**: World-class translation quality, perfectly capturing cultural nuances and character voices (role-language). Note: Uses a pay-as-you-go billing model. / 世界最高峰の翻訳精度。意訳やキャラクターの役割語を完璧に捉えます。※OpenAIの従量課金モデルが適用されます。
 
-* **Context-Aware Multimodal Translation / コンテキストを維持したマルチモーダル翻訳**: Unlike standard OCR+GPT workflows that translate text line-by-line, this tool leverages Gemini's massive context window and native vision capabilities. It reads the entire manga page as a single cohesive unit, understanding the flow of conversation, character tone, and visual context simultaneously. This prevents awkward literal translations and maintains character voice across the scene.
-  単純に文字を抽出して一行ずつ翻訳する従来のOCR＋GPT方式とは異なり、Geminiの巨大なコンテキストウィンドウとネイティブな視覚能力（Vision）を活用します。漫画のページ全体をひとつの繋がりとして読み取り、前後の会話の文脈、キャラクターの口調、視覚的な状況（誰がどんな表情で話しているか）を同時に理解することで、直訳による不自然さを防ぎ、シーン全体で一貫したキャラクターのトーンを維持します。
+* **Context-Aware Multimodal Translation / コンテキストを維持したマルチモーダル翻訳**: Unlike standard OCR+GPT workflows that translate text line-by-line, this tool leverages the AI engine's massive context window and native vision capabilities. It reads the entire manga page as a single cohesive unit, understanding the flow of conversation, character tone, and visual context simultaneously. This prevents awkward literal translations and maintains character voice across the scene.
+  単純に文字を抽出して一行ずつ翻訳する従来のOCR＋GPT方式とは異なり、AIエンジンの巨大なコンテキストウィンドウとネイティブな視覚能力（Vision）を活用します。漫画のページ全体をひとつの繋がりとして読み取り、前後の会話の文脈、キャラクターの口調、視覚的な状況（誰がどんな表情で話しているか）を同時に理解することで、直訳による不自然さを防ぎ、シーン全体で一貫したキャラクターのトーンを維持します。
 
 * **Casing Protection Protocol / ケーシング保護プロトコル**: Automatically protects technical strings like URLs, ISBNs, and email addresses in margin text from being forced to ALL CAPS, while maintaining comic-style ALL CAPS for dialogue, titles, and SFX.
   欄外のURL・ISBN・メールアドレス等の技術的文字列が全大文字化されないよう保護しつつ、吹き出し内セリフ・タイトル・擬音はコミックスタイルの大文字を維持します。
@@ -48,8 +48,8 @@ This system goes beyond simple machine translation by implementing strict contro
 * **Iterative Refinement Engine / 反復修正エンジン**: When regenerating images, the system uses the already translated image as a base, allowing users to apply specific correction rules via the instruction builder for true iterative refinement.
   再生成ルール使用時、翻訳済み画像をベースにAPIへ送信し、指示ビルダーを通じて特定の修正ルールを適用することで、真の反復的な修正・改善を可能にします。
 
-* **Anti-Degradation Prompting / 画質劣化防止プロンプト**: Incorporates Gemini-optimized quality preservation instructions to prevent line-art, screen-tone, and color palette degradation during multiple generation passes.
-  複数回の生成パスにおける線画・スクリーントーン・カラーパレットの劣化を防ぐため、Geminiに最適化された画質保護プロンプトを組み込んでいます。
+* **Anti-Degradation Prompting / 画質劣化防止プロンプト**: Incorporates model-optimized quality preservation instructions to prevent line-art, screen-tone, and color palette degradation during multiple generation passes.
+  複数回の生成パスにおける線画・スクリーントーン・カラーパレットの劣化を防ぐため、各モデルに最適化された画質保護プロンプトを組み込んでいます。
 
 ---
 
@@ -80,8 +80,8 @@ This system goes beyond simple machine translation by implementing strict contro
 
 ### 🌍 Cloud / Browser (Deploy)
 
-1. **Get API Key**: Obtain a Gemini API key at [Google AI Studio](https://aistudio.google.com/).
-   [Google AI Studio](https://aistudio.google.com/) で Gemini API キーを取得してください。
+1. **Get API Key**: Obtain a Gemini API key at [Google AI Studio](https://aistudio.google.com/) or an OpenAI API key at [OpenAI Platform](https://platform.openai.com/).
+   [Google AI Studio](https://aistudio.google.com/) で Gemini API キー、または [OpenAI Platform](https://platform.openai.com/) で OpenAI API キーを取得してください。
 2. **Access**: Open the deployed web app ([Comic Translation Tool](https://furuyan1234.github.io/comic-translation/)) and enter your API key.
    [Webアプリ (デモサイト)](https://furuyan1234.github.io/comic-translation/) にアクセスし、APIキーを入力してスタートします。
 
@@ -108,8 +108,8 @@ This project is developed in full compliance with **Article 30-4 of the Japanese
 
 ### Official API Usage
 
-All generations are performed through the **official Google Gemini API**. This system adheres strictly to Google's "Generative AI Forbidden Use Policy" and Terms of Service.
-本システムはGoogle公式のGemini APIを介して動作しており、Googleが定める「生成AI禁止事項」および利用規約を厳格に遵守しています。
+All generations are performed through the **official Google Gemini API and OpenAI API**. This system adheres strictly to the Terms of Service and Forbidden Use Policies of both Google and OpenAI.
+本システムはGoogle公式のGemini APIおよびOpenAI公式のAPIを介して動作しており、各社が定める「生成AI禁止事項」および利用規約を厳格に遵守しています。
 
 ### Translation Purpose
 
@@ -254,7 +254,10 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.6.0 (Current)
+### v1.6.1 (Current)
+- **[Docs]** Updated README and UI strings to accurately reflect the Dual API Architecture (Gemini API & OpenAI API) throughout the project, ensuring there are no misleading references to Gemini as the sole engine. / アプリ内UIとREADMEを全面改訂し、Gemini APIとOpenAI APIのDual APIアーキテクチャであることを正確に表記するよう修正しました。
+
+### v1.6.0
 - **[Feature]** Dual API Architecture (Gemini + OpenAI): The application now supports both Google Gemini API (default, fast, free tier) and OpenAI API (high-quality, pay-as-you-go). / Dual APIアーキテクチャ（Gemini + OpenAI）に対応しました。入力されたAPIキー（`sk-` プレフィックス）を検知し、内部のルーティング層で自動的に「🔵Geminiモード（無料枠・高速）」と「🟢ChatGPTモード（高品質・従量課金）」を切り替えます。
 - **[Integration]** Implemented full pipeline for OpenAI API: `gpt-4.1` Vision for text extraction and layout analysis, `gpt-4.1-mini` for targeted single-text re-translation, and `gpt-image-2` (Edit API) for high-fidelity translated image regeneration. / OpenAI APIのフルパイプラインを実装しました。`gpt-4.1` Visionによるテキスト抽出とレイアウト解析、`gpt-4.1-mini`による単一テキスト再翻訳、そして`gpt-image-2` Edit APIによる高精細な画像再生成に対応しています。
 - **[UI]** Unified API Gateway UI: Redesigned the start screen with real-time API key detection, dynamic engine badges, and specific key-acquisition links. Removed the universal prompt modal from the Gemini flow to streamline the UI. Added explicit wait-time warnings (2-4 minutes) during OpenAI image generation. / 統合APIゲート画面：APIキーの自動判別、リアルタイムエンジンインジケーター、専用のAPI取得リンクを実装しました。Geminiモードでは不要となった「汎用翻訳プロンプト」を削除し、UIを洗練化。また、処理時間の長いOpenAI画像生成時には待ち時間（2〜4分）の警告を表示するように改善しました。

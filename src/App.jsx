@@ -13,7 +13,7 @@ import {
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.6.0";
+const SYSTEM_VERSION = "1.6.1";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -621,8 +621,8 @@ Output the final translated image only. No explanations needed.`;
             <p className="prompt-modal-desc">
               APIによるImage-to-Image出力が直接サポートされていないモデルや、出力品質に問題がある場合、Webサービスのチャット画面から手動で利用するための汎用プロンプトです。翻訳したい漫画画像と一緒にこのプロンプトを貼り付けてください。
               <br /><span style={{opacity: 0.7}}>A universal prompt for manual use via web chat interfaces, useful when direct API Image-to-Image output is unsupported or yields poor quality. Attach your manga image with this prompt.</span>
-              <br /><br /><span className="prompt-caveat-inline">⚠️ 画像生成の品質はサービスのモデル性能に依存します。本ツール（Gemini API直接連携）ほどの細密な制御は得られない場合があります。</span>
-              <br /><span style={{opacity: 0.5, fontSize: '0.6rem'}}>Image quality depends on the AI service's model capabilities. Results may vary compared to this tool's direct Gemini API integration.</span>
+              <br /><br /><span className="prompt-caveat-inline">⚠️ 画像生成の品質はサービスのモデル性能に依存します。本ツール（Gemini API / OpenAI API 直接連携）ほどの細密な制御は得られない場合があります。</span>
+              <br /><span style={{opacity: 0.5, fontSize: '0.6rem'}}>Image quality depends on the AI service's model capabilities. Results may vary compared to this tool's direct Gemini API / OpenAI API integration.</span>
             </p>
             <div className="prompt-flip-warning">
               <p><strong>⚠️ 左右反転（読み順変換）の対応状況はサービスによって異なります / Flip support varies by service:</strong></p>
