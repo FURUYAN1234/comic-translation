@@ -254,7 +254,10 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.6.4 (Current)
+### v1.6.5 (Current)
+- **[UI]** Renamed the "Full Reset" button in the top right to "API Switch" (API切替) and changed its icon to be more intuitive, as returning to the API gate is primarily used for switching engines or updating keys. / 右上の「全リセット」ボタンを「API切替」ボタンに変更し、アイコンをより直感的なものに変更しました。
+
+### v1.6.4
 - **[Logic]** Refined the Casing Protection Protocol. The AI now accurately separates and translates descriptive text (e.g., "Official site:") while still perfectly preserving the exact casing and strings of adjacent URLs, ISBNs, or emails. / Casing Protection Protocol（ケーシング保護プロトコル）のロジックを改善。URL・ISBN・メールアドレスなどの技術的文字列は完全に原文のまま保護しつつ、その前後に付随する説明文（例：「公式サイト：」など）だけを正確に分離して翻訳できるようになりました。
 
 ### v1.6.3

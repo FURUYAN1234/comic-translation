@@ -13,7 +13,7 @@ import {
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.6.4";
+const SYSTEM_VERSION = "1.6.5";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -725,8 +725,8 @@ Output the final translated image only. No explanations needed.`;
                 </div>
               )}
               <div className="btn-icon-labeled">
-                <span className="btn-icon-label">全リセット<br />Full Reset</span>
-                <button className="btn-icon-only" onClick={handleFullReset} title="全リセット / Full Reset">⏻</button>
+                <span className="btn-icon-label">API切替<br />API Switch</span>
+                <button className="btn-icon-only" onClick={handleFullReset} title="API切替 / API Switch">🔌</button>
               </div>
             </div>
           </header>
