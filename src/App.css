@@ -48,7 +48,58 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
   font-weight: 800; font-size: 0.85rem; border-radius: var(--radius-lg);
 }
 .api-gate-btn:hover { background: var(--indigo-light); }
+.api-gate-btn-openai { background: #059669 !important; }
+.api-gate-btn-openai:hover { background: #10b981 !important; }
 .api-gate-note { font-size: 0.6rem; color: var(--text-dim); margin-top: 0.8rem; line-height: 1.6; }
+
+/* Dual Engine — APIゲート内のリンク */
+.api-gate-links {
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+.api-link { font-size: 0.62rem; text-decoration: underline; transition: opacity 0.2s; }
+.api-link:hover { opacity: 0.8; }
+.api-link-gemini { color: #60a5fa; text-decoration-color: rgba(96,165,250,0.3); }
+.api-link-openai { color: #34d399; text-decoration-color: rgba(52,211,153,0.3); }
+.api-link-divider { color: var(--text-dim); font-size: 0.6rem; }
+
+/* Dual Engine — エンジン自動判定インジケーター */
+.engine-indicator {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.4rem 0.8rem; margin-top: 0.8rem;
+  border-radius: 20px; font-size: 0.65rem; font-weight: 700;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  color: var(--text-muted); transition: all 0.3s;
+}
+.engine-indicator .engine-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-dim); transition: all 0.3s;
+}
+.engine-indicator.detecting-gemini {
+  background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.4); color: #60a5fa;
+}
+.engine-indicator.detecting-gemini .engine-dot { background: #60a5fa; }
+.engine-indicator.detecting-openai {
+  background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.4); color: #34d399;
+}
+.engine-indicator.detecting-openai .engine-dot { background: #34d399; }
+.engine-cost-warn {
+  margin-left: 0.4rem; font-size: 0.55rem; color: #fbbf24; font-weight: 600;
+}
+
+/* Dual Engine — ヘッダーエンジンバッジ */
+.engine-badge {
+  display: inline-flex; align-items: center; gap: 0.2rem;
+  padding: 0.25rem 0.6rem; border-radius: 12px;
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.03em;
+  border: 1px solid; transition: all 0.3s;
+}
+.engine-gemini {
+  background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.35); color: #60a5fa;
+}
+.engine-openai {
+  background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #34d399;
+}
 
 /* === 固定ヘッダー+ステータスエリア === */
 .sticky-top {

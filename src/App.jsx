@@ -1,22 +1,26 @@
-// AI Comic Translation Tool V1.5.0 — 多言語相互翻訳対応 / Universal Comic Translation
+// AI Comic Translation Tool V1.6.0 — Dual Engine (Gemini + OpenAI) 対応
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import './App.css';
+import { setApiKey, IMAGE_MODEL_OPTIONS } from './lib/gemini';
+import { setOpenAIApiKey } from './lib/openai';
 import {
-  setApiKey,
-  IMAGE_MODEL_OPTIONS,
-  extractTranslations,
-  generateTranslatedImage,
-  translateSingleText
-} from './lib/gemini';
+  setActiveEngine,
+  getActiveEngine,
+  getEngineDisplayName,
+  extractTranslationsAI,
+  translateSingleTextAI,
+  generateTranslatedImageAI
+} from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.5.7";
+const SYSTEM_VERSION = "1.6.0";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [selectedModel, setSelectedModel] = useState(IMAGE_MODEL_OPTIONS[0].value);
+  const [engineMode, setEngineMode] = useState('gemini'); // 'gemini' | 'openai' — Dual Engine
 
   // 多言語設定
   const [sourceLanguage, setSourceLanguage] = useState('auto');  // ソース言語（デフォルト: 自動検出）
@@ -227,10 +231,28 @@ Output the final translated image only. No explanations needed.`;
     }
   };
 
-  // ── API認証 ──
+  // ── API認証（Dual Engine: sk- → OpenAI / それ以外 → Gemini） ──
   const handleApiKeySubmit = () => {
-    const key = apiKeyInput.trim();
-    if (key.length > 10) { setApiKey(key); setIsUnlocked(true); }
+    const cleanKey = apiKeyInput.replace(/[^\u0000-\u007F]/g, "").trim();
+    if (cleanKey.length < 10) return;
+
+    if (cleanKey.startsWith("sk-")) {
+      // OpenAI Engine
+      setOpenAIApiKey(cleanKey);
+      setActiveEngine('openai');
+      setEngineMode('openai');
+      setIsUnlocked(true);
+      showStatus('✅ ChatGPT Engine 接続完了！ / Connected!', true);
+      console.log('[Dual Engine] Switched to OpenAI/ChatGPT mode');
+    } else {
+      // Gemini Engine（従来通り）
+      setApiKey(cleanKey);
+      setActiveEngine('gemini');
+      setEngineMode('gemini');
+      setIsUnlocked(true);
+      showStatus('✅ Gemini Engine 接続完了！ / Connected!', true);
+      console.log('[Dual Engine] Using Gemini mode (default)');
+    }
   };
 
   // ── 画像読み込み（D&D時は自動抽出） ──
@@ -280,7 +302,7 @@ Output the final translated image only. No explanations needed.`;
 
     try {
       const base64 = dataUrl.split(',')[1];
-      const result = await extractTranslations(base64, (s) => {
+      const result = await extractTranslationsAI(base64, (s) => {
         if (currentSession === extractionSessionRef.current) showStatus(s);
       }, lang, sourceLanguage);
       
@@ -308,7 +330,7 @@ Output the final translated image only. No explanations needed.`;
           try {
              const retranslated = await Promise.all(result.texts.map(async t => {
                 if (!t.original) return t;
-                const translated = await translateSingleText(t.original, finalTarget, result.detectedSourceLang);
+                const translated = await translateSingleTextAI(t.original, finalTarget, result.detectedSourceLang);
                 return { ...t, translated };
              }));
              result.texts = retranslated;
@@ -375,7 +397,7 @@ Output the final translated image only. No explanations needed.`;
     showStatus(`🔄 テキスト #${index + 1} を翻訳中... / Translating text #${index + 1}...`);
     try {
       const langInfo = getLanguageInfo(targetLanguage);
-      const translated = await translateSingleText(item.original, targetLanguage, sourceLanguage);
+      const translated = await translateSingleTextAI(item.original, targetLanguage, sourceLanguage);
       updateTranslation(index, translated);
       showStatus(`✅ テキスト #${index + 1} → ${langInfo.nativeName} 翻訳完了 / Translation complete`, true);
     } catch (err) {
@@ -481,7 +503,7 @@ Output the final translated image only. No explanations needed.`;
         inputBase64 = originalImage.split(',')[1];
       }
       showStatus(`🌐 ${langInfo.nativeName}画像を${isRefinement ? '修正' : '生成'}中...`);
-      const result = await generateTranslatedImage(
+      const result = await generateTranslatedImageAI(
         inputBase64, translations, selectedModel, (s) => showStatus(s), instructionRules, customPrompt, targetLanguage, sourceLanguage, isRefinement
       );
       const imgSrc = `data:image/png;base64,${result.base64Img}`;
@@ -535,10 +557,13 @@ Output the final translated image only. No explanations needed.`;
     setShowBuilder(false);
   };
 
-  // ── API リセット ──
+  // ── API リセット（エンジン設定もリセット） ──
   const handleFullReset = () => {
     handleImageReset();
     setApiKey('');
+    setOpenAIApiKey('');
+    setActiveEngine('gemini');
+    setEngineMode('gemini');
     setIsUnlocked(false);
     setApiKeyInput('');
   };
@@ -557,17 +582,30 @@ Output the final translated image only. No explanations needed.`;
             <div className="api-gate-icon">🌐</div>
             <h1 className="api-gate-title">{APP_NAME}</h1>
             <p className="api-gate-sub">V{SYSTEM_VERSION} — Multilingual Comic Translation Tool</p>
-            <input type="password" className="api-gate-input" placeholder="Gemini API キーを入力... / Enter API Key..."
+            <input type="password" className="api-gate-input" placeholder="Gemini API Key または OpenAI Key (sk-...) を入力..."
               value={apiKeyInput} onChange={(e) => setApiKeyInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleApiKeySubmit()} />
-            <button className="api-gate-btn" onClick={handleApiKeySubmit}>🔓 起動する / Start</button>
-            <p className="api-gate-note">※ APIキーはセッション限定（ブラウザに保存されません） / Session-only (Not saved)<br />Google AI Studio: ai.google.dev で取得 / Get key from ai.google.dev</p>
-            <div className="prompt-divider">── or ──</div>
-            <button className="btn-show-prompt" onClick={() => setShowUniversalPrompt(!showUniversalPrompt)}>
-              <span className="btn-prompt-icon">📋</span>
-              <span className="btn-prompt-main">汎用翻訳プロンプトを表示<br /><span className="btn-prompt-en">Show Universal Translation Prompt</span></span>
-            </button>
-            <p className="api-gate-prompt-note">※ OpenAI等のAPIキーは不要です。ChatGPT等のWebチャット画面で画像を添付して使えます。<br />（Gemini webでも使用可能ですが、左右反転には非対応です）<br /><span style={{opacity: 0.7}}>No API key needed. Works with ChatGPT web, etc.<br />(Also works with Gemini web, but mirror flip is not supported)</span></p>
+            <button className={`api-gate-btn ${apiKeyInput.trim().startsWith('sk-') ? 'api-gate-btn-openai' : ''}`} onClick={handleApiKeySubmit}>🔓 起動する / Start</button>
+
+            {/* Dual Engine 自動判定インジケーター */}
+            <div className={`engine-indicator ${apiKeyInput.trim().startsWith('sk-') ? 'detecting-openai' : apiKeyInput.trim() ? 'detecting-gemini' : ''}`}>
+              <span className="engine-dot" />
+              {apiKeyInput.trim().startsWith('sk-')
+                ? '🟢 ChatGPT Engine で起動'
+                : apiKeyInput.trim()
+                  ? '🔵 Gemini Engine で起動'
+                  : '入力待ち... / Waiting for input...'}
+              {apiKeyInput.trim().startsWith('sk-') && (
+                <span className="engine-cost-warn">⚠ 従量課金（OpenAI API）</span>
+              )}
+            </div>
+
+            <p className="api-gate-note">※ APIキーはセッション限定（ブラウザに保存されません） / Session-only (Not saved)</p>
+            <div className="api-gate-links">
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="api-link api-link-gemini">🔵 Gemini キー取得</a>
+              <span className="api-link-divider">|</span>
+              <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="api-link api-link-openai">🟢 OpenAI キー取得（従量課金）</a>
+            </div>
           </div>
         </div>
       )}
@@ -581,8 +619,8 @@ Output the final translated image only. No explanations needed.`;
               <button className="prompt-close" onClick={() => setShowUniversalPrompt(false)}>✕</button>
             </div>
             <p className="prompt-modal-desc">
-              ChatGPT版などのように、APIによるImage-to-Image処理が不可能で、Webサービスのチャット画面でしか画像添付による元画像参照ができないAIサービス向けの汎用プロンプトです。翻訳したい漫画画像と一緒にこのプロンプトを貼り付けてください。OpenAIのAPIは不要です。
-              <br /><span style={{opacity: 0.7}}>A universal prompt for AI services (like ChatGPT) where API-based Image-to-Image is unavailable. Attach your manga image with this prompt. No OpenAI API key required.</span>
+              APIによるImage-to-Image出力が直接サポートされていないモデルや、出力品質に問題がある場合、Webサービスのチャット画面から手動で利用するための汎用プロンプトです。翻訳したい漫画画像と一緒にこのプロンプトを貼り付けてください。
+              <br /><span style={{opacity: 0.7}}>A universal prompt for manual use via web chat interfaces, useful when direct API Image-to-Image output is unsupported or yields poor quality. Attach your manga image with this prompt.</span>
               <br /><br /><span className="prompt-caveat-inline">⚠️ 画像生成の品質はサービスのモデル性能に依存します。本ツール（Gemini API直接連携）ほどの細密な制御は得られない場合があります。</span>
               <br /><span style={{opacity: 0.5, fontSize: '0.6rem'}}>Image quality depends on the AI service's model capabilities. Results may vary compared to this tool's direct Gemini API integration.</span>
             </p>
@@ -645,6 +683,10 @@ Output the final translated image only. No explanations needed.`;
               </div>
             </div>
             <div className="header-actions">
+              {/* エンジンバッジ */}
+              <span className={`engine-badge ${engineMode === 'openai' ? 'engine-openai' : 'engine-gemini'}`}>
+                {engineMode === 'openai' ? '🟢 ChatGPT' : '🔵 Gemini'}
+              </span>
               <div className="model-select-wrap">
                 <label className="model-label">入力言語 / Source</label>
                 <select className="lang-select" value={sourceLanguage}
@@ -663,19 +705,25 @@ Output the final translated image only. No explanations needed.`;
                   ))}
                 </select>
               </div>
-              <div className="model-select-wrap">
-                <label className="model-label">生成モデル / Model</label>
-                <select className="model-select" value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)} disabled={isWorking}>
-                  {IMAGE_MODEL_OPTIONS.map(m => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="btn-icon-labeled">
-                <span className="btn-icon-label">汎用プロンプト<br />Universal Prompt</span>
-                <button className="btn-icon-only" onClick={() => setShowUniversalPrompt(true)} title="汎用プロンプト / Universal Prompt">📋</button>
-              </div>
+              {/* モデル選択 — Geminiモード時のみ表示 */}
+              {engineMode === 'gemini' && (
+                <div className="model-select-wrap">
+                  <label className="model-label">生成モデル / Model</label>
+                  <select className="model-select" value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)} disabled={isWorking}>
+                    {IMAGE_MODEL_OPTIONS.map(m => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {/* 汎用プロンプト — OpenAIモード時のみ表示 */}
+              {engineMode === 'openai' && (
+                <div className="btn-icon-labeled">
+                  <span className="btn-icon-label">汎用プロンプト<br />Universal Prompt</span>
+                  <button className="btn-icon-only" onClick={() => setShowUniversalPrompt(true)} title="汎用プロンプト / Universal Prompt">📋</button>
+                </div>
+              )}
               <div className="btn-icon-labeled">
                 <span className="btn-icon-label">全リセット<br />Full Reset</span>
                 <button className="btn-icon-only" onClick={handleFullReset} title="全リセット / Full Reset">⏻</button>
@@ -795,10 +843,10 @@ Output the final translated image only. No explanations needed.`;
             </div>
             <button className="btn-generate" onClick={() => handleGenerate(true)} disabled={!canGenerate}>
               {isGenerating
-                ? <><span className="animate-spin">◉</span> 画像生成中... / Generating...</>
+                ? <><span className="animate-spin">◉</span> 画像生成中... / Generating... {engineMode === 'openai' ? '(2〜4分)' : ''}</>
                 : <>{translatedImage
-                    ? `🌐 原画(左)から${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName}再生成 / Regenerate ${flipEnabled ? 'Flipped ' : ''}${getLanguageInfo(targetLanguage).name} from Original(Left)`
-                    : `🌐 ${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName} 画像生成 / Generate ${flipEnabled ? 'Flipped ' : ''}${getLanguageInfo(targetLanguage).name} Image`
+                    ? `🌐 原画(左)から${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName}再生成 / Regenerate ${flipEnabled ? 'Flipped ' : ''}${getLanguageInfo(targetLanguage).name} from Original(Left)${engineMode === 'openai' ? ' (2〜4分)' : ''}`
+                    : `🌐 ${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName} 画像生成 / Generate ${flipEnabled ? 'Flipped ' : ''}${getLanguageInfo(targetLanguage).name} Image${engineMode === 'openai' ? ' (2〜4分)' : ''}`
                   }</>
               }
             </button>
@@ -825,7 +873,7 @@ Output the final translated image only. No explanations needed.`;
                     {isGenerating ? (
                       <div className="gen-indicator">
                         <span className="animate-spin gen-spin">◉</span>
-                        <p>{getLanguageInfo(targetLanguage).nativeName}画像を生成中... / Generating...</p>
+                        <p>{getLanguageInfo(targetLanguage).nativeName}画像を生成中... / Generating... {engineMode === 'openai' ? <br/> : ''}<span style={{color: '#fbbf24'}}>{engineMode === 'openai' ? '(2〜4分お待ちください)' : ''}</span></p>
                         <p className="gen-sub">{flipEnabled ? '反転 → ' : ''}テキスト翻訳 → 画像再構築</p>
                       </div>
                     ) : (

@@ -3,8 +3,8 @@
 > **"Translate manga into 10 languages with one click."**
 > **「漫画をワンクリックで10言語に翻訳する実験的Webアプリケーション」**
 >
-> Powered by Google Gemini API — Automatic text extraction, translation, horizontal flip, and image regeneration.
-> Google Gemini APIを活用し、テキスト抽出・多言語翻訳・左右反転・画像再生成を完全自動化。
+> Powered by Dual API Architecture (Gemini & OpenAI) — Automatic text extraction, translation, horizontal flip, and image regeneration.
+> Gemini & OpenAIのDual APIアーキテクチャを活用し、テキスト抽出・多言語翻訳・左右反転・画像再生成を完全自動化。
 
 ---
 
@@ -18,11 +18,11 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ### Translation Pipeline / 翻訳パイプライン
 
-1. **Text Extraction & Translation / テキスト抽出・翻訳**: Gemini text model analyzes the manga image and extracts all text elements (titles, dialogue, SFX, narration) with high-precision translations.
-   Geminiテキストモデルが漫画画像を解析し、全テキスト要素（タイトル、セリフ、擬音、ナレーション）を高精度で抽出・翻訳します。
+1. **Text Extraction & Translation / テキスト抽出・翻訳**: The AI engine analyzes the manga image and extracts all text elements (titles, dialogue, SFX, narration) with high-precision translations.
+   AIエンジンが漫画画像を解析し、全テキスト要素（タイトル、セリフ、擬音、ナレーション）を高精度で抽出・翻訳します。
 
-2. **Image Regeneration / 画像再生成**: The original image is automatically flipped if required by the target reading order, and the Gemini image model regenerates the page with translated text naturally integrated into the artwork.
-   翻訳元・翻訳先の読み順に合わせて画像を必要に応じて自動で左右反転し、Gemini画像モデルが翻訳テキストを元のアートワークに自然に統合したページを再生成します。
+2. **Image Regeneration / 画像再生成**: The original image is automatically flipped if required by the target reading order, and the image model regenerates the page with translated text naturally integrated into the artwork.
+   翻訳元・翻訳先の読み順に合わせて画像を必要に応じて自動で左右反転し、画像モデルが翻訳テキストを元のアートワークに自然に統合したページを再生成します。
 
 ---
 
@@ -30,6 +30,11 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 This system goes beyond simple machine translation by implementing strict controls to preserve the original artistic intent while adapting to different languages.
 本システムは単純な機械翻訳にとどまらず、言語の適応を行いながらもオリジナルの芸術的意図を維持するための厳密な制御を実装しています。
+
+* **Dual API Architecture (Zenith Protocol) / デュアルAPIアーキテクチャ**: Seamlessly switch between two powerful AI engines based on the input API key.
+  入力されたAPIキーから自動でエンジンを判別し、ルーティング層を介して処理を切り替えます。
+  * **🔵 Gemini Mode (Default)**: Extremely fast processing, zero intervention required. Free to use within Google AI Studio limits. / 圧倒的な処理速度。Google AI Studioの無料枠内で利用可能。
+  * **🟢 ChatGPT Mode (OpenAI)**: World-class translation quality, perfectly capturing cultural nuances and character voices (role-language). Note: Uses a pay-as-you-go billing model. / 世界最高峰の翻訳精度。意訳やキャラクターの役割語を完璧に捉えます。※OpenAIの従量課金モデルが適用されます。
 
 * **Context-Aware Multimodal Translation / コンテキストを維持したマルチモーダル翻訳**: Unlike standard OCR+GPT workflows that translate text line-by-line, this tool leverages Gemini's massive context window and native vision capabilities. It reads the entire manga page as a single cohesive unit, understanding the flow of conversation, character tone, and visual context simultaneously. This prevents awkward literal translations and maintains character voice across the scene.
   単純に文字を抽出して一行ずつ翻訳する従来のOCR＋GPT方式とは異なり、Geminiの巨大なコンテキストウィンドウとネイティブな視覚能力（Vision）を活用します。漫画のページ全体をひとつの繋がりとして読み取り、前後の会話の文脈、キャラクターの口調、視覚的な状況（誰がどんな表情で話しているか）を同時に理解することで、直訳による不自然さを防ぎ、シーン全体で一貫したキャラクターのトーンを維持します。
@@ -63,7 +68,9 @@ This system goes beyond simple machine translation by implementing strict contro
 ## 💻 Tech Stack / 技術スタック
 
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS
-* **LLM/VFM**: Google Gemini API (Text: `gemini-2.5-flash`, Image: `gemini-2.5-flash-preview-image`)
+* **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction)
+* **LLM/VFM (Gemini)**: `gemini-2.5-flash`, `gemini-2.5-flash-preview-image`
+* **LLM/VFM (OpenAI)**: `gpt-4.1` (Vision), `gpt-4.1-mini`, `gpt-image-2` (Edit API)
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
 * **Security**: Memory-only API key management (no localStorage, no hardcoding)
 
@@ -247,7 +254,12 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.5.7 (Current)
+### v1.6.0 (Current)
+- **[Feature]** Dual API Architecture (Gemini + OpenAI): The application now supports both Google Gemini API (default, fast, free tier) and OpenAI API (high-quality, pay-as-you-go). / Dual APIアーキテクチャ（Gemini + OpenAI）に対応しました。入力されたAPIキー（`sk-` プレフィックス）を検知し、内部のルーティング層で自動的に「🔵Geminiモード（無料枠・高速）」と「🟢ChatGPTモード（高品質・従量課金）」を切り替えます。
+- **[Integration]** Implemented full pipeline for OpenAI API: `gpt-4.1` Vision for text extraction and layout analysis, `gpt-4.1-mini` for targeted single-text re-translation, and `gpt-image-2` (Edit API) for high-fidelity translated image regeneration. / OpenAI APIのフルパイプラインを実装しました。`gpt-4.1` Visionによるテキスト抽出とレイアウト解析、`gpt-4.1-mini`による単一テキスト再翻訳、そして`gpt-image-2` Edit APIによる高精細な画像再生成に対応しています。
+- **[UI]** Unified API Gateway UI: Redesigned the start screen with real-time API key detection, dynamic engine badges, and specific key-acquisition links. Removed the universal prompt modal from the Gemini flow to streamline the UI. Added explicit wait-time warnings (2-4 minutes) during OpenAI image generation. / 統合APIゲート画面：APIキーの自動判別、リアルタイムエンジンインジケーター、専用のAPI取得リンクを実装しました。Geminiモードでは不要となった「汎用翻訳プロンプト」を削除し、UIを洗練化。また、処理時間の長いOpenAI画像生成時には待ち時間（2〜4分）の警告を表示するように改善しました。
+
+### v1.5.7
 - **[Fix]** Updated dev server configuration in `vite.config.js` to use a strict port (5177). / `vite.config.js`の開発サーバー設定を更新し、ポート番号を5177に固定しました。
 
 ### v1.5.6
