@@ -256,7 +256,10 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.6.6 (Current)
+### v1.6.7
+- **[API / UI]** Extended OpenAI image generation timeout from 4 minutes to 5 minutes, and updated corresponding wait-time indications to "2-5 minutes". / OpenAI画像生成のタイムアウトを4分から 5分 に延長し、UI上の待ち時間表記を「(2〜5分)」に更新しました。
+
+### v1.6.6
 - **[Docs]** Added a prominent Demo link at the top of the README. / READMEの冒頭にデモサイトへのリンクを追加しました。
 
 ### v1.6.5

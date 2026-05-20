@@ -13,7 +13,7 @@ import {
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.6.6";
+const SYSTEM_VERSION = "1.6.7";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -843,10 +843,10 @@ Output the final translated image only. No explanations needed.`;
             </div>
             <button className="btn-generate" onClick={() => handleGenerate(true)} disabled={!canGenerate}>
               {isGenerating
-                ? <><span className="animate-spin">◉</span> 画像生成中... / Generating... {engineMode === 'openai' ? '(2〜4分)' : ''}</>
+                ? <><span className="animate-spin">◉</span> 画像生成中... / Generating... {engineMode === 'openai' ? '(2〜5分)' : ''}</>
                 : <>{translatedImage
-                    ? `🌐 原画(左)から${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName}再生成 / Regenerate ${flipEnabled ? 'Flipped ' : ''}${getLanguageInfo(targetLanguage).name} from Original(Left)${engineMode === 'openai' ? ' (2〜4分)' : ''}`
-                    : `🌐 ${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName} 画像生成 / Generate ${flipEnabled ? 'Flipped ' : ''}${getLanguageInfo(targetLanguage).name} Image${engineMode === 'openai' ? ' (2〜4分)' : ''}`
+                    ? `🌐 原画(左)から${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName}再生成 / Regenerate ${flipEnabled ? 'Flipped ' : ''}${getLanguageInfo(targetLanguage).name} from Original(Left)${engineMode === 'openai' ? ' (2〜5分)' : ''}`
+                    : `🌐 ${flipEnabled ? '反転(Flip) + ' : ''}${getLanguageInfo(targetLanguage).nativeName} 画像生成 / Generate ${flipEnabled ? 'Flipped ' : ''}${getLanguageInfo(targetLanguage).name} Image${engineMode === 'openai' ? ' (2〜5分)' : ''}`
                   }</>
               }
             </button>
@@ -873,7 +873,7 @@ Output the final translated image only. No explanations needed.`;
                     {isGenerating ? (
                       <div className="gen-indicator">
                         <span className="animate-spin gen-spin">◉</span>
-                        <p>{getLanguageInfo(targetLanguage).nativeName}画像を生成中... / Generating... {engineMode === 'openai' ? <br/> : ''}<span style={{color: '#fbbf24'}}>{engineMode === 'openai' ? '(2〜4分お待ちください)' : ''}</span></p>
+                        <p>{getLanguageInfo(targetLanguage).nativeName}画像を生成中... / Generating... {engineMode === 'openai' ? <br/> : ''}<span style={{color: '#fbbf24'}}>{engineMode === 'openai' ? '(2〜5分お待ちください)' : ''}</span></p>
                         <p className="gen-sub">{flipEnabled ? '反転 → ' : ''}テキスト翻訳 → 画像再構築</p>
                       </div>
                     ) : (

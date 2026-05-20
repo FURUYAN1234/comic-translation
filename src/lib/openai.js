@@ -423,7 +423,7 @@ VERIFICATION BEFORE OUTPUT:
   if (onStatus) onStatus(`> [生成/Generate] gpt-image-2 で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}) / Generating...`);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 240000); // 4分タイムアウト（NBP準拠）
+  const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分タイムアウト
 
   let seconds = 0;
   const timerId = setInterval(() => {
@@ -469,7 +469,7 @@ VERIFICATION BEFORE OUTPUT:
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
-      throw new Error("画像生成タイムアウト (240秒)。サーバーが混雑している可能性があります。");
+      throw new Error("画像生成タイムアウト (300秒)。サーバーが混雑している可能性があります。");
     }
     // 安全フィルターの検出
     if (err.message.includes("safety") || err.message.includes("SAFETY") || err.message.includes("content_policy")) {
