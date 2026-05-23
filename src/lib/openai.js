@@ -22,10 +22,11 @@ const VISION_MODEL_IDS = [
   "gpt-4.1-mini",     // Backup 2: コスト効率
 ];
 
-// ── 個別翻訳用モデル（軽量優先） ──
+// ── 個別翻訳用モデル（高品質優先＆フォールバック強化） ──
 const TEXT_MODEL_IDS = [
-  "gpt-4.1-mini",     // Primary: コスト効率・高速
-  "gpt-4.1",          // Backup 1: 高品質
+  "gpt-4.1",          // Primary: 高品質
+  "gpt-4.1-mini",     // Backup 1: コスト効率・高速
+  "gpt-4.1-nano",     // Backup 2: 超軽量
   "gpt-4o",           // Fallback: 安定実績
 ];
 

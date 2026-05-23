@@ -72,7 +72,7 @@ This system goes beyond simple machine translation by implementing strict contro
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS
 * **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction)
 * **LLM/VFM (Gemini)**: `gemini-2.5-flash`, `gemini-2.5-flash-preview-image`
-* **LLM/VFM (OpenAI)**: `gpt-4.1` (Vision), `gpt-4.1-mini`, `gpt-image-2` (Edit API)
+* **LLM/VFM (OpenAI)**: `gpt-4.1` (Vision), `gpt-4.1-mini`, `gpt-4.1-nano`, `gpt-image-2` (Edit API)
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
 * **Security**: Memory-only API key management (no localStorage, no hardcoding)
 
@@ -255,6 +255,9 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 ---
 
 ## 🔄 Changelog / 更新履歴
+
+### v1.6.8
+- **[API / Model]** Optimized OpenAI text model fallback sequence based on nano-banana-pro changes. Prioritized `gpt-4.1` for single-text translation and added `gpt-4.1-nano` as backup to ensure higher translation quality and robust fallback logic. / OpenAIのテキスト翻訳モデルのフォールバック順序を最適化しました。`gpt-4.1` を最優先に設定し、バックアップに `gpt-4.1-nano` を追加することで、翻訳品質の向上と安全性を強化しました。
 
 ### v1.6.7
 - **[API / UI]** Extended OpenAI image generation timeout from 4 minutes to 5 minutes, and updated corresponding wait-time indications to "2-5 minutes". / OpenAI画像生成のタイムアウトを4分から 5分 に延長し、UI上の待ち時間表記を「(2〜5分)」に更新しました。
