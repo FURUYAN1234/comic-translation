@@ -1,24 +1,21 @@
 # HANDOFF (Comic Translation → Codex)
 
 ## Snapshot Date
-2026-04-24T10:27:00+09:00
+2026-05-25T10:30:00+09:00
 
 ## Current Status
-- ✅ **v1.5.3** — 安定稼働中（GitHub Pages デプロイ済み）
-- ブランチ: `main`
-- 未コミット変更: なし（Working tree clean）
-- 直近5コミット:
+- ✅ **v1.6.9** — 安定稼働中（ビルド検証済み。デプロイ待ち）
+- ブランチ: `master`
+- 未コミット変更: あり（`gemini.js`, `App.jsx`, `package.json`, `index.html`, `README.md` の変更）
+- 直近コミット:
   - `955fe3b` fix: resolve mojibake in README.md
   - `e4de454` chore: release v1.5.3
-  - `f237abc` v1.5.2: URL/ISBN casing protection & pre-applied casing control
-  - `6a82457` chore: update AGENTS.md with codex sync reference
-  - `b79f280` docs: setup Four-File Operating Model
 
 ## Architecture & Key Files
 | 用途 | ファイル |
 |------|----------|
 | メインUI | `src/App.jsx` |
-| Gemini APIクライアント | `src/` 配下の該当ファイル |
+| Gemini APIクライアント | `src/lib/gemini.js` |
 | ビルド設定 | `vite.config.js` (base: `'/comic-translation/'` — **変更厳禁**) |
 
 ## Rule Enforcement (重要)
@@ -27,8 +24,15 @@
 - デプロイ先: GitHub Pages のみ（HF Spaces は対象外）
 
 ## Done (前回作業)
-- `AGENTS.md`, `docs/project_standards.md`, `docs/deploy.md` の整備完了
-- README.md の文字化け修正 (v1.5.3)
+- **v1.6.9: Gemini APIモデル非推奨化対応（OCR・翻訳処理のクラッシュ対策）**
+  - OCRおよび翻訳モデルのリストから廃止された `gemini-2.0-flash` を削除し、`gemini-3.5-flash` / `gemini-flash-latest` を最優先に指定。
+  - テキスト抽出（OCR）および単一テキスト再翻訳のAPIタイムアウト制御（25秒）を適用。
+  - APIエラーやタイムアウト時の `gemini-1.5-pro` への安全なフォールバックロジックを実装。
+  - **再チェック時の堅牢性向上**:
+    - `gemini.js` 内の各種APIコールで `try...finally` による `clearTimeout` の漏れ防止処理（リーク対策）を適用。
+    - OpenAI 側のテキスト処理（OCR/再翻訳）に対しても同様にタイムアウト制御を `25` 秒に同期調整（`openai.js`）。
+  - バージョン情報を v1.6.9 へ同期（`package.json`, `App.jsx`, `index.html`, `README.md`）。
+  - ローカル環境での `npm run build` が正常に完了することを確認済み。
 
 ## Remaining Tasks
 - 特になし（ユーザーからの新たな指示を待機中）

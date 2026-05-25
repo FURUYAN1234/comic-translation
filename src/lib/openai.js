@@ -193,7 +193,7 @@ export const extractTranslationsOAI = async (base64Image, onStatus, targetLang =
     try {
       if (onStatus) onStatus(`> [抽出/Extract] OpenAI ${modelId} でテキスト解析中... / Analyzing...`);
 
-      const result = await callChatCompletion(modelId, messages, currentOpenAIApiKey, 60000);
+      const result = await callChatCompletion(modelId, messages, currentOpenAIApiKey, 25000);
       let text = result.text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
       const parsed = JSON.parse(text);
 
@@ -258,7 +258,7 @@ export const translateSingleTextOAI = async (originalText, targetLang = 'en', so
 
   for (const modelId of TEXT_MODEL_IDS) {
     try {
-      const result = await callChatCompletion(modelId, messages, currentOpenAIApiKey, 10000);
+      const result = await callChatCompletion(modelId, messages, currentOpenAIApiKey, 25000);
       if (result.text) return result.text.trim();
     } catch (e) {
       console.warn(`[OpenAI SingleTranslate] ${modelId} failed:`, e.message);

@@ -16,11 +16,13 @@ export const getApiKey = () => currentApiKey;
 
 // ── テキスト抽出用モデル（NBP TEXT_MODEL_IDS 準拠） ──
 const TEXT_MODEL_IDS = [
-  "gemini-2.5-flash",                 // Primary: 高速・画像対応
-  "gemini-2.5-pro",                   // Backup 1: 高品質・安定
-  "gemini-3-flash-preview",           // Backup 2: Next-Gen
-  "gemini-2.5-flash-lite",            // Fallback 1: 軽量安定
-  "gemini-3.1-flash-lite-preview"     // Fallback 2: Next-Gen Lite
+  "gemini-3.5-flash",                 // Primary: 最新・高速・画像対応
+  "gemini-flash-latest",              // Primary 2: 安定高速エイリアス
+  "gemini-2.5-flash",                 // Backup 1: 高速・画像対応
+  "gemini-2.5-pro",                   // Backup 2: 高品質・安定
+  "gemini-1.5-pro",                   // Fallback 1: 安定高品質フォールバック
+  "gemini-2.5-flash-lite",            // Fallback 2: 軽量安定
+  "gemini-3.1-flash-lite-preview"     // Fallback 3: Next-Gen Lite
 ];
 
 // ── 画像生成用モデル（ドロップダウン選択肢 — NBP imagen.js 準拠） ──
@@ -132,11 +134,12 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
   };
 
   for (const modelId of TEXT_MODEL_IDS) {
+    let timeoutId;
     try {
       if (onStatus) onStatus(`> [抽出/Extract] ${modelId} でテキスト解析中... / Analyzing...`);
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      timeoutId = setTimeout(() => controller.abort(), 25000);
 
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${currentApiKey}`,
@@ -161,7 +164,6 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
           signal: controller.signal,
         }
       );
-      clearTimeout(timeoutId);
 
       const data = await response.json();
       if (data.error) throw new Error(`${data.error.message} (Code: ${data.error.code})`);
@@ -198,9 +200,11 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
 
     } catch (err) {
       let msg = err.message;
-      if (err.name === "AbortError") msg = "Timeout (60s)";
+      if (err.name === "AbortError") msg = "Timeout (25s)";
       console.warn(`[Extract] ${modelId} failed:`, msg);
       if (onStatus) onStatus(`> [抽出] ${modelId} 失敗。次のモデルへ...`);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
   }
 
@@ -240,9 +244,10 @@ export const translateSingleText = async (originalText, targetLang = 'en', sourc
 テキスト: ${originalText}`;
   
   for (const modelId of TEXT_MODEL_IDS) {
+    let timeoutId;
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      timeoutId = setTimeout(() => controller.abort(), 25000);
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${currentApiKey}`,
         {
@@ -252,13 +257,14 @@ export const translateSingleText = async (originalText, targetLang = 'en', sourc
           signal: controller.signal,
         }
       );
-      clearTimeout(timeoutId);
       const data = await response.json();
       if (data.error) throw new Error(data.error.message);
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
       if (text) return text.trim();
     } catch (e) {
       console.warn(`[SingleTranslate] ${modelId} failed:`, e.message);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
   }
   return originalText; // 失敗時は原文をそのまま返す
@@ -369,11 +375,12 @@ ${styleInstructions}`;
   const tgtLangName = langInfo.name;
 
   for (const modelId of modelsToTry) {
+    let timeoutId;
     try {
       if (onStatus) onStatus(`> [生成/Generate] ${modelId} で${tgtLangName}画像を生成中... / Generating image...`);
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 180000); // 3分タイムアウト
+      timeoutId = setTimeout(() => controller.abort(), 180000); // 3分タイムアウト
 
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${currentApiKey}`,
@@ -399,7 +406,6 @@ ${styleInstructions}`;
           signal: controller.signal,
         }
       );
-      clearTimeout(timeoutId);
 
       const data = await response.json();
       if (data.error) throw new Error(`${data.error.message} (Code: ${data.error.code})`);
@@ -426,6 +432,8 @@ ${styleInstructions}`;
       if (err.name === "AbortError") msg = "Timeout (180s)";
       console.warn(`[ImageGen] ${modelId} failed:`, msg);
       if (onStatus) onStatus(`> [生成] ${modelId} 失敗: ${msg.substring(0, 80)}...`);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
   }
 
