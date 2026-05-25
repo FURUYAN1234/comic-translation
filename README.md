@@ -73,7 +73,7 @@ This system goes beyond simple machine translation by implementing strict contro
 
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS
 * **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction)
-* **LLM/VFM (Gemini)**: `gemini-3.5-flash`, `gemini-flash-latest`, `gemini-2.5-flash-preview-image`
+* **LLM/VFM (Gemini)**: `gemini-3.5-flash`, `gemini-flash-latest`, `gemini-2.5-flash-image`, `gemini-3.1-flash-image-preview`, `gemini-3-pro-image-preview`
 * **LLM/VFM (OpenAI)**: `gpt-4.1` (Vision), `gpt-4.1-mini`, `gpt-4.1-nano`, `gpt-image-2` (Edit API)
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
 * **Security**: Memory-only API key management (no localStorage, no hardcoding)
@@ -257,6 +257,9 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 ---
 
 ## 🔄 Changelog / 更新履歴
+
+### v1.6.10
+- **[API / Model]** Hotfixed Gemini image generation model options. Removed the deprecated `gemini-2.5-flash-preview-image` which caused 404 API errors, and designated `gemini-2.5-flash-image` (Stable) as the primary option alongside `gemini-3-pro-image-preview`. / Geminiの画像生成モデルオプションのバグを修正しました。APIの404エラーを引き起こしていた廃止済みの `gemini-2.5-flash-preview-image` を削除し、正式な `gemini-2.5-flash-image`（推奨）を最優先に設定し、`gemini-3-pro-image-preview` を選択肢に追加しました。
 
 ### v1.6.9
 - **[API / Model]** Updated primary Gemini OCR and translation models to `gemini-3.5-flash` and `gemini-flash-latest` due to model deprecations. Added `gemini-1.5-pro` to the fallback list and implemented a strict 25-second timeout on requests to eliminate infinite hangs and API crash loops. / モデル廃止に伴い、最優先のGemini OCR・翻訳モデルを `gemini-3.5-flash` および `gemini-flash-latest` に更新しました。また、フォールバックモデルとして `gemini-1.5-pro` を追加し、リクエストに25秒のタイムアウト制御を設けることで、応答なしのハングやエラー時のクラッシュループを防止しました。

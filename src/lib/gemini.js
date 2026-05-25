@@ -28,9 +28,9 @@ const TEXT_MODEL_IDS = [
 // ── 画像生成用モデル（ドロップダウン選択肢 — NBP imagen.js 準拠） ──
 // responseModalities: ["IMAGE"] に対応するモデルのみ
 export const IMAGE_MODEL_OPTIONS = [
-  { value: "gemini-2.5-flash-preview-image",  label: "Gemini 2.5 Flash Image (推奨)" },
+  { value: "gemini-2.5-flash-image",           label: "Gemini 2.5 Flash Image (推奨)" },
   { value: "gemini-3.1-flash-image-preview",   label: "Gemini 3.1 Flash Image (Next-Gen)" },
-  { value: "gemini-2.5-flash-image",           label: "Gemini 2.5 Flash Image (Stable)" },
+  { value: "gemini-3-pro-image-preview",       label: "Gemini 3 Pro Image (Premium)" },
 ];
 
 // ── 診断機能 ──
