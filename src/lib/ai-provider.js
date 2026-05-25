@@ -1,6 +1,6 @@
 /**
  * AI Provider Router for AI漫画翻訳ツール
- * v1.0.0 - Dual Engine 抽象化レイヤー（Nano Banana Pro準拠）
+ * v1.0.0 - Dual Engine 抽象化レイヤー（共通モジュール準拠）
  *
  * 起動時に選択された AI Engine に基づいて、
  * テキスト抽出・個別翻訳・画像生成のルーティングを行う。

@@ -1,6 +1,6 @@
 /**
  * Gemini API Client for AI漫画翻訳ツール
- * Nano Banana Pro / キャラクターメーカー準拠の Zenith Protocol フォールバック
+ * 共通モジュール準拠の Zenith Protocol フォールバック
  * 
  * 2つの機能:
  * 1. extractTranslations() — テキストモデルで漫画テキスト抽出+翻訳
@@ -28,16 +28,21 @@ const TEXT_MODEL_IDS = [
 // ── 画像生成用モデル（ドロップダウン選択肢 — NBP imagen.js 準拠） ──
 // responseModalities: ["IMAGE"] に対応するモデルのみ
 export const IMAGE_MODEL_OPTIONS = [
-  { value: "gemini-2.5-flash-image",           label: "Gemini 2.5 Flash Image (推奨)" },
-  { value: "gemini-3.1-flash-image-preview",   label: "Gemini 3.1 Flash Image (Next-Gen)" },
+  { value: "gemini-3.1-flash-image-preview",   label: "Gemini 3.1 Flash Image (次世代高精度/推奨)" },
   { value: "gemini-3-pro-image-preview",       label: "Gemini 3 Pro Image (Premium)" },
+  { value: "gemini-2.5-flash-image",           label: "Gemini 2.5 Flash Image (旧高速版)" },
 ];
 
 // ── 診断機能 ──
 export const diagnoseConnection = async () => {
   if (!currentApiKey) return "API Key not set.";
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒タイムアウト
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${currentApiKey}`);
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${currentApiKey}`,
+      { signal: controller.signal }
+    );
     const data = await response.json();
     if (data.error) return `API Error: ${data.error.message}`;
     if (!data.models) return "No models returned by API.";
@@ -46,7 +51,11 @@ export const diagnoseConnection = async () => {
       .filter(name => name.includes("gemini") || name.includes("imagen"));
     return `Available Models: ${relevant.join(", ")}`;
   } catch (e) {
-    return `Diagnostic Failed: ${e.message}`;
+    let msg = e.message;
+    if (e.name === 'AbortError') msg = "Timeout (10s)";
+    return `Diagnostic Failed: ${msg}`;
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 
@@ -289,7 +298,7 @@ export const generateTranslatedImage = async (base64Image, translations, selecte
   const langInfo = getLanguageInfo(targetLang);
   const langName = langInfo.name;
   const srcInfo = getLanguageInfo(sourceLang);
-  const srcName = sourceLang === 'auto' ? 'ソース言語の' : `${srcInfo.name}の`;
+  const srcName = sourceLang === 'auto' ? 'source language' : srcInfo.name;
 
   // 翻訳テキストをプロンプトに組み込む
   // comicスタイル（英語等）: dialogue/title/sfx は事前ALL CAPS化、other（URL等）は原文ケーシング維持
@@ -314,49 +323,62 @@ export const generateTranslatedImage = async (base64Image, translations, selecte
 
   if (isRefinement) {
     // ── 修正モード: 翻訳済み画像をベースに部分修正 ──
-    // Gemini向け最適プロンプト: 自然言語で「何を変えないか」を具体的に制約する
-    basePrompt = `あなたはプロの漫画レタリング・ローカライズ専門家です。
-この画像は既に${langName}に翻訳済みの漫画画像です。以下のユーザー修正指示に従って、この画像を部分的に修正してください。
+    basePrompt = `You are a professional manga lettering and localization specialist.
+This image is an ALREADY TRANSLATED ${langName} manga page. Apply ONLY the following user corrections:
 
-【最重要: 未指定箇所の保護ルール — Preservation Rules】
-修正指示で明示的に指定された箇所以外は、以下の全要素を元画像と完全に同一に維持してください:
-- キャラクターの顔・体・ポーズ・表情を一切変更しないこと
-- 背景のアートワーク、スクリーントーン、パターンの密度と配置をそのまま維持すること
-- 線画（ライン）の太さ・質感・シャープさを元画像と同一レベルに保つこと
-- 元画像のカラーパレット、ライティング、シェーディング技法を正確に維持すること
-- 吹き出しの形状・位置・枠線デザインは、修正対象でない限り一切変形しないこと
-- コマ割り（パネルレイアウト）の構図・境界線を変更しないこと
-- 画像全体の解像度・鮮明さ・コントラストを元画像と同等に維持すること
+PRESERVATION RULES (NON-NEGOTIABLE):
+- Do NOT modify any artwork, character faces, bodies, poses, or expressions.
+- Do NOT change backgrounds, screen tones, shading, or colors.
+- Do NOT alter panel layouts or speech bubble shapes.
+- Maintain the EXACT same image resolution and quality.
 
-【翻訳テキスト参照リスト（現在の正しいテキスト内容）】
+CURRENT TRANSLATION REFERENCE:
 ${translationList}
 
-【ユーザー修正指示 — 以下の指示のみを適用してください】`;
+USER CORRECTIONS (apply ONLY these):`;
     if (instructionRules.length > 0) {
-      basePrompt += `\n` + instructionRules.map(r => `- ${r}`).join('\n');
+      basePrompt += "\n" + instructionRules.map(r => `- ${r}`).join('\n');
     }
     if (customPrompt.trim()) {
-      basePrompt += `\n- 詳細指示: ${customPrompt.trim()}`;
+      basePrompt += `\n- Additional: ${customPrompt.trim()}`;
     }
   } else {
     // ── 初回生成モード: 原画から翻訳画像を新規生成 ──
-    basePrompt = `あなたは漫画の${langName}ローカライズ専門家です。
-この${srcName}漫画画像を${langName}版に変換してください。
+    basePrompt = `You are a professional manga/comic localization specialist performing an IMAGE EDITING task.
 
-以下の翻訳テキストを使用して、画像内の全てのテキストを${langName}に置き換えた画像を生成してください:
+TASK: Edit this ${srcName} comic/manga page to produce a fully translated ${langName} version.
+Preserve the original artwork with pixel-level fidelity — ONLY the text content changes.
 
+ART PRESERVATION (NON-NEGOTIABLE):
+- The output image must be IDENTICAL to the input except for text content.
+- Do NOT modify, redraw, or reinterpret any artwork, faces, bodies, hair, clothing, poses.
+- Do NOT change backgrounds, screen tones, shading, lighting, or colors.
+- Do NOT alter panel layouts, borders, or speech bubble shapes/positions.
+- Do NOT add any border or frame around the output image.
+- Maintain the EXACT original image resolution and visual sharpness.
+
+## MIRRORED IMAGE ALERT
+The input image might be horizontally flipped (mirrored). If you see the original ${srcName} text written backwards or mirrored, DO NOT BE CONFUSED. Your job is still to completely erase that backwards text and write the ${langName} translation normally (reading left-to-right).
+
+TRANSLATION LIST — Replace each original text with its translation:
 ${translationList}
 
-${styleInstructions}`;
+${styleInstructions}
+
+COMPLETENESS:
+- Translate 100% of visible text — missing even one speech bubble is unacceptable.
+- Include margin annotations, small print, and any text outside panels.
+
+FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was altered.`;
 
     // ユーザーからの追加指示（初回生成時のカスタムプロンプト）
     if (instructionRules.length > 0 || customPrompt.trim()) {
-      basePrompt += `\n\n【重要なユーザー追加修正指示】\n以下はユーザーから指定された修正依頼です。全体のルールよりもこの指示を最優先に適用して描画してください。\n`;
+      basePrompt += `\n\nADDITIONAL USER INSTRUCTIONS:\n`;
       if (instructionRules.length > 0) {
         basePrompt += instructionRules.map(r => `- ${r}`).join('\n') + `\n`;
       }
       if (customPrompt.trim()) {
-        basePrompt += `- 詳細指示: ${customPrompt.trim()}\n`;
+        basePrompt += `- Additional: ${customPrompt.trim()}\n`;
       }
     }
   }
@@ -458,75 +480,66 @@ ${styleInstructions}`;
  */
 const buildStyleInstructions = (langInfo, srcInfo = {}) => {
   const langName = langInfo.name;
-  const srcName = srcInfo.name || 'ソース言語';
+  const srcName = srcInfo.name || 'source language';
   const isRtlSource = srcInfo.readingDirection === 'rtl';
 
-  // 共通: 全テキストを置換する基本ルール
-  const commonRules = `- 元の${srcName}テキスト箇所を完全に消去し、翻訳テキストを同じ位置に描画すること
-- フキダシの形状・位置・デザインは元画像を忠実に維持すること
-- 背景やキャラクターのアートワークは一切変更しないこと`;
+  const commonRules = `- Completely erase all original ${srcName} text and render the translated ${langName} text in the exact same position.
+- Preserve all speech bubble shapes, positions, and outlines exactly.`;
 
-  // ソースが縦書き文化（日本語）の場合、縦長吹き出しへの対応指示を追加
   const verticalBubbleHint = isRtlSource
-    ? `縦長の吹き出しに水平の${langName}を収めるため、**フォントサイズを小さくし**、**改行（折り返し）**を入れて横幅を圧縮すること。`
-    : `吹き出し内に収まるよう、適切なフォントサイズと改行で調整すること。`;
+    ? `To fit horizontal ${langName} text into tall/narrow vertical speech bubbles, shrink the font size and insert line breaks.`
+    : `Adjust font size and insert line breaks so the text fits naturally.`;
 
   switch (langInfo.style) {
     case 'manga':
-      // 日本語ターゲット: 縦書き対応
-      return `【絶対に守るべき物理的制約・ルール】
-1. 【テキスト方向】${langName}テキストは元の吹き出し形状に合わせ、縦書き（上から下）または横書きで描画すること。
-2. 【サイズと改行】吹き出し内に自然に収まるよう、フォントサイズと文字間隔を調整すること。
-3. 【フォントスタイル】日本の漫画で使われる自然なフォントスタイルを使用すること。セリフにはゴシック体か明朝体を使い分けること。
-4. 擬音・効果音は日本語の自然な表現で、元の位置に力強いレタリングスタイルで配置すること。
+      return `## STEP 2: TEXT RENDERING STYLE (CRITICAL)
+1. Direction: Render ${langName} text vertically (top-to-bottom) or horizontally, matching the original bubble shape.
+2. Fitting & Line Breaks: Adjust font size and character spacing to fit naturally inside bubbles.
+3. Font Style: Use natural Japanese manga fonts (Gothic for standard, Mincho for monologue).
+4. SFX: Render sound effects with dynamic Japanese manga lettering.
 ${commonRules}`;
 
     case 'comic':
-      // 英語: アメコミ風 ALL CAPS + 縦書き禁止（URL等は原文ケーシング維持）
-      return `【絶対に守るべき物理的制約・ルール】
-1. 【角度・方向の絶対指定】${langName}テキストは全て完全に「水平（0度）」かつ「横書き」(strict horizontal left-to-right) で描画すること。縦長の吹き出しの形に合わせて文字全体を90度回転させたり、T,h,eのように縦に1文字ずつ積むスタッキングは《絶対禁止》です。
-2. 【サイズと改行】${verticalBubbleHint}
-3. 【吹き出しの変形】上記でも収まらない場合は、元の吹き出しの枠線を完全に無視して、テキストが枠外にはみ出すことを許可します。あるいは既存の吹き出しの上に巨大な横長の吹き出しを上書きしてください。
-4. 【フォントスタイル・ケーシング】翻訳リストに記載されたテキストは、大文字・小文字が既に正しく設定済みです。各テキストをリストに記載された通りの文字（大文字・小文字）でそのまま忠実に描画してください。勝手に大文字化や小文字化をしないこと。特に「⚠EXACT CASE」マーク付きの項目（URL、ISBN等）は1文字も変えずに原文通りに描画すること。
-5. 擬音・効果音も同様に、元の位置にアメコミ風の水平レタリングで配置すること。
+      return `## STEP 2: TEXT RENDERING STYLE (CRITICAL)
+1. Strict Direction: All ${langName} text MUST be rendered strictly horizontal (0 degrees, left-to-right). Rotating the text 90 degrees to fit tall bubbles, or stacking letters vertically (e.g., T, h, e) is STRICTLY PROHIBITED.
+2. Fitting & Line Breaks: ${verticalBubbleHint}
+3. Overflow Allowance: If the text still does not fit, you are allowed to completely ignore the original speech bubble borders and let the text overflow outside the bubble, or overwrite a massive horizontal bubble over the existing one.
+4. Casing Protection: The text in the translation list already has the correct uppercase/lowercase casing. Render each text EXACTLY as listed. Do NOT arbitrarily change case. Items marked with "⚠EXACT CASE" (like URLs or ISBNs) must be rendered exactly as original.
+5. SFX: Render sound effects with dynamic American comic book style lettering.
 ${commonRules}`;
 
     case 'webtoon':
-      // 韓国語: ウェブトゥーン風横書き
-      return `【絶対に守るべき物理的制約・ルール】
-1. 【テキスト方向】${langName}テキストは全て「水平横書き」(horizontal left-to-right) で描画すること。
-2. 【サイズと改行】${verticalBubbleHint}
-3. 【フォントスタイル】韓国のウェブトゥーン・漫画で使われる自然で読みやすいフォントスタイルを使用すること。
-4. 擬音・効果音は${langName}の自然な表現で、元の位置に力強いレタリングスタイルで配置すること。
+      return `## STEP 2: TEXT RENDERING STYLE (CRITICAL)
+1. Strict Direction: All ${langName} text MUST be rendered horizontal (left-to-right).
+2. Fitting & Line Breaks: ${verticalBubbleHint}
+3. Font Style: Use natural Webtoon/Manhwa fonts that are easy to read on mobile devices.
+4. SFX: Render sound effects with bold, dynamic lettering in ${langName}.
 ${commonRules}`;
 
     case 'manhua':
-      // 中国語: 簡潔で明確なスタイル
-      return `【絶対に守るべき物理的制約・ルール】
-1. 【テキスト方向】${langName}テキストは「水平横書き」(horizontal left-to-right) で描画すること。
-2. 【サイズと改行】${verticalBubbleHint}漢字は英語より横幅が広いため、フォントサイズの調整に注意すること。
-3. 【フォントスタイル】中国の漫画（漫画/マンファ）で使われる明確で読みやすいフォントスタイルを使用すること。
-4. 擬音・効果音は${langName}の自然な表現で、元の位置に配置すること。
+      return `## STEP 2: TEXT RENDERING STYLE (CRITICAL)
+1. Strict Direction: All ${langName} text MUST be rendered horizontal (left-to-right).
+2. Fitting & Line Breaks: ${verticalBubbleHint} Note that Chinese characters are wider than English.
+3. Font Style: Use clear and readable fonts typical for Chinese Manhua.
+4. SFX: Render sound effects naturally in ${langName}.
 ${commonRules}`;
 
     case 'european':
-      // 欧州系: バンドデシネ風
-      return `【絶対に守るべき物理的制約・ルール】
-1. 【角度・方向の絶対指定】${langName}テキストは全て完全に「水平（0度）」かつ「横書き」(strict horizontal left-to-right) で描画すること。縦書き・スタッキングは《絶対禁止》です。
-2. 【サイズと改行】${verticalBubbleHint}
-3. 【吹き出しの変形】収まらない場合は、テキストが枠外にはみ出すことを許可します。
-4. 【フォントスタイル】ヨーロッパのコミック・バンドデシネで使われる読みやすいフォントスタイルを使用すること。
-5. 擬音・効果音は${langName}の自然な表現で、元の位置にレタリングスタイルで配置すること。
+      return `## STEP 2: TEXT RENDERING STYLE (CRITICAL)
+1. Strict Direction: All ${langName} text MUST be rendered strictly horizontal (0 degrees, left-to-right). Vertical stacking is STRICTLY PROHIBITED.
+2. Fitting & Line Breaks: ${verticalBubbleHint}
+3. Overflow Allowance: If the text does not fit, you are allowed to let the text overflow outside the bubble.
+4. Font Style: Use readable fonts typical for European Bande Dessinée.
+5. SFX: Render sound effects naturally in ${langName}.
 ${commonRules}`;
 
     default:
-      // 汎用（インドネシア語、タイ語など）
-      return `【絶対に守るべき物理的制約・ルール】
-1. 【テキスト方向】${langName}テキストは全て「水平横書き」(horizontal left-to-right) で描画すること。縦書き・スタッキングは禁止。
-2. 【サイズと改行】${verticalBubbleHint}
-3. 【吹き出しの変形】収まらない場合は、テキストが枠外にはみ出すことを許可します。
-4. 【フォントスタイル】読みやすく明確なフォントスタイルを使用すること。
-5. 擬音・効果音は${langName}の自然な表現で、元の位置に配置すること。
+      return `## STEP 2: TEXT RENDERING STYLE (CRITICAL)
+1. Strict Direction: All ${langName} text MUST be rendered strictly horizontal (left-to-right). Vertical stacking is prohibited.
+2. Fitting & Line Breaks: ${verticalBubbleHint}
+3. Overflow Allowance: If the text does not fit, you are allowed to let the text overflow outside the bubble.
+4. Font Style: Use clear and readable fonts.
+5. SFX: Render sound effects naturally in ${langName}.
 ${commonRules}`;
   }
 };

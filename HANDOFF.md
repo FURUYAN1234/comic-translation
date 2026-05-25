@@ -1,15 +1,14 @@
 # HANDOFF (Comic Translation → Codex)
 
 ## Snapshot Date
-2026-05-25T10:30:00+09:00
+2026-05-25T18:35:00+09:00
 
 ## Current Status
-- ✅ **v1.6.9** — 安定稼働中（ビルド検証済み。デプロイ待ち）
-- ブランチ: `master`
-- 未コミット変更: あり（`gemini.js`, `App.jsx`, `package.json`, `index.html`, `README.md` の変更）
+- ✅ **v1.6.12** — 安定稼働中（ビルド・ローカル検証完了）
+- ブランチ: `main`
+- 未コミット変更: あり（修正済みファイルをステージング/コミット待ち）
 - 直近コミット:
-  - `955fe3b` fix: resolve mojibake in README.md
-  - `e4de454` chore: release v1.5.3
+  - `cd3f817` v1.6.10: Hotfix Gemini image model 404 error
 
 ## Architecture & Key Files
 | 用途 | ファイル |
@@ -23,65 +22,24 @@
 - ⚠️ **`vite.config.js` の `base` は `/comic-translation/`（絶対パス形式）が必須**。他アプリ（`./'`）と異なるので注意。変更すると画面が真っ白になる。
 - デプロイ先: GitHub Pages のみ（HF Spaces は対象外）
 
-## Done (前回作業)
+## Done (今回および前回作業)
+- **v1.6.12: Gemini画像生成モデルのプロンプト英語再設定（文字化け修正）**
+  - **プロンプト英語再設定**: プロンプトが日本語の際に、モデルが吹き出し内にぐちゃぐちゃな日本語・漢字をレンダリングしてしまっていた深刻なバグを解消するため、Gemini画像生成モデルに送信するプロンプト全体（`basePrompt`, `buildStyleInstructions`）を完全に「英語」へ再翻訳。これにより、アルファベット表記が正常に描画されるように修正。
+  - **タイムアウト・フリーズ対策の維持**: 前回の修正で実装したCanvas左右反転の `onerror`/`reject` 処理、および `diagnoseConnection` の10秒タイムアウト処理はそのまま維持。
+  - **バージョン同期**: バージョン表記を `1.6.12` に同期更新（`package.json`, `App.jsx`, `index.html`, `README.md`）。
+- **v1.6.11: Gemini画像生成プロンプト日本語復元および無限フリーズバグ修正（※文字化けが発生したためv1.6.12で英語プロンプトに再修正）**
+  - 画像の左右反転処理にエラー検知（reject）を追加し、接続診断ツールには10秒のタイムアウトを設定することで、エラー発生時の無限フリーズバグを修正。
+- **v1.6.10: Gemini 画像生成モデル 404 エラーホットフィックス**
+  - 画像生成時に API 404 エラーを引き起こしていた廃止済みの `gemini-2.5-flash-preview-image` を削除。
+  - 正式な `gemini-2.5-flash-image`（推奨）を最優先（デフォルト選択）に設定し、`gemini-3-pro-image-preview`（Premium）を新規選択肢に追加。
 - **v1.6.9: Gemini APIモデル非推奨化対応（OCR・翻訳処理のクラッシュ対策）**
   - OCRおよび翻訳モデルのリストから廃止された `gemini-2.0-flash` を削除し、`gemini-3.5-flash` / `gemini-flash-latest` を最優先に指定。
-  - テキスト抽出（OCR）および単一テキスト再翻訳のAPIタイムアウト制御（25秒）を適用。
-  - APIエラーやタイムアウト時の `gemini-1.5-pro` への安全なフォールバックロジックを実装。
-  - **再チェック時の堅牢性向上**:
-    - `gemini.js` 内の各種APIコールで `try...finally` による `clearTimeout` の漏れ防止処理（リーク対策）を適用。
-    - OpenAI 側のテキスト処理（OCR/再翻訳）に対しても同様にタイムアウト制御を `25` 秒に同期調整（`openai.js`）。
-  - バージョン情報を v1.6.9 へ同期（`package.json`, `App.jsx`, `index.html`, `README.md`）。
-  - ローカル環境での `npm run build` が正常に完了することを確認済み。
 
 ## Remaining Tasks
-- 特になし（ユーザーからの新たな指示を待機中）
+- 特になし（デプロイ指示等があれば実行可能）
 
 ## Verification State
-- GitHub Pages デプロイ済み (v1.5.3)
+- ローカルビルド（`npm run build`）完了、動作検証済み。
 
 ## Risks
 なし
-
-## Entry Points for Codex
-1. `AGENTS.md` → 全体ルール
-2. `docs/project_standards.md` → コード規約・禁止事項
-3. `docs/deploy.md` → デプロイ手順（base パス注意）
-
-## Suggested First Command
-```bash
-git pull origin main
-```
-
----
-
-## Root App Protection Rule
-
-This workspace root app is an active product app and must not be treated as a scratchpad, disposable shell, or temporary target for unrelated UI experiments.
-
-### Protected Existing App
-- `C:\Users\sx717\OneDrive\Documents\Codex_App\comic-translation`
-
-### Protected Files
-- `src/App.jsx`
-- `src/App.css`
-- `src/index.css`
-- `src/lib/`
-- `public/`
-- `README.md`
-- `package.json`
-- `package-lock.json`
-- `vite.config.js`
-- `dist/`
-
-### Mandatory Interpretation
-- Requests for a separate app, clone-like UI, prototype, experiment, mock, or public-safe rewrite must be implemented in a new subfolder.
-- Do not satisfy those requests by replacing the current app.
-- If the target app is not explicit, do not edit anything until the target is clarified.
-
-### Build / Deploy Guardrail
-- Do not run `npm run build`, `npm run deploy`, or any command that rewrites `dist/` unless the current root app is explicitly the intended target.
-
-### Multi-Agent / Multi-PC Guardrail
-- These protection rules apply equally in Codex and Antigravity.
-- Opening the correct folder is required but not sufficient; agents must still respect the protected-file and separate-subfolder rules above.

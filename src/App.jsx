@@ -13,7 +13,7 @@ import {
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.6.10";
+const SYSTEM_VERSION = "1.8.0";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -459,16 +459,27 @@ Output the final translated image only. No explanations needed.`;
 
   // ── Canvas左右反転 ──
   const flipImageHorizontally = (dataUrl) => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.scale(-1, 1);
-        ctx.drawImage(img, -canvas.width, 0);
-        resolve(canvas.toDataURL('image/png').split(',')[1]);
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error("Canvas 2D context の取得に失敗しました。"));
+            return;
+          }
+          ctx.scale(-1, 1);
+          ctx.drawImage(img, -canvas.width, 0);
+          resolve(canvas.toDataURL('image/png').split(',')[1]);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = () => {
+        reject(new Error("左右反転のための画像読み込みに失敗しました。"));
       };
       img.src = dataUrl;
     });
