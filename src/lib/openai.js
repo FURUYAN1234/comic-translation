@@ -17,17 +17,21 @@ export const getOpenAIApiKey = () => currentOpenAIApiKey;
 
 // ── テキスト抽出用モデル（Vision対応・Zenith Protocol相当のフォールバック） ──
 const VISION_MODEL_IDS = [
-  "gpt-4.1",          // Primary: Vision対応・1Mコンテキスト
-  "gpt-4o",           // Backup 1: Vision安定実績
-  "gpt-4.1-mini",     // Backup 2: コスト効率
+  "gpt-5.5",
+  "gpt-5.4",
+  "gpt-4o",
+  "gpt-5.4-mini"
 ];
 
 // ── 個別翻訳用モデル（高品質優先＆フォールバック強化） ──
 const TEXT_MODEL_IDS = [
-  "gpt-4.1",          // Primary: 高品質
-  "gpt-4.1-mini",     // Backup 1: コスト効率・高速
-  "gpt-4.1-nano",     // Backup 2: 超軽量
-  "gpt-4o",           // Fallback: 安定実績
+  "gpt-5.5",
+  "gpt-5.5-instant",
+  "gpt-5.4",
+  "gpt-5.4-mini",
+  "gpt-5.4-nano",
+  "gpt-4o",
+  "gpt-4o-mini"
 ];
 
 // ── ユーティリティ ──
