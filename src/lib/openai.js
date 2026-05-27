@@ -15,23 +15,28 @@ let currentOpenAIApiKey = "";
 export const setOpenAIApiKey = (key) => { currentOpenAIApiKey = key; };
 export const getOpenAIApiKey = () => currentOpenAIApiKey;
 
+// ── 成功モデルキャッシュ（フォールバック遅延防止） ──
+let lastSuccessfulOpenAIModel = null;
+let lastSuccessfulOpenAIVisionModel = null;
+
 // ── テキスト抽出用モデル（Vision対応・Zenith Protocol相当のフォールバック） ──
 const VISION_MODEL_IDS = [
+  "gpt-4o",
+  "gpt-4o-mini",
   "gpt-5.5",
   "gpt-5.4",
-  "gpt-4o",
   "gpt-5.4-mini"
 ];
 
 // ── 個別翻訳用モデル（高品質優先＆フォールバック強化） ──
 const TEXT_MODEL_IDS = [
+  "gpt-4o",
+  "gpt-4o-mini",
   "gpt-5.5",
   "gpt-5.5-instant",
   "gpt-5.4",
   "gpt-5.4-mini",
-  "gpt-5.4-nano",
-  "gpt-4o",
-  "gpt-4o-mini"
+  "gpt-5.4-nano"
 ];
 
 // ── ユーティリティ ──
@@ -193,9 +198,23 @@ export const extractTranslationsOAI = async (base64Image, onStatus, targetLang =
 
   const messages = [{ role: "user", content: userContent }];
 
-  for (const modelId of VISION_MODEL_IDS) {
+  const models = [];
+  if (lastSuccessfulOpenAIVisionModel) {
+    models.push(lastSuccessfulOpenAIVisionModel);
+  }
+  models.push(...VISION_MODEL_IDS);
+  const uniqueModels = Array.from(new Set(models));
+
+  const startModel = uniqueModels[0];
+  for (const modelId of uniqueModels) {
     try {
-      if (onStatus) onStatus(`> [抽出/Extract] OpenAI ${modelId} でテキスト解析中... / Analyzing...`);
+      if (onStatus) {
+        if (modelId === startModel) {
+          onStatus(`> [抽出/Extract] OpenAI ${modelId} でテキスト解析中... / Analyzing...`);
+        } else {
+          onStatus(`> [抽出/Extract] OpenAI ${modelId} (代替) でテキスト解析中... / Analyzing...`);
+        }
+      }
 
       const result = await callChatCompletion(modelId, messages, currentOpenAIApiKey, 25000);
       let text = result.text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
@@ -217,6 +236,7 @@ export const extractTranslationsOAI = async (base64Image, onStatus, targetLang =
 
       const layoutLabel = layout.type === '4koma' ? '四コマ / 4-koma' : `一般漫画 / Comic (${layout.panels.length}コマ/panels)`;
       if (onStatus) onStatus(`> [抽出/Extract] 完了 / Complete ✓ ${texts.length}件検出 / ${layoutLabel} (${modelId})`);
+      lastSuccessfulOpenAIVisionModel = modelId;
       return { layout, texts, detectedSourceLang };
 
     } catch (err) {
@@ -260,10 +280,20 @@ export const translateSingleTextOAI = async (originalText, targetLang = 'en', so
 
   const messages = [{ role: "user", content: prompt }];
 
-  for (const modelId of TEXT_MODEL_IDS) {
+  const models = [];
+  if (lastSuccessfulOpenAIModel) {
+    models.push(lastSuccessfulOpenAIModel);
+  }
+  models.push(...TEXT_MODEL_IDS);
+  const uniqueModels = Array.from(new Set(models));
+
+  for (const modelId of uniqueModels) {
     try {
       const result = await callChatCompletion(modelId, messages, currentOpenAIApiKey, 25000);
-      if (result.text) return result.text.trim();
+      if (result.text) {
+        lastSuccessfulOpenAIModel = modelId;
+        return result.text.trim();
+      }
     } catch (e) {
       console.warn(`[OpenAI SingleTranslate] ${modelId} failed:`, e.message);
     }
