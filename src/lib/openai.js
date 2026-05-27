@@ -19,6 +19,33 @@ export const getOpenAIApiKey = () => currentOpenAIApiKey;
 let lastSuccessfulOpenAIModel = null;
 let lastSuccessfulOpenAIVisionModel = null;
 
+// 動的取得した利用可能なモデルリストのキャッシュ
+let availableOpenAIModels = null;
+
+/**
+ * OpenAIの利用可能モデルを動的に取得する
+ */
+export const fetchAvailableOpenAIModels = async (apiKey) => {
+  if (availableOpenAIModels) return availableOpenAIModels;
+  try {
+    const response = await fetch("https://api.openai.com/v1/models", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`
+      }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      availableOpenAIModels = data.data.map(m => m.id);
+      console.log("[OpenAI] Dynamically fetched available models:", availableOpenAIModels);
+      return availableOpenAIModels;
+    }
+  } catch (e) {
+    console.warn("[OpenAI] Failed to fetch available models:", e.message);
+  }
+  return null;
+};
+
 // ── テキスト抽出用モデル（Vision対応・Zenith Protocol相当のフォールバック） ──
 const VISION_MODEL_IDS = [
   "gpt-4o",
@@ -198,11 +225,19 @@ export const extractTranslationsOAI = async (base64Image, onStatus, targetLang =
 
   const messages = [{ role: "user", content: userContent }];
 
+  // 動的モデルフィルタリング
+  let activeVisionModels = VISION_MODEL_IDS;
+  const allowedModels = await fetchAvailableOpenAIModels(currentOpenAIApiKey);
+  if (allowedModels && allowedModels.length > 0) {
+    activeVisionModels = VISION_MODEL_IDS.filter(m => allowedModels.includes(m));
+    if (activeVisionModels.length === 0) activeVisionModels = VISION_MODEL_IDS;
+  }
+
   const models = [];
   if (lastSuccessfulOpenAIVisionModel) {
     models.push(lastSuccessfulOpenAIVisionModel);
   }
-  models.push(...VISION_MODEL_IDS);
+  models.push(...activeVisionModels);
   const uniqueModels = Array.from(new Set(models));
 
   const startModel = uniqueModels[0];
@@ -280,11 +315,19 @@ export const translateSingleTextOAI = async (originalText, targetLang = 'en', so
 
   const messages = [{ role: "user", content: prompt }];
 
+  // 動的モデルフィルタリング
+  let activeTextModels = TEXT_MODEL_IDS;
+  const allowedModels = await fetchAvailableOpenAIModels(currentOpenAIApiKey);
+  if (allowedModels && allowedModels.length > 0) {
+    activeTextModels = TEXT_MODEL_IDS.filter(m => allowedModels.includes(m));
+    if (activeTextModels.length === 0) activeTextModels = TEXT_MODEL_IDS;
+  }
+
   const models = [];
   if (lastSuccessfulOpenAIModel) {
     models.push(lastSuccessfulOpenAIModel);
   }
-  models.push(...TEXT_MODEL_IDS);
+  models.push(...activeTextModels);
   const uniqueModels = Array.from(new Set(models));
 
   for (const modelId of uniqueModels) {
