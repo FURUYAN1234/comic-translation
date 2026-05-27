@@ -258,6 +258,9 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
+### v1.8.1
+- chore: Sync Gemini API models to latest stable version.
+
 ### v1.8.0
 - **[Stable Release / Deploy]** Full deploy and version stabilization following the successful unification of the Gemini and OpenAI image generation prompts. The rigid "ART PRESERVATION" constraints have proven to completely eliminate Gemini's layout hallucination and dialogue cross-wiring bugs. All internal proper nouns and temporary comments have been audited and removed prior to deployment. / GeminiとOpenAIの画像生成プロンプトの完全統合が成功し、レイアウト破綻バグが完全に解消されたことを受けての安定版デプロイ。ソースコード内の固有名詞や不要なコメントをクリーンアップし、本番環境へと反映しました。
 

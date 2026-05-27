@@ -16,13 +16,12 @@ export const getApiKey = () => currentApiKey;
 
 // ── テキスト抽出用モデル（NBP TEXT_MODEL_IDS 準拠） ──
 const TEXT_MODEL_IDS = [
-  "gemini-3.5-flash",                 // Primary: 最新・高速・画像対応
-  "gemini-flash-latest",              // Primary 2: 安定高速エイリアス
-  "gemini-2.5-flash",                 // Backup 1: 高速・画像対応
-  "gemini-2.5-pro",                   // Backup 2: 高品質・安定
-  "gemini-1.5-pro",                   // Fallback 1: 安定高品質フォールバック
-  "gemini-2.5-flash-lite",            // Fallback 2: 軽量安定
-  "gemini-3.1-flash-lite-preview"     // Fallback 3: Next-Gen Lite
+    "gemini-3.5-flash",
+    "gemini-flash-latest",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-1.5-pro",
+    "gemini-1.5-flash"
 ];
 
 // ── 画像生成用モデル（ドロップダウン選択肢 — NBP imagen.js 準拠） ──
