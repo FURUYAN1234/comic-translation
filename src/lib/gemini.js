@@ -16,8 +16,6 @@ export const getApiKey = () => currentApiKey;
 
 // ── テキスト抽出用モデル（NBP TEXT_MODEL_IDS 準拠） ──
 const TEXT_MODEL_IDS = [
-    "gemini-3.5-flash",
-    "gemini-flash-latest",
     "gemini-2.5-flash",
     "gemini-2.5-pro",
     "gemini-1.5-pro",
