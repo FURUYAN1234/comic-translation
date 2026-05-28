@@ -14,19 +14,23 @@ let currentApiKey = "";
 export const setApiKey = (key) => { currentApiKey = key; };
 export const getApiKey = () => currentApiKey;
 
+// ── テキスト抽出用モデル（NBP TEXT_MODEL_IDS 準拠） ──
 const TEXT_MODEL_IDS = [
-  "gemini-2.0-flash",                 // Primary: 最新・高速・画像対応
+  "gemini-3.5-flash",                 // Primary: 最新・高速・画像対応
   "gemini-flash-latest",              // Primary 2: 安定高速エイリアス
-  "gemini-1.5-flash",                 // Backup 1: 1.5 Flash
+  "gemini-2.5-flash",                 // Backup 1: 高速・画像対応
+  "gemini-2.5-pro",                   // Backup 2: 高品質・安定
   "gemini-1.5-pro",                   // Fallback 1: 安定高品質フォールバック
-  "gemini-pro-latest"                 // Fallback 2: 安定
+  "gemini-2.5-flash-lite",            // Fallback 2: 軽量安定
+  "gemini-3.1-flash-lite-preview"     // Fallback 3: Next-Gen Lite
 ];
 
 // ── 画像生成用モデル（ドロップダウン選択肢 — NBP imagen.js 準拠） ──
 // responseModalities: ["IMAGE"] に対応するモデルのみ
 export const IMAGE_MODEL_OPTIONS = [
-  { value: "gemini-2.0-flash",           label: "Gemini 2.0 Flash (推奨/高速)" },
-  { value: "gemini-1.5-flash",           label: "Gemini 1.5 Flash (安定)" },
+  { value: "gemini-3.1-flash-image-preview",   label: "Gemini 3.1 Flash Image (次世代高精度/推奨)" },
+  { value: "gemini-3-pro-image-preview",       label: "Gemini 3 Pro Image (Premium)" },
+  { value: "gemini-2.5-flash-image",           label: "Gemini 2.5 Flash Image (旧高速版)" },
 ];
 
 // ── 診断機能 ──
