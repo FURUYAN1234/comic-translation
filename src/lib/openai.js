@@ -3,8 +3,8 @@
  * Dual Engine: ChatGPT テキスト処理 + gpt-image-2 画像編集
  *
  * 3つの機能:
- * 1. extractTranslationsOAI() — GPT-4.1 Vision でテキスト抽出+翻訳
- * 2. translateSingleTextOAI() — GPT-4.1-mini で個別再翻訳
+ * 1. extractTranslationsOAI() — GPT-4o Vision でテキスト抽出+翻訳
+ * 2. translateSingleTextOAI() — GPT-4o-mini で個別再翻訳
  * 3. generateTranslatedImageOAI() — gpt-image-2 で翻訳済み画像を生成
  */
 
@@ -17,17 +17,14 @@ export const getOpenAIApiKey = () => currentOpenAIApiKey;
 
 // ── テキスト抽出用モデル（Vision対応・Zenith Protocol相当のフォールバック） ──
 const VISION_MODEL_IDS = [
-  "gpt-4.1",          // Primary: Vision対応・1Mコンテキスト
-  "gpt-4o",           // Backup 1: Vision安定実績
-  "gpt-4.1-mini",     // Backup 2: コスト効率
+  "gpt-4o",           // Primary: Vision安定実績
+  "gpt-4o-mini",      // Fallback: コスト効率
 ];
 
 // ── 個別翻訳用モデル（高品質優先＆フォールバック強化） ──
 const TEXT_MODEL_IDS = [
-  "gpt-4.1",          // Primary: 高品質
-  "gpt-4.1-mini",     // Backup 1: コスト効率・高速
-  "gpt-4.1-nano",     // Backup 2: 超軽量
-  "gpt-4o",           // Fallback: 安定実績
+  "gpt-4o",           // Primary: 高品質
+  "gpt-4o-mini",      // Fallback: コスト効率・高速
 ];
 
 // ── ユーティリティ ──
@@ -102,7 +99,7 @@ const callChatCompletion = async (modelId, messages, apiKey, timeout = 60000) =>
 };
 
 // ══════════════════════════════════════════════
-// STEP 1: テキスト抽出+翻訳（GPT-4.1 Vision）
+// STEP 1: テキスト抽出+翻訳（GPT-4o Vision）
 // ══════════════════════════════════════════════
 
 /**
@@ -225,7 +222,7 @@ export const extractTranslationsOAI = async (base64Image, onStatus, targetLang =
 };
 
 // ══════════════════════════════════════════════
-// STEP 1.5: 個別再翻訳（GPT-4.1-mini）
+// STEP 1.5: 個別再翻訳（GPT-4o-mini）
 // ══════════════════════════════════════════════
 
 /**
@@ -421,7 +418,7 @@ VERIFICATION BEFORE OUTPUT:
   // アスペクト比からサイズ決定
   const outputSize = await detectOutputSize(base64Image);
 
-  if (onStatus) onStatus(`> [生成/Generate] gpt-image-2 で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}) / Generating...`);
+  if (onStatus) onStatus(`> [生成/Generate] dall-e-2 で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}) / Generating...`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分タイムアウト
@@ -430,13 +427,13 @@ VERIFICATION BEFORE OUTPUT:
   const timerId = setInterval(() => {
     seconds++;
     if (onStatus) {
-      onStatus(`> [生成/Generate] gpt-image-2 で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}, ${seconds}秒経過) / Generating...`);
+      onStatus(`> [生成/Generate] dall-e-2 で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}, ${seconds}秒経過) / Generating...`);
     }
   }, 1000);
 
   try {
     const formData = new FormData();
-    formData.append('model', 'gpt-image-2');
+    formData.append('model', 'dall-e-2');
     formData.append('image', imageBlob, 'manga.png');
     formData.append('prompt', prompt);
     formData.append('size', outputSize);
@@ -461,8 +458,8 @@ VERIFICATION BEFORE OUTPUT:
     const data = await response.json();
 
     if (data.data && data.data.length > 0 && data.data[0].b64_json) {
-      if (onStatus) onStatus(`> [生成/Generate] 完了 / Complete ✓ (gpt-image-2, ${seconds}秒)`);
-      return { base64Img: data.data[0].b64_json, usedModel: "gpt-image-2" };
+      if (onStatus) onStatus(`> [生成/Generate] 完了 / Complete ✓ (dall-e-2, ${seconds}秒)`);
+      return { base64Img: data.data[0].b64_json, usedModel: "dall-e-2" };
     }
 
     throw new Error("APIレスポンスに画像データが含まれていませんでした。");
