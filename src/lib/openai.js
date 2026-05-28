@@ -1,11 +1,11 @@
 /**
  * OpenAI API Client for AI漫画翻訳ツール
- * Dual Engine: ChatGPT テキスト処理 + dall-e-2 画像編集
+ * Dual Engine: ChatGPT テキスト処理 + gpt-image-2 画像編集
  *
  * 3つの機能:
  * 1. extractTranslationsOAI() — GPT-4o Vision でテキスト抽出+翻訳
  * 2. translateSingleTextOAI() — GPT-4o-mini で個別再翻訳
- * 3. generateTranslatedImageOAI() — dall-e-2 で翻訳済み画像を生成
+ * 3. generateTranslatedImageOAI() — gpt-image-2 で翻訳済み画像を生成
  */
 
 import { getLanguageInfo } from './languages';
@@ -265,11 +265,11 @@ export const translateSingleTextOAI = async (originalText, targetLang = 'en', so
 };
 
 // ══════════════════════════════════════════════
-// STEP 2: 翻訳済み画像生成（dall-e-2 Edit API）
+// STEP 2: 翻訳済み画像生成（gpt-image-2 Edit API）
 // ══════════════════════════════════════════════
 
 /**
- * 言語別のスタイル指示を構築（英語版 — dall-e-2 最適化）
+ * 言語別のスタイル指示を構築（英語版 — gpt-image-2 最適化）
  */
 const buildOpenAIStyleInstructions = (langInfo, srcInfo = {}) => {
   const langName = langInfo.name;
