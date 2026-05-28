@@ -15,19 +15,19 @@ let currentOpenAIApiKey = "";
 export const setOpenAIApiKey = (key) => { currentOpenAIApiKey = key; };
 export const getOpenAIApiKey = () => currentOpenAIApiKey;
 
-// ── テキスト抽出用モデル（Vision対応・Zenith Protocol相当のフォールバック） ──
+// 画像付きリクエスト用モデルリスト（Vision対応モデル優先）
 const VISION_MODEL_IDS = [
-  "gpt-4.1",          // Primary: Vision対応・1Mコンテキスト
-  "gpt-4o",           // Backup 1: Vision安定実績
-  "gpt-4.1-mini",     // Backup 2: コスト効率
+    "gpt-4.1",          // Primary: Vision対応・高品質
+    "gpt-4o",           // Backup 1: Vision安定実績
+    "gpt-4.1-mini",     // Backup 2: コスト効率
 ];
 
-// ── 個別翻訳用モデル（高品質優先＆フォールバック強化） ──
+// テキストのみリクエスト用モデルリスト（Zenith Protocol相当のフォールバック）
 const TEXT_MODEL_IDS = [
-  "gpt-4.1",          // Primary: 高品質
-  "gpt-4.1-mini",     // Backup 1: コスト効率・高速
-  "gpt-4.1-nano",     // Backup 2: 超軽量
-  "gpt-4o",           // Fallback: 安定実績
+    "gpt-4.1",          // Primary: 高品質・1Mコンテキスト
+    "gpt-4.1-mini",     // Backup 1: コスト効率・高速
+    "gpt-4.1-nano",     // Backup 2: 最軽量・最速
+    "gpt-4o",           // Fallback: 安定実績
 ];
 
 // ── ユーティリティ ──

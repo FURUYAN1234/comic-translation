@@ -14,22 +14,28 @@ let currentApiKey = "";
 export const setApiKey = (key) => { currentApiKey = key; };
 export const getApiKey = () => currentApiKey;
 
-// ── テキスト抽出用モデル（NBP TEXT_MODEL_IDS 準拠） ──
+// テキストのみリクエスト用 (シナリオ生成等): Next-Gen優先・無料枠優先
 const TEXT_MODEL_IDS = [
-  "gemini-3.5-flash",                 // Primary: 最新・高速・画像対応
-  "gemini-flash-latest",              // Primary 2: 安定高速エイリアス
-  "gemini-2.5-flash",                 // Backup 1: 高速・画像対応
-  "gemini-2.5-pro",                   // Backup 2: 高品質・安定
-  "gemini-1.5-pro",                   // Fallback 1: 安定高品質フォールバック
-  "gemini-2.5-flash-lite",            // Fallback 2: 軽量安定
-  "gemini-3.1-flash-lite-preview"     // Fallback 3: Next-Gen Lite
+    "gemini-3.5-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-flash-latest",
+    "gemini-pro-latest"
+];
+
+// 画像付きリクエスト用 (キャラクターシート認識等): フィルター寛容モデル優先
+const IMAGE_MODEL_IDS = [
+    "gemini-3.5-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-flash-latest",
+    "gemini-pro-latest"
 ];
 
 // ── 画像生成用モデル（ドロップダウン選択肢 — NBP imagen.js 準拠） ──
 // responseModalities: ["IMAGE"] に対応するモデルのみ
 export const IMAGE_MODEL_OPTIONS = [
   { value: "gemini-3.1-flash-image-preview",   label: "Gemini 3.1 Flash Image (次世代高精度/推奨)" },
-  { value: "gemini-3-pro-image-preview",       label: "Gemini 3 Pro Image (Premium)" },
   { value: "gemini-2.5-flash-image",           label: "Gemini 2.5 Flash Image (旧高速版)" },
 ];
 
@@ -358,7 +364,9 @@ ART PRESERVATION (NON-NEGOTIABLE):
 - Maintain the EXACT original image resolution and visual sharpness.
 
 ## MIRRORED IMAGE ALERT
-The input image might be horizontally flipped (mirrored). If you see the original ${srcName} text written backwards or mirrored, DO NOT BE CONFUSED. Your job is still to completely erase that backwards text and write the ${langName} translation normally (reading left-to-right).
+The input image might be horizontally flipped (mirrored). If you see ANY text, copyright notices, or watermarks written backwards or mirrored, DO NOT BE CONFUSED. You MUST completely erase ALL backwards text from the image.
+1. For text in the TRANSLATION LIST, erase the backwards text and write the translation normally (reading left-to-right).
+2. For ANY OTHER backwards text (like watermarks) not in the list, simply ERASE it completely (fill with background color). NEVER leave mirrored text in the final output.
 
 TRANSLATION LIST — Replace each original text with its translation:
 ${translationList}
