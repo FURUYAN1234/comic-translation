@@ -73,8 +73,8 @@ This system goes beyond simple machine translation by implementing strict contro
 
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS
 * **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction)
-* **LLM/VFM (Gemini)**: `gemini-3.5-flash`, `gemini-flash-latest`, `gemini-2.5-flash-image`, `gemini-3.1-flash-image-preview`, `gemini-3-pro-image-preview`
-* **LLM/VFM (OpenAI)**: `gpt-4.1` (Vision), `gpt-4.1-mini`, `gpt-4.1-nano`, `gpt-image-2` (Edit API)
+* **LLM/VFM (Gemini)**: `gemini-2.0-flash`, `gemini-flash-latest`, `gemini-1.5-flash`, `gemini-1.5-pro`
+* **LLM/VFM (OpenAI)**: `gpt-4o` (Vision), `gpt-4o-mini`, `dall-e-2` (Edit API)
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
 * **Security**: Memory-only API key management (no localStorage, no hardcoding)
 
@@ -310,7 +310,7 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 - **[Logic]** Refined the Casing Protection Protocol. The AI now accurately separates and translates descriptive text (e.g., "Official site:") while still perfectly preserving the exact casing and strings of adjacent URLs, ISBNs, or emails. / Casing Protection Protocol（ケーシング保護プロトコル）のロジックを改善。URL・ISBN・メールアドレスなどの技術的文字列は完全に原文のまま保護しつつ、その前後に付随する説明文（例：「公式サイト：」など）だけを正確に分離して翻訳できるようになりました。
 
 ### v1.6.3
-- **[Feature]** Added timer to OpenAI image generation (gpt-image-2) status bar to display elapsed seconds. / OpenAIの画像生成（gpt-image-2）時、ステータスバーに経過秒数を表示するタイマー機能を追加し、進捗状況を可視化しました。
+- **[Feature]** Added timer to OpenAI image generation (dall-e-2) status bar to display elapsed seconds. / OpenAIの画像生成（dall-e-2）時、ステータスバーに経過秒数を表示するタイマー機能を追加し、進捗状況を可視化しました。
 
 ### v1.6.2
 - **[Deploy]** Routine maintenance and automated deployment pipeline execution. / メンテナンスと環境同期のための自動デプロイメントパイプラインを実行しました。
@@ -320,7 +320,7 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ### v1.6.0
 - **[Feature]** Dual API Architecture (Gemini + OpenAI): The application now supports both Google Gemini API (default, fast, free tier) and OpenAI API (high-quality, pay-as-you-go). / Dual APIアーキテクチャ（Gemini + OpenAI）に対応しました。入力されたAPIキー（`sk-` プレフィックス）を検知し、内部のルーティング層で自動的に「🔵Geminiモード（無料枠・高速）」と「🟢ChatGPTモード（高品質・従量課金）」を切り替えます。
-- **[Integration]** Implemented full pipeline for OpenAI API: `gpt-4.1` Vision for text extraction and layout analysis, `gpt-4.1-mini` for targeted single-text re-translation, and `gpt-image-2` (Edit API) for high-fidelity translated image regeneration. / OpenAI APIのフルパイプラインを実装しました。`gpt-4.1` Visionによるテキスト抽出とレイアウト解析、`gpt-4.1-mini`による単一テキスト再翻訳、そして`gpt-image-2` Edit APIによる高精細な画像再生成に対応しています。
+- **[Integration]** Implemented full pipeline for OpenAI API: `gpt-4o` Vision for text extraction and layout analysis, `gpt-4o-mini` for targeted single-text re-translation, and `dall-e-2` (Edit API) for high-fidelity translated image regeneration. / OpenAI APIのフルパイプラインを実装しました。`gpt-4o` Visionによるテキスト抽出とレイアウト解析、`gpt-4o-mini`による単一テキスト再翻訳、安定版の `dall-e-2` Edit APIによる高精細な画像再生成に対応しています。
 - **[UI]** Unified API Gateway UI: Redesigned the start screen with real-time API key detection, dynamic engine badges, and specific key-acquisition links. Removed the universal prompt modal from the Gemini flow to streamline the UI. Added explicit wait-time warnings (2-4 minutes) during OpenAI image generation. / 統合APIゲート画面：APIキーの自動判別、リアルタイムエンジンインジケーター、専用のAPI取得リンクを実装しました。Geminiモードでは不要となった「汎用翻訳プロンプト」を削除し、UIを洗練化。また、処理時間の長いOpenAI画像生成時には待ち時間（2〜4分）の警告を表示するように改善しました。
 
 ### v1.5.7
