@@ -1,34 +1,56 @@
-# Deploy Rules: comic_translation
+# Deploy Rules & Full Protocol: comic_translation
 
-## Deploy Targets
-- GitHub Pages
+CodexおよびAntigravityがデプロイ作業を行う際の完全な手順書（フルプロトコル）です。
 
-## Deploy Commands
+## 1. Deploy Targets & Environment
+- **Deploy Target**: GitHub Pages (gh-pages)
+- **Protected Settings**: `vite.config.js` の `base` は `/comic-translation/` であること。推測で `'./'` に変更しない。
+- **Not Applicable**: Hugging Face Spaces, Vercel, Netlify
+
+## 2. Version Bump Targets (バージョン更新対象ファイル)
+以下のファイルのバージョン番号 (`vX.Y.Z`) を全て一致させること。
+1. `package.json` (`"version": "X.Y.Z"`)
+2. `src/App.jsx` (`const SYSTEM_VERSION = "X.Y.Z"` など存在する場合)
+3. `index.html` (`<title>` タグ内のバージョン)
+4. `README.md` (バッジ表記やChangeLog等)
+
+## 3. Pre-Deploy Audit (監査ルール)
+デプロイ前に以下のチェックを必ず行うこと。
+- **ゴミファイル**: 一時検証スクリプト、テンプレート残骸が存在しないか。
+- **個人情報/ローカルパス**: `C:\Users\...` などのパス、個人名、メールアドレスが含まれていないか。
+- **公開禁止の固有名詞**: 他プロジェクト名（`Nano Banana Pro`, `remotion_video_2` 等）が混入していないか。
+- **機密情報**: APIキーが直書きされていないか。
+
+## 4. Build & Deploy Commands
 ```bash
 npm run build
 npm run deploy
 ```
+※ `npm run deploy` 後、リモートの `gh-pages` に反映されるまで1〜2分待機すること。
 
-※「デプロイして」と指示された場合は、ビルド、検証（remote確認）、コミット、タグ作成、リリース作成まで一気通貫で行うワークフロー（`/deploy`）に従うこと。
+## 5. Post-Deploy Verification (デプロイ後の確認)
+- リモート反映確認コマンド: `git fetch origin gh-pages && git show origin/gh-pages:index.html`
+- ライブ確認: GitHub Pages のURLにアクセスし、`?v=TIMESTAMP` を付与して確認。
 
-## Platform-Specific Guardrails (🚨超重要🚨)
-- ❌ **`vite.config.js` の `base` を勝手に変更しないこと！**
-  - このアプリは `base: '/comic-translation/'` （絶対パス形式）が必須設定として定義されている。他のアプリ（例: Nano Banana Pro）のように `'./'`（相対パス）にしたり、記述を削除したりしてはならない。画面が真っ白になる原因となる。
+## 6. Commit, Tag & Push Rules
+- コミット: `vX.Y.Z: 変更概要`
+- タグ: `git tag -a vX.Y.Z -m "vX.Y.Z: 変更概要 / Feature summary"` (日本語と英語の併記)
+- プッシュ: `git push origin main` および `git push origin vX.Y.Z`
 
-## Protected Settings
-- `vite.config.js` (baseプロパティ関連)
+## 7. GitHub Release (リリース作成)
+※ Codexの `gh` トークンが無効な場合はスキップしてAntigravityに引き継ぐこと。
+- タイトル: `vX.Y.Z: Feature Name / 機能名`
+- 本文: `## What's New / 更新内容` 以下に英日併記。
+- コマンド: `gh release create vX.Y.Z --title "タイトル" --notes "本文"`
 
-## Not Applicable
-- Hugging Face Spaces (HFへのデプロイスクリプト `deploy:hf` や `.git` 保護ルールは**一切不要**)
-- Vercel / Netlify / Cloudflare Pages / Firebase Hosting
+## 8. ZIP Extraction (バックアップ展開先ルール)
+※ GitHub Release が作成された場合のみ実行。
+- ダウンロード: `gh release download vX.Y.Z --archive zip --output $env:TEMP\comic_translation-vX.Y.Z.zip`
+- 展開先: `C:\comic-translation-main` (既存を削除してから配置、二重フォルダに注意)
 
-## Local Deployment Cleanup (ローカル環境同期)
-デプロイ（GitHub Releaseの作成・ZIPの検証）完了後、最終工程として必ず以下の処理を行い、ローカルの検証用・運用環境を更新すること。
+## 9. Full Workspace Backup (全体バックアップ手順)
+※ 全体バックアップが必要な場合のみ。すべての開発・デプロイ完了後に実行。
+- 実行コマンド: `powershell -ExecutionPolicy Bypass -File C:\Users\sx717\Antigravity\scripts\backup_full.ps1`
 
-1. **古い環境の削除**: 既存の `C:\comic-translation-main` ディレクトリを完全に削除する。
-   ```powershell
-   Remove-Item -Recurse -Force C:\comic-translation-main -ErrorAction SilentlyContinue
-   ```
-2. **最新版の配置**: 
-   最新の `comic-translation-main`（ZIP形式でダウンロード・展開したもの等）を `C:\` 直下に配置（コピー）し、パスが `C:\comic-translation-main` となるようにする。
-   ※展開時に `C:\comic-translation-main\comic-translation-main` のような二重フォルダにならないよう注意すること。
+## 10. Rollback Procedure
+- Actionsが止まった場合: 空コミットで再トリガー (`git commit --allow-empty -m "Trigger Build"`)
