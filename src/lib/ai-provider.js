@@ -28,7 +28,6 @@ export const setActiveEngine = (engine) => {
     return;
   }
   activeEngine = engine;
-  console.log(`[AI Provider] Engine switched to: ${engine.toUpperCase()}`);
 };
 
 /**

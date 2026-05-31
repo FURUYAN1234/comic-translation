@@ -5,15 +5,13 @@ import { setApiKey, IMAGE_MODEL_OPTIONS } from './lib/gemini';
 import { setOpenAIApiKey } from './lib/openai';
 import {
   setActiveEngine,
-  getActiveEngine,
-  getEngineDisplayName,
   extractTranslationsAI,
   translateSingleTextAI,
   generateTranslatedImageAI
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.8.7";
+const SYSTEM_VERSION = "1.8.8";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -107,8 +105,6 @@ const App = () => {
     const tgtInfo = getLanguageInfo(promptTargetLang);
     const srcName = srcInfo.name;
     const tgtName = tgtInfo.name;
-    const srcNative = srcInfo.nativeName;
-    const tgtNative = tgtInfo.nativeName;
     const isRtlSource = srcInfo.readingDirection === 'rtl';
     const isRtlTarget = tgtInfo.readingDirection === 'rtl';
     const needsFlip = promptFlip;
@@ -218,7 +214,7 @@ Output the final translated image only. No explanations needed.`;
       await navigator.clipboard.writeText(universalPrompt);
       setPromptCopied(true);
       setTimeout(() => setPromptCopied(false), 2500);
-    } catch (e) {
+    } catch {
       // フォールバック: テキストエリアからコピー
       const ta = document.createElement('textarea');
       ta.value = universalPrompt;
@@ -233,7 +229,7 @@ Output the final translated image only. No explanations needed.`;
 
   // ── API認証（Dual Engine: sk- → OpenAI / それ以外 → Gemini） ──
   const handleApiKeySubmit = () => {
-    const cleanKey = apiKeyInput.replace(/[^\u0000-\u007F]/g, "").trim();
+    const cleanKey = apiKeyInput.replace(/[^\x20-\x7E]/g, "").trim();
     if (cleanKey.length < 10) return;
 
     if (cleanKey.startsWith("sk-")) {
@@ -243,7 +239,6 @@ Output the final translated image only. No explanations needed.`;
       setEngineMode('openai');
       setIsUnlocked(true);
       showStatus('✅ ChatGPT Engine 接続完了！ / Connected!', true);
-      console.log('[Dual Engine] Switched to OpenAI/ChatGPT mode');
     } else {
       // Gemini Engine（従来通り）
       setApiKey(cleanKey);
@@ -251,7 +246,6 @@ Output the final translated image only. No explanations needed.`;
       setEngineMode('gemini');
       setIsUnlocked(true);
       showStatus('✅ Gemini Engine 接続完了！ / Connected!', true);
-      console.log('[Dual Engine] Using Gemini mode (default)');
     }
   };
 

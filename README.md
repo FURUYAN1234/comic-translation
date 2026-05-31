@@ -258,6 +258,9 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
+### v1.8.8 (Current)
+- **[Fix / Console]** Fixed lint errors and removed unused imports/variables. Cleaned up production console logs by removing unnecessary engine switch logs. / lintエラーおよび未使用のimportや変数を修正しました。また、エンジン切替時の不要なconsole.logを削除し、本番環境のコンソールをクリーンアップしました。
+
 ### v1.8.7
 - **[Fix / Prompt]** Enhanced the Gemini `## MIRRORED IMAGE ALERT` prompt to strictly enforce the complete erasure of all mirrored text (including background watermarks and copyrights) when processing horizontally flipped images. This resolves the issue where Gemini would faithfully preserve mirrored watermarks as part of the artwork. / Geminiの鏡文字対策プロンプト（`## MIRRORED IMAGE ALERT`）を強化し、反転画像の処理時に翻訳対象外の裏返った文字（ウォーターマークやコピーライトなど）も背景ごと完全に消去するよう厳格な命令を追加しました。これにより、Geminiが裏返ったウォーターマークをアートワークの一部として残してしまうバグを完全に修正しました。
 
