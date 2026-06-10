@@ -15,20 +15,30 @@
  */
 
 export const LANGUAGES = [
-  { code: 'ja',    name: 'Japanese',               nativeName: '日本語',            readingDirection: 'rtl', style: 'manga' },
-  { code: 'en',    name: 'English',                nativeName: 'English',          readingDirection: 'ltr', style: 'comic' },
-  { code: 'ko',    name: 'Korean',                 nativeName: '한국어',            readingDirection: 'ltr', style: 'webtoon' },
-  { code: 'zh-CN', name: 'Chinese (Simplified)',    nativeName: '中文简体',          readingDirection: 'rtl', style: 'manhua' },
-  { code: 'zh-TW', name: 'Chinese (Traditional)',   nativeName: '中文繁體',          readingDirection: 'rtl', style: 'manhua' },
-  { code: 'es',    name: 'Spanish',                nativeName: 'Español',          readingDirection: 'ltr', style: 'european' },
-  { code: 'fr',    name: 'French',                 nativeName: 'Français',         readingDirection: 'ltr', style: 'european' },
-  { code: 'de',    name: 'German',                 nativeName: 'Deutsch',          readingDirection: 'ltr', style: 'european' },
-  { code: 'id',    name: 'Indonesian',             nativeName: 'Bahasa Indonesia', readingDirection: 'ltr', style: 'general' },
-  { code: 'th',    name: 'Thai',                   nativeName: 'ไทย',              readingDirection: 'ltr', style: 'general' },
+  { code: 'ja',    name: 'Japanese',               nativeName: '日本語',            readingDirection: 'rtl', style: 'manga',
+    sampleTranslations: { title: 'タイトル', dialogue: 'セリフ', sfx: 'ドカーン' } },
+  { code: 'en',    name: 'English',                nativeName: 'English',          readingDirection: 'ltr', style: 'comic',
+    sampleTranslations: { title: 'Title', dialogue: 'Line', sfx: 'KABOOM' } },
+  { code: 'ko',    name: 'Korean',                 nativeName: '한국어',            readingDirection: 'ltr', style: 'webtoon',
+    sampleTranslations: { title: '제목', dialogue: '대사', sfx: '쾅' } },
+  { code: 'zh-CN', name: 'Chinese (Simplified)',    nativeName: '中文简体',          readingDirection: 'rtl', style: 'manhua',
+    sampleTranslations: { title: '标题', dialogue: '台词', sfx: '轰' } },
+  { code: 'zh-TW', name: 'Chinese (Traditional)',   nativeName: '中文繁體',          readingDirection: 'rtl', style: 'manhua',
+    sampleTranslations: { title: '標題', dialogue: '台詞', sfx: '轟' } },
+  { code: 'es',    name: 'Spanish',                nativeName: 'Español',          readingDirection: 'ltr', style: 'european',
+    sampleTranslations: { title: 'Título', dialogue: 'Línea', sfx: '¡BUM!' } },
+  { code: 'fr',    name: 'French',                 nativeName: 'Français',         readingDirection: 'ltr', style: 'european',
+    sampleTranslations: { title: 'Titre', dialogue: 'Réplique', sfx: 'BOUM' } },
+  { code: 'de',    name: 'German',                 nativeName: 'Deutsch',          readingDirection: 'ltr', style: 'european',
+    sampleTranslations: { title: 'Titel', dialogue: 'Zeile', sfx: 'WUMM' } },
+  { code: 'id',    name: 'Indonesian',             nativeName: 'Bahasa Indonesia', readingDirection: 'ltr', style: 'general',
+    sampleTranslations: { title: 'Judul', dialogue: 'Dialog', sfx: 'DUAR' } },
+  { code: 'th',    name: 'Thai',                   nativeName: 'ไทย',              readingDirection: 'ltr', style: 'general',
+    sampleTranslations: { title: 'ชื่อเรื่อง', dialogue: 'บทพูด', sfx: 'ตูม' } },
 ];
 
 // 自動検出オプション（ソース言語用）
-export const AUTO_DETECT = { code: 'auto', name: 'Auto-Detect', nativeName: '自動検出 / Auto-Detect', readingDirection: null, style: null };
+export const AUTO_DETECT = { code: 'auto', name: 'Auto-Detect', nativeName: '自動検出 / Auto-Detect', readingDirection: null, style: null, sampleTranslations: null };
 
 /**
  * ソース言語とターゲット言語の読み方向からデフォルトの反転設定を計算

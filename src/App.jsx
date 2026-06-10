@@ -11,7 +11,7 @@ import {
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.8.8";
+const SYSTEM_VERSION = "1.8.9";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -810,7 +810,7 @@ Output the final translated image only. No explanations needed.`;
                         <button className="btn-retrans" onClick={() => handleSingleTranslate(i)} disabled={translatingRow === i} title="この行だけ再翻訳 / Retranslate this line">
                           {translatingRow === i ? <span className="animate-spin" style={{fontSize: '9px'}}>◉</span> : '🔄'}
                         </button>
-                        <button className="btn-clear" onClick={() => updateTranslation(i, '')} disabled={translatingRow === i} title="英訳を消去 / Clear translation">🧹</button>
+                        <button className="btn-clear" onClick={() => updateTranslation(i, '')} disabled={translatingRow === i} title={`${getLanguageInfo(targetLanguage).nativeName}訳を消去 / Clear translation`}>🧹</button>
                       </div>
                       <span className="text-arrow">→</span>
                       <textarea value={t.translated}
@@ -843,7 +843,17 @@ Output the final translated image only. No explanations needed.`;
                 </button>
               </label>
               <span className="flip-hint">
-                {flipEnabled ? 'LTR (左→右 / Left-to-Right)' : 'RTL (右→左 / Right-to-Left)'}
+                {(() => {
+                  const srcDir = getLanguageInfo(sourceLanguage).readingDirection;
+                  const tgtDir = getLanguageInfo(targetLanguage).readingDirection;
+                  if (flipEnabled) {
+                    // 反転ON: ソースの読み方向を反転してターゲット側の読み方向に変換
+                    return tgtDir === 'ltr' ? 'LTR (左→右 / Left-to-Right)' : 'RTL (右→左 / Right-to-Left)';
+                  } else {
+                    // 反転OFF: 原画の読み方向を維持
+                    return srcDir === 'rtl' || (!srcDir && tgtDir === 'rtl') ? 'RTL (右→左 / Right-to-Left)' : 'LTR (左→右 / Left-to-Right)';
+                  }
+                })()}
               </span>
             </div>
             <button className="btn-generate" onClick={() => handleGenerate(true)} disabled={!canGenerate}>

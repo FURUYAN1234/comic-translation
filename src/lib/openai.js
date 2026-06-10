@@ -134,6 +134,10 @@ export const extractTranslationsOAI = async (base64Image, onStatus, targetLang =
     ? `あなたは${srcName}の漫画・コミックの翻訳専門家です。\nこの漫画画像に含まれる全てのテキスト要素を検出し、${langName}に翻訳してください。`
     : `あなたは漫画・コミックの翻訳専門家です。\nこの漫画画像に含まれる全てのテキスト要素を自動検出し、${langName}に翻訳してください。テキストのソース言語は自動判定してください。`;
 
+  // ターゲット言語のサンプル翻訳（プロンプトのJSONサンプルに使用）
+  // AIのfew-shot exampleを正しい言語で誘導する
+  const samples = langInfo.sampleTranslations || { title: 'Title', dialogue: 'Line', sfx: 'KABOOM' };
+
   const prompt = `${expertIntro}
 同時に、画像のコマ構造（パネルレイアウト）も解析してください。
 
@@ -162,9 +166,9 @@ export const extractTranslationsOAI = async (base64Image, onStatus, targetLang =
     "panels": ["1コマ目", "2コマ目", "3コマ目", "4コマ目"]
   },
   "texts": [
-    {"type": "title", "original": "タイトル", "translated": "Title", "panel": "欄外"},
-    {"type": "dialogue", "original": "セリフ", "translated": "Line", "panel": "1コマ目"},
-    {"type": "sfx", "original": "ドカーン", "translated": "KABOOM", "panel": "3コマ目"}
+    {"type": "title", "original": "タイトル", "translated": "${samples.title}", "panel": "欄外"},
+    {"type": "dialogue", "original": "セリフ", "translated": "${samples.dialogue}", "panel": "1コマ目"},
+    {"type": "sfx", "original": "ドカーン", "translated": "${samples.sfx}", "panel": "3コマ目"}
   ]
 }
 

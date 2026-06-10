@@ -258,7 +258,12 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.8.8 (Current)
+### v1.8.9 (Current)
+- **[Fix / Translation]** Fixed a critical bug where selecting any non-English target language (Korean, Chinese, French, etc.) would still produce English translations. The root cause was that the few-shot JSON example in the AI extraction prompt had hardcoded English translations (`"translated": "Title"`, `"translated": "KABOOM"`), causing the AI to mimic the English example regardless of the language instruction. Added per-language sample translations to `languages.js` and dynamically inject them into prompts for both Gemini and OpenAI engines. / **全言語が英語出力になる致命的バグを修正しました。** 韓国語・中国語・フランス語など英語以外の言語を選択しても英語で翻訳されてしまう問題の原因は、AIへのプロンプト内のJSONサンプルが英語固定（`"translated": "Title"`等）だったことでした。AIがfew-shot exampleに引っ張られて指示文を無視していたため、各言語のサンプル翻訳を動的に埋め込むよう修正しました。
+- **[Fix / UI]** Fixed the clear button tooltip showing "英訳を消去" (Clear English translation) regardless of the selected target language. Now dynamically shows the selected language name (e.g., "한국어訳を消去"). / 翻訳クリアボタンのツールチップが選択言語に関わらず「英訳を消去」と表示されていたバグを修正。選択中の言語名が動的に反映されるようになりました。
+- **[Fix / UI]** Fixed the flip hint display to dynamically reflect the actual reading direction based on source/target language pair, instead of showing a static LTR/RTL label. / フリップヒントの表示をソース/ターゲット言語ペアの読み方向から動的に判定するよう修正しました。
+
+### v1.8.8
 - **[Fix / Console]** Fixed lint errors and removed unused imports/variables. Cleaned up production console logs by removing unnecessary engine switch logs. / lintエラーおよび未使用のimportや変数を修正しました。また、エンジン切替時の不要なconsole.logを削除し、本番環境のコンソールをクリーンアップしました。
 
 ### v1.8.7
