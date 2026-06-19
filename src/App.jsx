@@ -11,7 +11,7 @@ import {
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.8.9";
+const SYSTEM_VERSION = "1.9.0";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -511,7 +511,7 @@ Output the final translated image only. No explanations needed.`;
       const result = await generateTranslatedImageAI(
         inputBase64, translations, selectedModel, (s) => showStatus(s), instructionRules, customPrompt, targetLanguage, sourceLanguage, isRefinement
       );
-      const imgSrc = `data:image/png;base64,${result.base64Img}`;
+      const imgSrc = `data:${result.mimeType || 'image/png'};base64,${result.base64Img}`;
       setTranslatedImage(imgSrc);
       setUsedModel(result.usedModel);
       setHistory(prev => [{ translated: imgSrc, model: result.usedModel, fileName: originalFileName, timestamp: Date.now() }, ...prev]);

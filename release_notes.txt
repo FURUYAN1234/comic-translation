@@ -1,3 +1,11 @@
 ## What's New / 更新内容
-- Enhanced the Gemini `## MIRRORED IMAGE ALERT` prompt to strictly enforce the complete erasure of all mirrored text (including background watermarks and copyrights) when processing horizontally flipped images. This resolves the issue where Gemini would faithfully preserve mirrored watermarks as part of the artwork.
-- Geminiの鏡文字対策プロンプト（`## MIRRORED IMAGE ALERT`）を強化し、反転画像の処理時に翻訳対象外の裏返った文字（ウォーターマークやコピーライトなど）も背景ごと完全に消去するよう厳格な命令を追加しました。これにより、Geminiが裏返ったウォーターマークをアートワークの一部として残してしまうバグを完全に修正しました。
+- Updated Gemini image generation to the current Nano Banana 2-compatible `gemini-3.1-flash-image` model.
+- Removed legacy Gemini preview/2.5 image model options from the app's image-generation selector.
+- Aligned OpenAI image editing with current `gpt-image-2` settings: PNG output, high quality, MIME preservation, and a 600-second timeout.
+- Synchronized app version metadata for v1.9.0.
+
+## 日本語
+- Gemini画像生成を現在のNano Banana 2互換 `gemini-3.1-flash-image` に更新しました。
+- 旧Gemini preview/2.5画像モデルを画像生成モデル選択肢から撤去しました。
+- OpenAI画像編集を現在の `gpt-image-2` 運用に合わせ、PNG出力・高品質・MIME保持・600秒タイムアウトに更新しました。
+- v1.9.0としてアプリ内表示とメタデータを同期しました。

@@ -4,6 +4,8 @@
 2026-05-25T18:35:00+09:00
 
 ## Current Status
+Codex update 2026-06-19: v1.9.0 fallback-chain alignment completed locally. Gemini image generation is updated to `gemini-3.1-flash-image` only; legacy `gemini-3.1-flash-image-preview` and `gemini-2.5-flash-image` image-generation options were removed. OpenAI image editing now uses `gpt-image-2` with PNG/high/600s behavior and returns MIME metadata to the UI. Verification passed before release: syntax checks, `npx eslint src --no-cache --max-warnings=0`, `npm run build`, and in-app browser on port 5177 with the provided manga image generated an English translated image via `gemini-3.1-flash-image` with a visible result image and enabled download button.
+
 - ✅ **v1.6.12** — 安定稼働中（ビルド・ローカル検証完了）
 - ブランチ: `main`
 - 未コミット変更: あり（修正済みファイルをステージング/コミット待ち）

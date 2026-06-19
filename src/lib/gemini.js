@@ -33,10 +33,9 @@ const IMAGE_MODEL_IDS = [
 ];
 
 // ── 画像生成用モデル（ドロップダウン選択肢 — NBP imagen.js 準拠） ──
-// responseModalities: ["IMAGE"] に対応するモデルのみ
+// responseModalities: ["TEXT", "IMAGE"] に対応するモデルのみ
 export const IMAGE_MODEL_OPTIONS = [
-  { value: "gemini-3.1-flash-image-preview",   label: "Gemini 3.1 Flash Image (次世代高精度/推奨)" },
-  { value: "gemini-2.5-flash-image",           label: "Gemini 2.5 Flash Image (旧高速版)" },
+  { value: "gemini-3.1-flash-image", label: "Gemini 3.1 Flash Image (Nano Banana 2 / Recommended)" },
 ];
 
 // ── 診断機能 ──
@@ -427,7 +426,7 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
               parts: [imagePayload, { text: prompt }]
             }],
             generationConfig: {
-              responseModalities: ["IMAGE", "TEXT"],
+              responseModalities: ["TEXT", "IMAGE"],
               temperature: 0.4,
             },
             safetySettings: [
@@ -453,10 +452,16 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
       }
 
       const parts = candidates[0]?.content?.parts || [];
-      const imagePart = parts.find(p => p.inlineData);
+      const imagePart = parts
+        .filter(p => p.inlineData?.data)
+        .sort((a, b) => (b.inlineData.data?.length || 0) - (a.inlineData.data?.length || 0))[0];
       if (imagePart?.inlineData?.data) {
         if (onStatus) onStatus(`> [生成/Generate] 完了 / Complete ✓ (${modelId})`);
-        return { base64Img: imagePart.inlineData.data, usedModel: modelId };
+        return {
+          base64Img: imagePart.inlineData.data,
+          mimeType: imagePart.inlineData.mimeType || "image/png",
+          usedModel: modelId,
+        };
       }
 
       throw new Error(`画像データなし (${modelId})`);

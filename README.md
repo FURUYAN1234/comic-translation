@@ -73,8 +73,8 @@ This system goes beyond simple machine translation by implementing strict contro
 
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS
 * **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction)
-* **LLM/VFM (Gemini)**: `gemini-3.5-flash`, `gemini-flash-latest`, `gemini-2.5-flash-image`, `gemini-3.1-flash-image-preview`, `gemini-3-pro-image-preview`
-* **LLM/VFM (OpenAI)**: `gpt-4.1` (Vision), `gpt-4.1-mini`, `gpt-4.1-nano`, `gpt-image-2` (Edit API)
+* **LLM/VFM (Gemini)**: Text/OCR `gemini-3.5-flash` -> `gemini-2.5-flash` -> `gemini-2.5-pro` -> `gemini-flash-latest` -> `gemini-pro-latest`; Image `gemini-3.1-flash-image`
+* **LLM/VFM (OpenAI)**: Text `gpt-4.1` -> `gpt-4.1-mini` -> `gpt-4.1-nano` -> `gpt-4o`; Image `gpt-image-2` (Edit API, PNG/high, 600s timeout)
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
 * **Security**: Memory-only API key management (no localStorage, no hardcoding)
 
@@ -258,7 +258,12 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.8.9 (Current)
+### v1.9.0 (Current)
+- **[API / Fallback Chain]** Updated the Gemini image generation path to the current Nano Banana 2-compatible model `gemini-3.1-flash-image` and removed legacy preview/2.5 image model options from the UI fallback list. / Gemini画像生成を現在のNano Banana 2互換モデル `gemini-3.1-flash-image` に更新し、旧preview/2.5画像モデルをUIのフォールバック選択肢から撤去しました。
+- **[OpenAI / Image Edit]** Aligned OpenAI image editing with the current `gpt-image-2` behavior: PNG output, high quality, returned MIME preservation, and a 600-second timeout for slower edits. / OpenAI画像編集を現在の `gpt-image-2` 運用に合わせ、PNG出力・高品質・MIME保持・600秒タイムアウトへ更新しました。
+- **[Deploy / Version]** Synchronized app version files and deployment notes for v1.9.0. / v1.9.0としてバージョン表示・リリース情報を同期しました。
+
+### v1.8.9
 - **[Fix / Translation]** Fixed a critical bug where selecting any non-English target language (Korean, Chinese, French, etc.) would still produce English translations. The root cause was that the few-shot JSON example in the AI extraction prompt had hardcoded English translations (`"translated": "Title"`, `"translated": "KABOOM"`), causing the AI to mimic the English example regardless of the language instruction. Added per-language sample translations to `languages.js` and dynamically inject them into prompts for both Gemini and OpenAI engines. / **全言語が英語出力になる致命的バグを修正しました。** 韓国語・中国語・フランス語など英語以外の言語を選択しても英語で翻訳されてしまう問題の原因は、AIへのプロンプト内のJSONサンプルが英語固定（`"translated": "Title"`等）だったことでした。AIがfew-shot exampleに引っ張られて指示文を無視していたため、各言語のサンプル翻訳を動的に埋め込むよう修正しました。
 - **[Fix / UI]** Fixed the clear button tooltip showing "英訳を消去" (Clear English translation) regardless of the selected target language. Now dynamically shows the selected language name (e.g., "한국어訳を消去"). / 翻訳クリアボタンのツールチップが選択言語に関わらず「英訳を消去」と表示されていたバグを修正。選択中の言語名が動的に反映されるようになりました。
 - **[Fix / UI]** Fixed the flip hint display to dynamically reflect the actual reading direction based on source/target language pair, instead of showing a static LTR/RTL label. / フリップヒントの表示をソース/ターゲット言語ペアの読み方向から動的に判定するよう修正しました。

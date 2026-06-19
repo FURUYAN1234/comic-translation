@@ -17,9 +17,10 @@ export const getOpenAIApiKey = () => currentOpenAIApiKey;
 
 // 画像付きリクエスト用モデルリスト（Vision対応モデル優先）
 const VISION_MODEL_IDS = [
-    "gpt-4.1",          // Primary: Vision対応・高品質
-    "gpt-4o",           // Backup 1: Vision安定実績
-    "gpt-4.1-mini",     // Backup 2: コスト効率
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-4.1-nano",
+    "gpt-4o",
 ];
 
 // テキストのみリクエスト用モデルリスト（Zenith Protocol相当のフォールバック）
@@ -29,6 +30,9 @@ const TEXT_MODEL_IDS = [
     "gpt-4.1-nano",     // Backup 2: 最軽量・最速
     "gpt-4o",           // Fallback: 安定実績
 ];
+
+const OPENAI_IMAGE_MODEL = "gpt-image-2";
+const OPENAI_IMAGE_TIMEOUT_MS = 600000;
 
 // ── ユーティリティ ──
 
@@ -425,26 +429,27 @@ VERIFICATION BEFORE OUTPUT:
   // アスペクト比からサイズ決定
   const outputSize = await detectOutputSize(base64Image);
 
-  if (onStatus) onStatus(`> [生成/Generate] gpt-image-2 で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}) / Generating...`);
+  if (onStatus) onStatus(`> [生成/Generate] ${OPENAI_IMAGE_MODEL} で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}) / Generating...`);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分タイムアウト
+  const timeoutId = setTimeout(() => controller.abort(), OPENAI_IMAGE_TIMEOUT_MS); // 10分タイムアウト
 
   let seconds = 0;
   const timerId = setInterval(() => {
     seconds++;
     if (onStatus) {
-      onStatus(`> [生成/Generate] gpt-image-2 で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}, ${seconds}秒経過) / Generating...`);
+      onStatus(`> [生成/Generate] ${OPENAI_IMAGE_MODEL} で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}, ${seconds}秒経過) / Generating...`);
     }
   }, 1000);
 
   try {
     const formData = new FormData();
-    formData.append('model', 'gpt-image-2');
+    formData.append('model', OPENAI_IMAGE_MODEL);
     formData.append('image', imageBlob, 'manga.png');
     formData.append('prompt', prompt);
     formData.append('size', outputSize);
     formData.append('quality', 'high');
+    formData.append('output_format', 'png');
     formData.append('n', '1');
 
     const response = await fetch("https://api.openai.com/v1/images/edits", {
@@ -465,8 +470,8 @@ VERIFICATION BEFORE OUTPUT:
     const data = await response.json();
 
     if (data.data && data.data.length > 0 && data.data[0].b64_json) {
-      if (onStatus) onStatus(`> [生成/Generate] 完了 / Complete ✓ (gpt-image-2, ${seconds}秒)`);
-      return { base64Img: data.data[0].b64_json, usedModel: "gpt-image-2" };
+      if (onStatus) onStatus(`> [生成/Generate] 完了 / Complete ✓ (${OPENAI_IMAGE_MODEL}, ${seconds}秒)`);
+      return { base64Img: data.data[0].b64_json, mimeType: "image/png", usedModel: OPENAI_IMAGE_MODEL };
     }
 
     throw new Error("APIレスポンスに画像データが含まれていませんでした。");
@@ -474,7 +479,7 @@ VERIFICATION BEFORE OUTPUT:
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
-      throw new Error("画像生成タイムアウト (300秒)。サーバーが混雑している可能性があります。");
+      throw new Error(`Image generation timed out (${OPENAI_IMAGE_TIMEOUT_MS / 1000}s). Please retry later.`);
     }
     // 安全フィルターの検出
     if (err.message.includes("safety") || err.message.includes("SAFETY") || err.message.includes("content_policy")) {
