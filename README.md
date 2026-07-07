@@ -28,6 +28,20 @@ This tool automates the process of translating manga pages into 10 languages (En
 2. **Image Regeneration / 画像再生成**: The original image is automatically flipped if required by the target reading order, and the image model regenerates the page with translated text naturally integrated into the artwork.
    翻訳元・翻訳先の読み順に合わせて画像を必要に応じて自動で左右反転し、画像モデルが翻訳テキストを元のアートワークに自然に統合したページを再生成します。
 
+## Current Release Line / 現行仕様
+
+The current public line is **v1.9.0**. This release keeps the two-stage translation workflow but updates the underlying model boundary to the current provider APIs.
+現行公開系統は **v1.9.0** です。2段階翻訳ワークフローは維持しつつ、内部モデル境界を現在のプロバイダーAPIに合わせています。
+
+* **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-3.1-flash-image` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path.
+  Gemini画像生成の現行経路は `gemini-3.1-flash-image` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
+* **OpenAI image generation / OpenAI画像生成**: OpenAI uses `gpt-image-2` through the image edit/generation API with PNG/high-quality settings and a long timeout for manga-page regeneration.
+  OpenAIは `gpt-image-2` を画像編集/生成API経由で使用し、漫画ページ再生成に合わせてPNG・高品質設定・長めのタイムアウトを採用しています。
+* **Security boundary / セキュリティ境界**: API keys remain memory-only. The app does not write provider keys to localStorage, source files, or generated artifacts.
+  APIキーはメモリ限定です。localStorage、ソースファイル、生成物にはプロバイダーキーを書き込みません。
+* **Iteration model / 反復修正モデル**: When the user regenerates, the translated image can be used as the next base image, so corrections are layered through explicit user instructions rather than hidden automatic rewriting.
+  再生成時は翻訳済み画像を次のベースにできるため、隠れた自動改変ではなく、ユーザーが明示した修正指示を重ねる形で反復改善します。
+
 ---
 
 ## 🏗️ Unique Architecture Highlights / 固有アーキテクチャの要点
