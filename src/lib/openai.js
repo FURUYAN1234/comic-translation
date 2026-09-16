@@ -1,6 +1,6 @@
 /**
  * OpenAI API Client for AI漫画翻訳ツール
- * Dual Engine: ChatGPT テキスト処理 + gpt-image-2 画像編集
+ * Dual Engine: ChatGPT テキスト処理 + GPT Image 2.5 / 2.0 fallback 画像編集
  *
  * 3つの機能:
  * 1. extractTranslationsOAI() — GPT-4.1 Vision でテキスト抽出+翻訳
@@ -9,6 +9,7 @@
  */
 
 import { getLanguageInfo } from './languages';
+import { getOpenAIImageFallbackChain, shouldFallbackOpenAIImage } from './openai-image-fallback.js';
 
 // ── APIキー管理（メモリ限定・localStorage永続化なし） ──
 let currentOpenAIApiKey = "";
@@ -31,7 +32,6 @@ const TEXT_MODEL_IDS = [
     "gpt-4o",           // Fallback: 安定実績
 ];
 
-const OPENAI_IMAGE_MODEL = "gpt-image-2";
 const OPENAI_IMAGE_TIMEOUT_MS = 600000;
 
 // ── ユーティリティ ──
@@ -276,11 +276,11 @@ export const translateSingleTextOAI = async (originalText, targetLang = 'en', so
 };
 
 // ══════════════════════════════════════════════
-// STEP 2: 翻訳済み画像生成（gpt-image-2 Edit API）
+// STEP 2: 翻訳済み画像生成（GPT Image 2.5 primary / 2.0 fallback Edit API）
 // ══════════════════════════════════════════════
 
 /**
- * 言語別のスタイル指示を構築（英語版 — gpt-image-2 最適化）
+ * 言語別のスタイル指示を構築（英語版 — GPT Image最適化）
  */
 const buildOpenAIStyleInstructions = (langInfo, srcInfo = {}) => {
   const langName = langInfo.name;
@@ -429,55 +429,73 @@ VERIFICATION BEFORE OUTPUT:
   // アスペクト比からサイズ決定
   const outputSize = await detectOutputSize(base64Image);
 
-  if (onStatus) onStatus(`> [生成/Generate] ${OPENAI_IMAGE_MODEL} で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}) / Generating...`);
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), OPENAI_IMAGE_TIMEOUT_MS); // 10分タイムアウト
-
   let seconds = 0;
+  let activeImageModel = getOpenAIImageFallbackChain()[0];
   const timerId = setInterval(() => {
     seconds++;
     if (onStatus) {
-      onStatus(`> [生成/Generate] ${OPENAI_IMAGE_MODEL} で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}, ${seconds}秒経過) / Generating...`);
+      onStatus(`> [生成/Generate] ${activeImageModel.label} で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}, ${seconds}秒経過) / Generating...`);
     }
   }, 1000);
+  const deadline = Date.now() + OPENAI_IMAGE_TIMEOUT_MS;
 
   try {
-    const formData = new FormData();
-    formData.append('model', OPENAI_IMAGE_MODEL);
-    formData.append('image', imageBlob, 'manga.png');
-    formData.append('prompt', prompt);
-    formData.append('size', outputSize);
-    formData.append('quality', 'high');
-    formData.append('output_format', 'png');
-    formData.append('n', '1');
+    const imageModels = getOpenAIImageFallbackChain();
+    let lastError;
 
-    const response = await fetch("https://api.openai.com/v1/images/edits", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${currentOpenAIApiKey}`
-      },
-      body: formData,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    for (let index = 0; index < imageModels.length; index++) {
+      const imageModel = imageModels[index];
+      const controller = new AbortController();
+      const remainingMs = deadline - Date.now();
+      if (remainingMs <= 0) throw new Error(`Image generation timed out (${OPENAI_IMAGE_TIMEOUT_MS / 1000}s). Please retry later.`);
+      const timeoutId = setTimeout(() => controller.abort(), remainingMs);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`OpenAI API Error: ${response.status} ${errorData.error?.message || response.statusText}`);
+      try {
+        activeImageModel = imageModel;
+        if (onStatus) onStatus(`> [生成/Generate] ${imageModel.label} で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}, ${seconds}秒経過) / Generating...`);
+        const formData = new FormData();
+        formData.append('model', imageModel.id);
+        formData.append('image', imageBlob, 'manga.png');
+        formData.append('prompt', prompt);
+        formData.append('size', outputSize);
+        formData.append('quality', imageModel.quality);
+        formData.append('output_format', 'png');
+        formData.append('n', '1');
+
+        const response = await fetch("https://api.openai.com/v1/images/edits", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${currentOpenAIApiKey}` },
+          body: formData,
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const error = new Error(`OpenAI API Error: ${response.status} ${errorData.error?.message || response.statusText}`);
+          error.status = response.status;
+          error.code = errorData.error?.code;
+          throw error;
+        }
+
+        const data = await response.json();
+        if (data.data?.[0]?.b64_json) {
+          if (onStatus) onStatus(`> [生成/Generate] 完了 / Complete ✓ (${imageModel.label}, ${seconds}秒)`);
+          return { base64Img: data.data[0].b64_json, mimeType: "image/png", usedModel: imageModel.id };
+        }
+        throw new Error("APIレスポンスに画像データが含まれていませんでした。");
+      } catch (err) {
+        lastError = err;
+        const canFallback = index < imageModels.length - 1 && shouldFallbackOpenAIImage(err);
+        if (!canFallback) throw err;
+        if (onStatus) onStatus(`> [生成/Generate] ${imageModel.label} が利用できないため、GPT Image 2.0へ自動切替します。`);
+      } finally {
+        clearTimeout(timeoutId);
+      }
     }
 
-    const data = await response.json();
-
-    if (data.data && data.data.length > 0 && data.data[0].b64_json) {
-      if (onStatus) onStatus(`> [生成/Generate] 完了 / Complete ✓ (${OPENAI_IMAGE_MODEL}, ${seconds}秒)`);
-      return { base64Img: data.data[0].b64_json, mimeType: "image/png", usedModel: OPENAI_IMAGE_MODEL };
-    }
-
-    throw new Error("APIレスポンスに画像データが含まれていませんでした。");
+    throw lastError || new Error('OpenAI画像生成に失敗しました。');
 
   } catch (err) {
-    clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
       throw new Error(`Image generation timed out (${OPENAI_IMAGE_TIMEOUT_MS / 1000}s). Please retry later.`);
     }

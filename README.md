@@ -30,13 +30,13 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-The current public line is **v1.9.0**. This release keeps the two-stage translation workflow but updates the underlying model boundary to the current provider APIs.
-現行公開系統は **v1.9.0** です。2段階翻訳ワークフローは維持しつつ、内部モデル境界を現在のプロバイダーAPIに合わせています。
+The current public line is **v1.9.1**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing.
+現行公開系統は **v1.9.1** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-3.1-flash-image` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path.
   Gemini画像生成の現行経路は `gemini-3.1-flash-image` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
-* **OpenAI image generation / OpenAI画像生成**: OpenAI uses `gpt-image-2` through the image edit/generation API with PNG/high-quality settings and a long timeout for manga-page regeneration.
-  OpenAIは `gpt-image-2` を画像編集/生成API経由で使用し、漫画ページ再生成に合わせてPNG・高品質設定・長めのタイムアウトを採用しています。
+* **OpenAI image generation / OpenAI画像生成**: OpenAI first uses `gpt-image-2.5-sunburst` at xhigh quality through the image edit API. If that provider request cannot complete, it automatically falls back to `gpt-image-2` at high quality within the same 600-second window.
+  OpenAIはまず `gpt-image-2.5-sunburst` をxhigh品質で画像編集APIに使用し、同モデルのリクエストが完了できない場合だけ、同じ600秒枠内で `gpt-image-2` のhigh品質へ自動フォールバックします。
 * **Security boundary / セキュリティ境界**: API keys remain memory-only. The app does not write provider keys to localStorage, source files, or generated artifacts.
   APIキーはメモリ限定です。localStorage、ソースファイル、生成物にはプロバイダーキーを書き込みません。
 * **Iteration model / 反復修正モデル**: When the user regenerates, the translated image can be used as the next base image, so corrections are layered through explicit user instructions rather than hidden automatic rewriting.
@@ -88,7 +88,7 @@ This system goes beyond simple machine translation by implementing strict contro
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS
 * **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction)
 * **LLM/VFM (Gemini)**: Text/OCR `gemini-3.5-flash` -> `gemini-2.5-flash` -> `gemini-2.5-pro` -> `gemini-flash-latest` -> `gemini-pro-latest`; Image `gemini-3.1-flash-image`
-* **LLM/VFM (OpenAI)**: Text `gpt-4.1` -> `gpt-4.1-mini` -> `gpt-4.1-nano` -> `gpt-4o`; Image `gpt-image-2` (Edit API, PNG/high, 600s timeout)
+* **LLM/VFM (OpenAI)**: Text `gpt-4.1` -> `gpt-4.1-mini` -> `gpt-4.1-nano` -> `gpt-4o`; Image `gpt-image-2.5-sunburst` (Edit API, PNG/xhigh) -> `gpt-image-2` (PNG/high fallback, shared 600s timeout)
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
 * **Security**: Memory-only API key management (no localStorage, no hardcoding)
 
@@ -272,7 +272,11 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.9.0 (Current)
+### v1.9.1 (Current)
+
+- **[OpenAI Image / OpenAI画像]** GPT Image 2.5 Sunburst/xhigh is now the first choice for OpenAI image editing. Retry-eligible provider failures fall back to GPT Image 2.0/high within the same 600-second request window. / OpenAI画像編集の優先モデルをGPT Image 2.5 Sunburst/xhighに変更しました。リトライ対象のプロバイダー失敗時は、同じ600秒枠内でGPT Image 2.0/highへ切り替えます。
+
+### v1.9.0
 - **[API / Fallback Chain]** Updated the Gemini image generation path to the current Nano Banana 2-compatible model `gemini-3.1-flash-image` and removed legacy preview/2.5 image model options from the UI fallback list. / Gemini画像生成を現在のNano Banana 2互換モデル `gemini-3.1-flash-image` に更新し、旧preview/2.5画像モデルをUIのフォールバック選択肢から撤去しました。
 - **[OpenAI / Image Edit]** Aligned OpenAI image editing with the current `gpt-image-2` behavior: PNG output, high quality, returned MIME preservation, and a 600-second timeout for slower edits. / OpenAI画像編集を現在の `gpt-image-2` 運用に合わせ、PNG出力・高品質・MIME保持・600秒タイムアウトへ更新しました。
 - **[Deploy / Version]** Synchronized app version files and deployment notes for v1.9.0. / v1.9.0としてバージョン表示・リリース情報を同期しました。

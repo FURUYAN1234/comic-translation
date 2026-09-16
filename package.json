@@ -1,13 +1,15 @@
 {
   "name": "comic_translation",
   "private": true,
-  "version": "1.9.0",
+  "version": "1.9.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "release:preflight": "powershell -ExecutionPolicy Bypass -File ..\\scripts\\release_app_preflight.ps1 -App comic_translation",
+    "predeploy": "npm run release:preflight && npm run build",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
