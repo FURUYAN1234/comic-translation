@@ -838,3 +838,5 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
   .prompt-options { flex-direction: column; gap: 0.5rem; }
   .prompt-opt-group select { min-width: unset; width: 100%; }
 }
+
+.openai-model-help { display: block; font-size: 10px; font-weight: 400; line-height: 1.35; color: var(--text-secondary); overflow-wrap: anywhere; }

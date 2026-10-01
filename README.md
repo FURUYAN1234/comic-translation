@@ -15,6 +15,13 @@
 This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API and OpenAI API.
 本プロジェクトは、Gemini APIおよびOpenAI APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
 
+**v1.9.2 (2026-10-01)** — OpenAI text/Vision default: GPT-6.1 Sol. / OpenAIテキスト・画像解析の既定をGPT-6.1 Solに更新。
+
+全11モデルを選択できます。GPT-6 Astraを最上位、GPT-6.1 Solを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。 / Select from all 11 models, with Astra highest and 6.1 Sol default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls.
+
+
+OpenAI fallback: `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`. GPT-6.1 Sol uses a 32,768-token completion budget. Incomplete, refused and empty responses are rejected; output-budget exhaustion, authentication, billing/quota and policy failures stop retries. / 途中終了・拒否・空応答を成功扱いせず、出力上限到達・認証・残高不足・ポリシー拒否は連続試行を停止します。画像モデルと既存翻訳ルールは維持します。
+
 ## 🚀 Overview / 概要
 
 This tool automates the process of translating manga pages into 10 languages (English, Japanese, Chinese, Korean, French, Spanish, etc.) using a two-stage AI pipeline.
@@ -30,8 +37,8 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-The current public line is **v1.9.1**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing.
-現行公開系統は **v1.9.1** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
+The current public line is **v1.9.2**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing.
+現行公開系統は **v1.9.2** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-3.1-flash-image` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path.
   Gemini画像生成の現行経路は `gemini-3.1-flash-image` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
@@ -88,7 +95,7 @@ This system goes beyond simple machine translation by implementing strict contro
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS
 * **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction)
 * **LLM/VFM (Gemini)**: Text/OCR `gemini-3.5-flash` -> `gemini-2.5-flash` -> `gemini-2.5-pro` -> `gemini-flash-latest` -> `gemini-pro-latest`; Image `gemini-3.1-flash-image`
-* **LLM/VFM (OpenAI)**: Text `gpt-4.1` -> `gpt-4.1-mini` -> `gpt-4.1-nano` -> `gpt-4o`; Image `gpt-image-2.5-sunburst` (Edit API, PNG/xhigh) -> `gpt-image-2` (PNG/high fallback, shared 600s timeout)
+* **LLM/VFM (OpenAI)**: Text `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`; Image `gpt-image-2.5-sunburst` (Edit API, PNG/xhigh) -> `gpt-image-2` (PNG/high fallback, shared 600s timeout)
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
 * **Security**: Memory-only API key management (no localStorage, no hardcoding)
 
@@ -272,7 +279,7 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.9.1 (Current)
+### v1.9.2 (Current)
 
 - **[OpenAI Image / OpenAI画像]** GPT Image 2.5 Sunburst/xhigh is now the first choice for OpenAI image editing. Retry-eligible provider failures fall back to GPT Image 2.0/high within the same 600-second request window. / OpenAI画像編集の優先モデルをGPT Image 2.5 Sunburst/xhighに変更しました。リトライ対象のプロバイダー失敗時は、同じ600秒枠内でGPT Image 2.0/highへ切り替えます。
 

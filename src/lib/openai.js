@@ -8,7 +8,8 @@
  * 3. generateTranslatedImageOAI() — gpt-image-2 で翻訳済み画像を生成
  */
 
-import { getLanguageInfo } from './languages';
+import { DEFAULT_OPENAI_MODEL, fallbackModels, chatOptions, completedText, terminalOpenAIError } from './openai-chat-contract.js';
+import { getLanguageInfo } from './languages.js';
 import { getOpenAIImageFallbackChain, shouldFallbackOpenAIImage } from './openai-image-fallback.js';
 
 // ── APIキー管理（メモリ限定・localStorage永続化なし） ──
@@ -17,20 +18,11 @@ export const setOpenAIApiKey = (key) => { currentOpenAIApiKey = key; };
 export const getOpenAIApiKey = () => currentOpenAIApiKey;
 
 // 画像付きリクエスト用モデルリスト（Vision対応モデル優先）
-const VISION_MODEL_IDS = [
-    "gpt-4.1",
-    "gpt-4.1-mini",
-    "gpt-4.1-nano",
-    "gpt-4o",
-];
-
-// テキストのみリクエスト用モデルリスト（Zenith Protocol相当のフォールバック）
-const TEXT_MODEL_IDS = [
-    "gpt-4.1",          // Primary: 高品質・1Mコンテキスト
-    "gpt-4.1-mini",     // Backup 1: コスト効率・高速
-    "gpt-4.1-nano",     // Backup 2: 最軽量・最速
-    "gpt-4o",           // Fallback: 安定実績
-];
+let selectedTextModel = DEFAULT_OPENAI_MODEL;
+let textModelStatus = { selected: DEFAULT_OPENAI_MODEL, attempted: [], adopted: null };
+export const setOpenAITextModel = (model) => { fallbackModels(model); selectedTextModel = model; };
+export const getOpenAITextModelStatus = () => ({ ...textModelStatus, attempted: [...textModelStatus.attempted] });
+const beginTextRun = () => { textModelStatus = { selected: selectedTextModel, attempted: [], adopted: null }; return fallbackModels(selectedTextModel); };
 
 const OPENAI_IMAGE_TIMEOUT_MS = 600000;
 
@@ -67,7 +59,7 @@ const detectOutputSize = async (base64) => {
 };
 
 /** OpenAI Chat Completions API 共通呼び出し */
-const callChatCompletion = async (modelId, messages, apiKey, timeout = 60000) => {
+const callChatCompletion = async (modelId, messages, apiKey, timeout = 120000) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -81,8 +73,7 @@ const callChatCompletion = async (modelId, messages, apiKey, timeout = 60000) =>
       body: JSON.stringify({
         model: modelId,
         messages: messages,
-        temperature: 0.3,
-        max_tokens: 8192,
+        ...chatOptions(modelId),
       }),
       signal: controller.signal,
     });
@@ -90,12 +81,11 @@ const callChatCompletion = async (modelId, messages, apiKey, timeout = 60000) =>
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(`${response.status} ${errorData.error?.message || response.statusText}`);
+      throw Object.assign(new Error(`${response.status} ${errorData.error?.message || response.statusText}`), { status: response.status, code: errorData.error?.code });
     }
 
     const data = await response.json();
-    const text = data.choices?.[0]?.message?.content || "";
-    if (!text) throw new Error("Empty response");
+    const text = completedText(data);
     return { text, model: modelId };
 
   } catch (e) {
@@ -197,11 +187,11 @@ export const extractTranslationsOAI = async (base64Image, onStatus, targetLang =
 
   const messages = [{ role: "user", content: userContent }];
 
-  for (const modelId of VISION_MODEL_IDS) {
+  for (const modelId of beginTextRun()) {
     try {
+      textModelStatus.attempted.push(modelId);
       if (onStatus) onStatus(`> [抽出/Extract] OpenAI ${modelId} でテキスト解析中... / Analyzing...`);
-
-      const result = await callChatCompletion(modelId, messages, currentOpenAIApiKey, 25000);
+      const result = await callChatCompletion(modelId, messages, currentOpenAIApiKey, 120000);
       let text = result.text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
       const parsed = JSON.parse(text);
 
@@ -221,9 +211,11 @@ export const extractTranslationsOAI = async (base64Image, onStatus, targetLang =
 
       const layoutLabel = layout.type === '4koma' ? '四コマ / 4-koma' : `一般漫画 / Comic (${layout.panels.length}コマ/panels)`;
       if (onStatus) onStatus(`> [抽出/Extract] 完了 / Complete ✓ ${texts.length}件検出 / ${layoutLabel} (${modelId})`);
-      return { layout, texts, detectedSourceLang };
+      textModelStatus.adopted = modelId;
+      return { layout, texts, detectedSourceLang, modelStatus: getOpenAITextModelStatus() };
 
     } catch (err) {
+      if (terminalOpenAIError(err)) throw err;
       console.warn(`[OpenAI Extract] ${modelId} failed:`, err.message);
       if (onStatus) onStatus(`> [抽出] OpenAI ${modelId} 失敗。次のモデルへ...`);
     }
@@ -264,11 +256,13 @@ export const translateSingleTextOAI = async (originalText, targetLang = 'en', so
 
   const messages = [{ role: "user", content: prompt }];
 
-  for (const modelId of TEXT_MODEL_IDS) {
+  for (const modelId of beginTextRun()) {
     try {
-      const result = await callChatCompletion(modelId, messages, currentOpenAIApiKey, 25000);
-      if (result.text) return result.text.trim();
+      textModelStatus.attempted.push(modelId);
+      const result = await callChatCompletion(modelId, messages, currentOpenAIApiKey, 120000);
+      if (result.text) { textModelStatus.adopted = modelId; return result.text.trim(); }
     } catch (e) {
+      if (terminalOpenAIError(e)) throw e;
       console.warn(`[OpenAI SingleTranslate] ${modelId} failed:`, e.message);
     }
   }

@@ -1,5 +1,11 @@
 # HANDOFF (Comic Translation → Codex)
 
+## GPT-6.1 Sol candidate v1.9.2 — 2026-10-01
+
+Live evidence: supplied Japanese four-panel image was analyzed and translated to English with selected/tried/adopted GPT-6.1 Sol, 13 extracted text items, no fallback. Ignored `output_sol61/api-readback.txt` and screenshot preserve the normal API result. Image regeneration was not run for this model-selector change. Helper text is 10px and final production build passes. Root PLAN owns remaining authorized release/social/backup stages.
+
+OpenAI text/Vision: all 11 model options, Astra highest, 6.1 Sol default, selected-and-lower fallback only; unknown IDs rejected. Selected/tried/adopted shown. Incomplete/refused/empty completion guard and terminal output-budget/authentication/quota/policy gate added. Image paths unchanged. Local checks pass: node syntax, 15/15 focused regression checks across both apps, both production builds, Comic Translation strict lint. Real API, official release, SNS and backup remain unverified; root owns those stages. No external effects by worker.
+
 ## Snapshot Date
 2026-05-25T18:35:00+09:00
 

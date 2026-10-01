@@ -2,7 +2,8 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 import { setApiKey, IMAGE_MODEL_OPTIONS } from './lib/gemini';
-import { setOpenAIApiKey } from './lib/openai';
+import { setOpenAIApiKey, setOpenAITextModel, getOpenAITextModelStatus } from './lib/openai';
+import { OPENAI_MODEL_OPTIONS, DEFAULT_OPENAI_MODEL, fallbackModels } from './lib/openai-chat-contract.js';
 import {
   setActiveEngine,
   extractTranslationsAI,
@@ -11,13 +12,16 @@ import {
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.9.1";
+const SYSTEM_VERSION = "1.9.2";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [selectedModel, setSelectedModel] = useState(IMAGE_MODEL_OPTIONS[0].value);
+  const [textModel, setTextModel] = useState(DEFAULT_OPENAI_MODEL);
+  const [textModelStatus, setTextModelStatus] = useState({ attempted: [], adopted: null });
+  const updateTextModel = (model) => { setOpenAITextModel(model); setTextModel(model); setTextModelStatus({ attempted: [], adopted: null }); };
   const [engineMode, setEngineMode] = useState('gemini'); // 'gemini' | 'openai' — Dual Engine
 
   // 多言語設定
@@ -297,8 +301,9 @@ Output the final translated image only. No explanations needed.`;
     try {
       const base64 = dataUrl.split(',')[1];
       const result = await extractTranslationsAI(base64, (s) => {
-        if (currentSession === extractionSessionRef.current) showStatus(s);
+        if (currentSession === extractionSessionRef.current) { showStatus(s); if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus()); }
       }, lang, sourceLanguage);
+      if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       
       // もし抽出中に別の画像がドロップされセッションが変わっていたら、古い結果は画面に反映せず破棄する
       if (currentSession !== extractionSessionRef.current) return;
@@ -343,6 +348,7 @@ Output the final translated image only. No explanations needed.`;
         showStatus(`✅ 検出完了 / Extraction Complete`, true);
       }
     } catch (err) {
+      if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       if (currentSession !== extractionSessionRef.current) return;
       setErrorMessage(`テキスト抽出エラー: ${err.message}`);
       showStatus('', false);
@@ -392,9 +398,11 @@ Output the final translated image only. No explanations needed.`;
     try {
       const langInfo = getLanguageInfo(targetLanguage);
       const translated = await translateSingleTextAI(item.original, targetLanguage, sourceLanguage);
+      if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       updateTranslation(index, translated);
       showStatus(`✅ テキスト #${index + 1} → ${langInfo.nativeName} 翻訳完了 / Translation complete`, true);
     } catch (err) {
+      if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       setErrorMessage(`個別翻訳エラー / Translation Error: ${err.message}`);
       showStatus('', false);
     } finally {
@@ -525,6 +533,7 @@ Output the final translated image only. No explanations needed.`;
         setShowBuilder(false);
       }
     } catch (err) {
+      if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       setErrorMessage(err.message);
       showStatus('', false);
     } finally {
@@ -592,6 +601,13 @@ Output the final translated image only. No explanations needed.`;
               onKeyDown={(e) => e.key === 'Enter' && handleApiKeySubmit()} />
             <button className={`api-gate-btn ${apiKeyInput.trim().startsWith('sk-') ? 'api-gate-btn-openai' : ''}`} onClick={handleApiKeySubmit}>🔓 起動する / Start</button>
 
+
+            <label>OpenAI text / Vision model
+              <select value={textModel} onChange={e => updateTextModel(e.target.value)} disabled={isWorking}>
+                {OPENAI_MODEL_OPTIONS.map(model => <option key={model.id} value={model.id}>{model.label}</option>)}
+              </select>
+              <small className="openai-model-help">{OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.description}<br/>入力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.inputPriceUsdPerM} / 出力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.outputPriceUsdPerM} per 1M tokens</small>
+            </label>
             {/* Dual Engine 自動判定インジケーター */}
             <div className={`engine-indicator ${apiKeyInput.trim().startsWith('sk-') ? 'detecting-openai' : apiKeyInput.trim() ? 'detecting-gemini' : ''}`}>
               <span className="engine-dot" />
@@ -688,6 +704,15 @@ Output the final translated image only. No explanations needed.`;
               </div>
             </div>
             <div className="header-actions">
+              {engineMode === 'openai' && <div className="model-select-wrap">
+                <label className="model-label" htmlFor="openai-text-model">OpenAI text / Vision</label>
+                <select id="openai-text-model" value={textModel} onChange={e => updateTextModel(e.target.value)} disabled={isWorking}>
+                  {OPENAI_MODEL_OPTIONS.map(model => <option key={model.id} value={model.id}>{model.label}</option>)}
+                </select>
+                <small className="openai-model-help">{OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.description}<br/>入力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.inputPriceUsdPerM} / 出力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.outputPriceUsdPerM} per 1M tokens</small>
+                <p className="openai-model-help">選択: {textModel} / 試行: {textModelStatus.attempted.join(' → ') || 'なし'} / 採用: {textModelStatus.adopted || '未採用'}</p>
+                <details className="openai-model-help"><summary>下位フォールバック / 料金</summary><p>{fallbackModels(textModel).join(' → ')}</p><p>入力/出力 USD per 1M tokens。推論トークン・修正回数で総額は変わります。価格確認日: 2026-09-30。</p></details>
+              </div>}
               {/* エンジンバッジ */}
               <span className={`engine-badge ${engineMode === 'openai' ? 'engine-openai' : 'engine-gemini'}`}>
                 {engineMode === 'openai' ? '🟢 ChatGPT' : '🔵 Gemini'}
