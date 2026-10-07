@@ -15,7 +15,7 @@
 This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API and OpenAI API.
 本プロジェクトは、Gemini APIおよびOpenAI APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
 
-**v1.9.3 (2026-10-04)** — Free-use and redistribution terms clarified. / 無料利用・収益化と再配布の利用条件を明確化。
+**v1.9.4 (2026-10-07)** — Translation and refinement images now use Nano Banana 2.1 through the Interactions API. / 翻訳画像と追加修正をNano Banana 2.1のInteractions APIへ更新しました。
 
 全11モデルを選択できます。GPT-6 Astraを最上位、GPT-6.1 Solを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。 / Select from all 11 models, with Astra highest and 6.1 Sol default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls.
 
@@ -37,11 +37,11 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-The current public line is **v1.9.3**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing.
-現行公開系統は **v1.9.3** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
+The current public line is **v1.9.4**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing.
+現行公開系統は **v1.9.4** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
 
-* **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-3.1-flash-image` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path.
-  Gemini画像生成の現行経路は `gemini-3.1-flash-image` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
+* **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path.
+  Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
 * **OpenAI image generation / OpenAI画像生成**: OpenAI first uses `gpt-image-2.5-sunburst` at xhigh quality through the image edit API. If that provider request cannot complete, it automatically falls back to `gpt-image-2` at high quality within the same 600-second window.
   OpenAIはまず `gpt-image-2.5-sunburst` をxhigh品質で画像編集APIに使用し、同モデルのリクエストが完了できない場合だけ、同じ600秒枠内で `gpt-image-2` のhigh品質へ自動フォールバックします。
 * **Security boundary / セキュリティ境界**: API keys remain memory-only. The app does not write provider keys to localStorage, source files, or generated artifacts.
@@ -94,7 +94,7 @@ This system goes beyond simple machine translation by implementing strict contro
 
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS
 * **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction)
-* **LLM/VFM (Gemini)**: Text/OCR `gemini-3.5-flash` -> `gemini-2.5-flash` -> `gemini-2.5-pro` -> `gemini-flash-latest` -> `gemini-pro-latest`; Image `gemini-3.1-flash-image`
+* **LLM/VFM (Gemini)**: Text/OCR `gemini-3.5-flash` -> `gemini-2.5-flash` -> `gemini-2.5-pro` -> `gemini-flash-latest` -> `gemini-pro-latest`; Image `gemini-nano-banana-2.1`
 * **LLM/VFM (OpenAI)**: Text `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`; Image `gpt-image-2.5-sunburst` (Edit API, PNG/xhigh) -> `gpt-image-2` (PNG/high fallback, shared 600s timeout)
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
 * **Security**: Memory-only API key management (no localStorage, no hardcoding)
@@ -281,7 +281,11 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
-### v1.9.3 (Current)
+### v1.9.4 (2026-10-07)
+
+- Translation and refinement images now use Nano Banana 2.1 through the Interactions API. / 翻訳画像と追加修正をNano Banana 2.1のInteractions APIへ更新しました。
+
+### v1.9.3 (2026-10-04)
 
 Clarify free personal, business and commissioned use and monetization of users' own outputs. Paid redistribution, paid services based on the app and bundling with paid information products require prior written permission. Valid prior grants and third-party terms remain available.
 

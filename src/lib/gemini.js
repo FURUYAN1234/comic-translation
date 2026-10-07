@@ -33,9 +33,9 @@ const IMAGE_MODEL_IDS = [
 ];
 
 // ── 画像生成用モデル（ドロップダウン選択肢 — NBP imagen.js 準拠） ──
-// responseModalities: ["TEXT", "IMAGE"] に対応するモデルのみ
+// Interactions APIの画像出力に対応するモデルのみ
 export const IMAGE_MODEL_OPTIONS = [
-  { value: "gemini-3.1-flash-image", label: "Gemini 3.1 Flash Image (Nano Banana 2 / Recommended)" },
+  { value: "gemini-nano-banana-2.1", label: "Nano Banana 2.1 (Recommended)" },
 ];
 
 // ── 診断機能 ──
@@ -396,15 +396,11 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
 
   const prompt = basePrompt;
 
-  const imagePayload = {
-    inlineData: {
-      mimeType: "image/png",
-      data: base64Image
-    }
-  };
+  const imagePayload = { type: 'image', mime_type: 'image/png', data: base64Image };
 
   // 選択モデル → フォールバックリスト構築
-  const modelsToTry = [selectedModel, ...IMAGE_MODEL_OPTIONS.map(m => m.value).filter(m => m !== selectedModel)];
+  const selectedImageModel = IMAGE_MODEL_OPTIONS.find(m => m.value === selectedModel)?.value || IMAGE_MODEL_OPTIONS[0].value;
+  const modelsToTry = [selectedImageModel, ...IMAGE_MODEL_OPTIONS.map(m => m.value).filter(m => m !== selectedImageModel)];
   const tgtLangName = langInfo.name;
 
   for (const modelId of modelsToTry) {
@@ -416,25 +412,14 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
       timeoutId = setTimeout(() => controller.abort(), 180000); // 3分タイムアウト
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${currentApiKey}`,
+        'https://generativelanguage.googleapis.com/v1beta/interactions',
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-goog-api-key": currentApiKey },
           body: JSON.stringify({
-            contents: [{
-              role: "user",
-              parts: [imagePayload, { text: prompt }]
-            }],
-            generationConfig: {
-              responseModalities: ["TEXT", "IMAGE"],
-              temperature: 0.4,
-            },
-            safetySettings: [
-              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-            ]
+            model: modelId,
+            input: [imagePayload, { type: 'text', text: prompt }],
+            response_format: { type: 'image', mime_type: 'image/jpeg' },
           }),
           signal: controller.signal,
         }
@@ -443,23 +428,15 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
       const data = await response.json();
       if (data.error) throw new Error(`${data.error.message} (Code: ${data.error.code})`);
 
-      const candidates = data.candidates || [];
-      if (!candidates.length) {
-        if (data.promptFeedback?.blockReason) {
-          throw new Error(`Safety Filter: ${data.promptFeedback.blockReason}`);
-        }
-        throw new Error("No response candidates");
-      }
-
-      const parts = candidates[0]?.content?.parts || [];
+      const parts = (data.steps || []).flatMap(step => step.content || []);
       const imagePart = parts
-        .filter(p => p.inlineData?.data)
-        .sort((a, b) => (b.inlineData.data?.length || 0) - (a.inlineData.data?.length || 0))[0];
-      if (imagePart?.inlineData?.data) {
+        .filter(p => p.type === 'image' && p.data)
+        .sort((a, b) => b.data.length - a.data.length)[0];
+      if (imagePart?.data) {
         if (onStatus) onStatus(`> [生成/Generate] 完了 / Complete ✓ (${modelId})`);
         return {
-          base64Img: imagePart.inlineData.data,
-          mimeType: imagePart.inlineData.mimeType || "image/png",
+          base64Img: imagePart.data,
+          mimeType: imagePart.mime_type || "image/jpeg",
           usedModel: modelId,
         };
       }
