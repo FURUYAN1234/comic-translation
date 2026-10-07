@@ -169,7 +169,6 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
               parts: [imagePayload, { text: prompt }]
             }],
             generationConfig: {
-              temperature: 0.3,
               maxOutputTokens: 8192,
             },
             safetySettings: [

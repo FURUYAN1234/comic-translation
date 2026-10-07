@@ -2,7 +2,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "name": "comic_translation",
   "private": true,
-  "version": "1.9.5",
+  "version": "1.9.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,9 @@
     "release:preflight": "powershell -ExecutionPolicy Bypass -File ..\\scripts\\release_app_preflight.ps1 -App comic_translation",
     "predeploy": "npm run release:preflight && npm run build",
     "deploy": "gh-pages -d dist",
-    "postbuild": "node scripts/web-security.mjs --verify-dist"
+    "postbuild": "node scripts/web-security.mjs --verify-dist",
+    "test": "node --test",
+    "prebuild": "npm test"
   },
   "dependencies": {
     "react": "^19.2.4",
