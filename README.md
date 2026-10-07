@@ -15,7 +15,7 @@
 This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API and OpenAI API.
 本プロジェクトは、Gemini APIおよびOpenAI APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
 
-**v1.9.4 (2026-10-07)** — Translation and refinement images now use Nano Banana 2.1 through the Interactions API. / 翻訳画像と追加修正をNano Banana 2.1のInteractions APIへ更新しました。
+**v1.9.5 (2026-10-07)** — Added CSP/frame protection, dependency updates, and security checks on every deployment. / CSP・埋め込み防御・依存更新と、デプロイごとのセキュリティ検査を追加しました。
 
 全11モデルを選択できます。GPT-6 Astraを最上位、GPT-6.1 Solを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。 / Select from all 11 models, with Astra highest and 6.1 Sol default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls.
 
@@ -37,8 +37,8 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-The current public line is **v1.9.4**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing.
-現行公開系統は **v1.9.4** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
+The current public line is **v1.9.5**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing.
+現行公開系統は **v1.9.5** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path.
   Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
@@ -279,7 +279,18 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 - [Code / コード](https://github.com/FURUYAN1234/ai-voice-comic-maker)
 ---
 
+
+## Browser security / ブラウザーの安全対策
+
+The app limits script execution and API connections with Content Security Policy, disables embedded frames and form submissions, and sends no referrer. Open the app directly in its own tab. API keys remain sensitive while in memory; these protections do not guarantee the absence of every vulnerability. Every deployment checks dependencies, source safeguards and the built policy.
+
+CSPでスクリプト実行・API接続先を制限し、埋め込み表示とフォーム送信を禁止、参照元情報を送信しません。アプリは直接タブで開いてください。メモリー内のAPIキーも機密情報であり、すべての脆弱性がないことを保証するものではありません。毎回のデプロイで依存ライブラリ・ソースの防御・ビルド後の設定を検査します。
+
 ## 🔄 Changelog / 更新履歴
+
+### v1.9.5 (2026-10-07)
+
+- Security: CSP and frame protection, dependency updates, and mandatory release checks. / CSP・埋め込み防御・依存更新・公開前検査を追加。
 
 ### v1.9.4 (2026-10-07)
 

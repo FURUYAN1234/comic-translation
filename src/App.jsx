@@ -12,7 +12,7 @@ import {
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.9.4";
+const SYSTEM_VERSION = "1.9.5";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
