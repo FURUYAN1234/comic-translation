@@ -5,79 +5,62 @@
 
 [![Demo / デモ](https://img.shields.io/badge/Demo-Play_Now-blue?style=for-the-badge)](https://furuyan1234.github.io/comic-translation/)
 
-> **"Translate manga into 10 languages with one click."**
-> **「漫画をワンクリックで10言語に翻訳する実験的Webアプリケーション」**
+> **"Translate manga into 10 languages with one click."** / **「漫画をワンクリックで10言語に翻訳する実験的Webアプリケーション」**
 >
 >[!['ChatGPT Image 2026年6月25日 22_19_30'](https://github.com/user-attachments/assets/d850ac7f-aa1c-40cc-a378-b8c6673c726c)](https://youtu.be/pqYVxUUg0Cs?si=27g1I3tO2EuZkOuxJ)
 >
-> Powered by Dual API Architecture (Gemini & OpenAI) — Automatic text extraction, translation, horizontal flip, and image regeneration.
-> Gemini & OpenAIのDual APIアーキテクチャを活用し、テキスト抽出・多言語翻訳・左右反転・画像再生成を完全自動化。
+> Powered by Dual API Architecture (Gemini & OpenAI) — Automatic text extraction, translation, horizontal flip, and image regeneration. / Gemini & OpenAIのDual APIアーキテクチャを活用し、テキスト抽出・多言語翻訳・左右反転・画像再生成を完全自動化。
 
 ---
 
-This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API and OpenAI API.
-本プロジェクトは、Gemini APIおよびOpenAI APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
+This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API and OpenAI API. / 本プロジェクトは、Gemini APIおよびOpenAI APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
 
 **v1.9.6 (2026-10-07)** — Updated Gemini request parameters for API compatibility. / Gemini APIの仕様変更に合わせ、翻訳用の文字抽出で非推奨の送信設定を除きました。
 
-全11モデルを選択できます。GPT-6 Astraを最上位、GPT-6.1 Solを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。 / Select from all 11 models, with Astra highest and 6.1 Sol default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls.
+Select from all 11 models, with Astra highest and 6.1 Sol default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls. / 全11モデルを選択できます。GPT-6 Astraを最上位、GPT-6.1 Solを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。
 
 
 OpenAI fallback: `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`. GPT-6.1 Sol uses a 32,768-token completion budget. Incomplete, refused and empty responses are rejected; output-budget exhaustion, authentication, billing/quota and policy failures stop retries. / 途中終了・拒否・空応答を成功扱いせず、出力上限到達・認証・残高不足・ポリシー拒否は連続試行を停止します。画像モデルと既存翻訳ルールは維持します。
 
 ## 🚀 Overview / 概要
 
-This tool automates the process of translating manga pages into 10 languages (English, Japanese, Chinese, Korean, French, Spanish, etc.) using a two-stage AI pipeline.
-漫画のページをAIの2段階パイプラインで10言語（英語、日本語、中国語、韓国語、フランス語、スペイン語など）に翻訳するツールです。
+This tool automates the process of translating manga pages into 10 languages (English, Japanese, Chinese, Korean, French, Spanish, etc.) using a two-stage AI pipeline. / 漫画のページをAIの2段階パイプラインで10言語（英語、日本語、中国語、韓国語、フランス語、スペイン語など）に翻訳するツールです。
 
 ### Translation Pipeline / 翻訳パイプライン
 
-1. **Text Extraction & Translation / テキスト抽出・翻訳**: The AI engine analyzes the manga image and extracts all text elements (titles, dialogue, SFX, narration) with high-precision translations.
-   AIエンジンが漫画画像を解析し、全テキスト要素（タイトル、セリフ、擬音、ナレーション）を高精度で抽出・翻訳します。
+1. **Text Extraction & Translation / テキスト抽出・翻訳**: The AI engine analyzes the manga image and extracts all text elements (titles, dialogue, SFX, narration) with high-precision translations. / AIエンジンが漫画画像を解析し、全テキスト要素（タイトル、セリフ、擬音、ナレーション）を高精度で抽出・翻訳します。
 
-2. **Image Regeneration / 画像再生成**: The original image is automatically flipped if required by the target reading order, and the image model regenerates the page with translated text naturally integrated into the artwork.
-   翻訳元・翻訳先の読み順に合わせて画像を必要に応じて自動で左右反転し、画像モデルが翻訳テキストを元のアートワークに自然に統合したページを再生成します。
+2. **Image Regeneration / 画像再生成**: The original image is automatically flipped if required by the target reading order, and the image model regenerates the page with translated text naturally integrated into the artwork. / 翻訳元・翻訳先の読み順に合わせて画像を必要に応じて自動で左右反転し、画像モデルが翻訳テキストを元のアートワークに自然に統合したページを再生成します。
 
 ## Current Release Line / 現行仕様
 
-The current public line is **v1.9.6**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing.
-現行公開系統は **v1.9.6** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
+The current public line is **v1.9.6**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing. / 現行公開系統は **v1.9.6** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
 
-* **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path.
-  Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
-* **OpenAI image generation / OpenAI画像生成**: OpenAI first uses `gpt-image-2.5-sunburst` at xhigh quality through the image edit API. If that provider request cannot complete, it automatically falls back to `gpt-image-2` at high quality within the same 600-second window.
-  OpenAIはまず `gpt-image-2.5-sunburst` をxhigh品質で画像編集APIに使用し、同モデルのリクエストが完了できない場合だけ、同じ600秒枠内で `gpt-image-2` のhigh品質へ自動フォールバックします。
-* **Security boundary / セキュリティ境界**: API keys remain memory-only. The app does not write provider keys to localStorage, source files, or generated artifacts.
-  APIキーはメモリ限定です。localStorage、ソースファイル、生成物にはプロバイダーキーを書き込みません。
-* **Iteration model / 反復修正モデル**: When the user regenerates, the translated image can be used as the next base image, so corrections are layered through explicit user instructions rather than hidden automatic rewriting.
-  再生成時は翻訳済み画像を次のベースにできるため、隠れた自動改変ではなく、ユーザーが明示した修正指示を重ねる形で反復改善します。
+* **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path. / Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
+* **OpenAI image generation / OpenAI画像生成**: OpenAI first uses `gpt-image-2.5-sunburst` at xhigh quality through the image edit API. If that provider request cannot complete, it automatically falls back to `gpt-image-2` at high quality within the same 600-second window. / OpenAIはまず `gpt-image-2.5-sunburst` をxhigh品質で画像編集APIに使用し、同モデルのリクエストが完了できない場合だけ、同じ600秒枠内で `gpt-image-2` のhigh品質へ自動フォールバックします。
+* **Security boundary / セキュリティ境界**: API keys remain memory-only. The app does not write provider keys to localStorage, source files, or generated artifacts. / APIキーはメモリ限定です。localStorage、ソースファイル、生成物にはプロバイダーキーを書き込みません。
+* **Iteration model / 反復修正モデル**: When the user regenerates, the translated image can be used as the next base image, so corrections are layered through explicit user instructions rather than hidden automatic rewriting. / 再生成時は翻訳済み画像を次のベースにできるため、隠れた自動改変ではなく、ユーザーが明示した修正指示を重ねる形で反復改善します。
 
 ---
 
 ## 🏗️ Unique Architecture Highlights / 固有アーキテクチャの要点
 
-This system goes beyond simple machine translation by implementing strict controls to preserve the original artistic intent while adapting to different languages.
-本システムは単純な機械翻訳にとどまらず、言語の適応を行いながらもオリジナルの芸術的意図を維持するための厳密な制御を実装しています。
+This system goes beyond simple machine translation by implementing strict controls to preserve the original artistic intent while adapting to different languages. / 本システムは単純な機械翻訳にとどまらず、言語の適応を行いながらもオリジナルの芸術的意図を維持するための厳密な制御を実装しています。
 
-* **Dual API Architecture (Zenith Protocol) / デュアルAPIアーキテクチャ**: Seamlessly switch between two powerful AI engines based on the input API key.
-  入力されたAPIキーから自動でエンジンを判別し、ルーティング層を介して処理を切り替えます。
+* **Dual API Architecture (Zenith Protocol) / デュアルAPIアーキテクチャ**: Seamlessly switch between two powerful AI engines based on the input API key. / 入力されたAPIキーから自動でエンジンを判別し、ルーティング層を介して処理を切り替えます。
   * **🔵 Gemini Mode (Default)**: Extremely fast processing, zero intervention required. Free to use within Google AI Studio limits. / 圧倒的な処理速度。Google AI Studioの無料枠内で利用可能。
   * **🟢 ChatGPT Mode (OpenAI)**: World-class translation quality, perfectly capturing cultural nuances and character voices (role-language). Note: Uses a pay-as-you-go billing model. / 世界最高峰の翻訳精度。意訳やキャラクターの役割語を完璧に捉えます。※OpenAIの従量課金モデルが適用されます。
 
 * **Context-Aware Multimodal Translation / コンテキストを維持したマルチモーダル翻訳**: Unlike standard OCR+GPT workflows that translate text line-by-line, this tool leverages the AI engine's massive context window and native vision capabilities. It reads the entire manga page as a single cohesive unit, understanding the flow of conversation, character tone, and visual context simultaneously. This prevents awkward literal translations and maintains character voice across the scene.
-  単純に文字を抽出して一行ずつ翻訳する従来のOCR＋GPT方式とは異なり、AIエンジンの巨大なコンテキストウィンドウとネイティブな視覚能力（Vision）を活用します。漫画のページ全体をひとつの繋がりとして読み取り、前後の会話の文脈、キャラクターの口調、視覚的な状況（誰がどんな表情で話しているか）を同時に理解することで、直訳による不自然さを防ぎ、シーン全体で一貫したキャラクターのトーンを維持します。
+  Unlike line-by-line OCR and translation, the engine reads the entire page with its context window and native vision. It considers dialogue flow, character voice and visual context together to reduce awkward literal translation and retain a consistent tone. / 単純に文字を抽出して一行ずつ翻訳する従来のOCR＋GPT方式とは異なり、AIエンジンの巨大なコンテキストウィンドウとネイティブな視覚能力（Vision）を活用します。漫画のページ全体をひとつの繋がりとして読み取り、前後の会話の文脈、キャラクターの口調、視覚的な状況（誰がどんな表情で話しているか）を同時に理解することで、直訳による不自然さを防ぎ、シーン全体で一貫したキャラクターのトーンを維持します。
 
-* **Casing Protection Protocol / ケーシング保護プロトコル**: Automatically protects technical strings like URLs, ISBNs, and email addresses in margin text from being forced to ALL CAPS, while maintaining comic-style ALL CAPS for dialogue, titles, and SFX.
-  欄外のURL・ISBN・メールアドレス等の技術的文字列が全大文字化されないよう保護しつつ、吹き出し内セリフ・タイトル・擬音はコミックスタイルの大文字を維持します。
+* **Casing Protection Protocol / ケーシング保護プロトコル**: Automatically protects technical strings like URLs, ISBNs, and email addresses in margin text from being forced to ALL CAPS, while maintaining comic-style ALL CAPS for dialogue, titles, and SFX. / 欄外のURL・ISBN・メールアドレス等の技術的文字列が全大文字化されないよう保護しつつ、吹き出し内セリフ・タイトル・擬音はコミックスタイルの大文字を維持します。
 
-* **Automated Image Flip Logic / 自動左右反転ロジック**: Accurately defaults the "Flip Image" switch ON or OFF automatically based on the native reading direction (RTL/LTR) of both input and target translation languages (e.g. Japanese ⇄ English).
-  翻訳元・先の言語ごとの本来の読み方向（右から左／左から右）に基づく、自然な左右反転判定アルゴリズムを実装。
+* **Automated Image Flip Logic / 自動左右反転ロジック**: Accurately defaults the "Flip Image" switch ON or OFF automatically based on the native reading direction (RTL/LTR) of both input and target translation languages (e.g. Japanese ⇄ English). / 翻訳元・先の言語ごとの本来の読み方向（右から左／左から右）に基づく、自然な左右反転判定アルゴリズムを実装。
 
-* **Iterative Refinement Engine / 反復修正エンジン**: When regenerating images, the system uses the already translated image as a base, allowing users to apply specific correction rules via the instruction builder for true iterative refinement.
-  再生成ルール使用時、翻訳済み画像をベースにAPIへ送信し、指示ビルダーを通じて特定の修正ルールを適用することで、真の反復的な修正・改善を可能にします。
+* **Iterative Refinement Engine / 反復修正エンジン**: When regenerating images, the system uses the already translated image as a base, allowing users to apply specific correction rules via the instruction builder for true iterative refinement. / 再生成ルール使用時、翻訳済み画像をベースにAPIへ送信し、指示ビルダーを通じて特定の修正ルールを適用することで、真の反復的な修正・改善を可能にします。
 
-* **Anti-Degradation Prompting / 画質劣化防止プロンプト**: Incorporates model-optimized quality preservation instructions to prevent line-art, screen-tone, and color palette degradation during multiple generation passes.
-  複数回の生成パスにおける線画・スクリーントーン・カラーパレットの劣化を防ぐため、各モデルに最適化された画質保護プロンプトを組み込んでいます。
+* **Anti-Degradation Prompting / 画質劣化防止プロンプト**: Incorporates model-optimized quality preservation instructions to prevent line-art, screen-tone, and color palette degradation during multiple generation passes. / 複数回の生成パスにおける線画・スクリーントーン・カラーパレットの劣化を防ぐため、各モデルに最適化された画質保護プロンプトを組み込んでいます。
 
 ---
 
@@ -88,61 +71,52 @@ This system goes beyond simple machine translation by implementing strict contro
 - **Bilingual UI / 完全日英対応UI**: Full English/Japanese support for all buttons, toggles, prompts, and status messages.
 - **Download / ダウンロード**: Save the translated image with one click.
 - **Session-Only API Key / セッション限定APIキー**: API key is stored in memory only — never saved to disk or localStorage.
-- **Universal Prompt Generator / 汎用プロンプト生成**: Generate a copy-paste translation prompt for ChatGPT and other web AI services — no API key required. Supports language selection, flip toggle, and per-service compatibility notes.
-  ChatGPTなどのWebサービスで使える翻訳プロンプトをワンクリック生成。APIキー不要。言語選択・反転トグル・サービス別対応状況の注記付き。
+- **Universal Prompt Generator / 汎用プロンプト生成**: Generate a copy-paste translation prompt for ChatGPT and other web AI services — no API key required. Supports language selection, flip toggle, and per-service compatibility notes. / ChatGPTなどのWebサービスで使える翻訳プロンプトをワンクリック生成。APIキー不要。言語選択・反転トグル・サービス別対応状況の注記付き。
 
 ---
 
 ## 💻 Tech Stack / 技術スタック
 
-* **Frontend**: React 19 / Vite 8 / Vanilla CSS
-* **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction)
-* **LLM/VFM (Gemini)**: Text/OCR `gemini-3.5-flash` -> `gemini-2.5-flash` -> `gemini-2.5-pro` -> `gemini-flash-latest` -> `gemini-pro-latest`; Image `gemini-nano-banana-2.1`
-* **LLM/VFM (OpenAI)**: Text `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`; Image `gpt-image-2.5-sunburst` (Edit API, PNG/xhigh) -> `gpt-image-2` (PNG/high fallback, shared 600s timeout)
+* **Frontend**: React 19 / Vite 8 / Vanilla CSS / フロントエンド：React 19／Vite 8／Vanilla CSS。
+* **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction) / AI経路：両エンジンを抽象化するZenith Protocol。
+* **LLM/VFM (Gemini)**: Text/OCR `gemini-3.5-flash` -> `gemini-2.5-flash` -> `gemini-2.5-pro` -> `gemini-flash-latest` -> `gemini-pro-latest`; Image `gemini-nano-banana-2.1` / Gemini：文章／OCRは記載した順のフォールバック、画像はgemini-nano-banana-2.1。
+* **LLM/VFM (OpenAI)**: Text `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`; Image `gpt-image-2.5-sunburst` (Edit API, PNG/xhigh) -> `gpt-image-2` (PNG/high fallback, shared 600s timeout) / OpenAI：文章は記載した順のフォールバック。画像はGPT Image 2.5 SunburstのEdit API・PNG／xhighを優先し、共有600秒枠内でGPT Image 2のPNG／highへ切り替えます。
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
-* **Security**: Memory-only API key management (no localStorage, no hardcoding)
+* **Security**: Memory-only API key management (no localStorage, no hardcoding) / 安全対策：APIキーはメモリだけに保持し、localStorageへの保存や埋め込みを行いません。
 
 ---
 
 ## 📝 Setup & Launch / セットアップと起動
 
-### 🌍 Cloud / Browser (Deploy)
+### 🌍 Cloud / Browser (Deploy) / ブラウザー公開版
 
-1. **Get API Key**: Obtain a Gemini API key at [Google AI Studio](https://aistudio.google.com/) or an OpenAI API key at [OpenAI Platform](https://platform.openai.com/).
-   [Google AI Studio](https://aistudio.google.com/) で Gemini API キー、または [OpenAI Platform](https://platform.openai.com/) で OpenAI API キーを取得してください。
-2. **Access**: Open the deployed web app ([Comic Translation Tool](https://furuyan1234.github.io/comic-translation/)) and enter your API key.
-   [Webアプリ (デモサイト)](https://furuyan1234.github.io/comic-translation/) にアクセスし、APIキーを入力してスタートします。
+1. **Get API Key**: Obtain a Gemini API key at [Google AI Studio](https://aistudio.google.com/) or an OpenAI API key at [OpenAI Platform](https://platform.openai.com/). / Google AI StudioでGemini APIキー、またはOpenAI PlatformでOpenAI APIキーを取得します。
+   Obtain a Gemini API key from Google AI Studio or an OpenAI API key from OpenAI Platform. / [Google AI Studio](https://aistudio.google.com/) で Gemini API キー、または [OpenAI Platform](https://platform.openai.com/) で OpenAI API キーを取得してください。
+2. **Access**: Open the deployed web app ([Comic Translation Tool](https://furuyan1234.github.io/comic-translation/)) and enter your API key. / [Webアプリ (デモサイト)](https://furuyan1234.github.io/comic-translation/) にアクセスし、APIキーを入力してスタートします。
 
 ### 💻 Local Launch (Windows) / ローカルでの起動 (Windows)
 
-1. **Download**: Download the Source Code (ZIP) from [Releases](../../releases) or click "Code" -> "Download ZIP".
-   [Releases](../../releases) または "Code" ボタンからZIPファイルをダウンロードします。
-2. **Unzip**: Extract the ZIP file to any folder.
-   ダウンロードしたZIPファイルを解凍してください。
-3. **Run**: Double-click `start_comic_transration.bat`.
-   フォルダ内の `start_comic_transration.bat` をダブルクリックします。
+1. **Download**: Download the Source Code (ZIP) from [Releases](../../releases) or click "Code" -> "Download ZIP". / [Releases](../../releases) または "Code" ボタンからZIPファイルをダウンロードします。
+2. **Unzip**: Extract the ZIP file to any folder. / ダウンロードしたZIPファイルを解凍してください。
+3. **Run**: Double-click `start_comic_transration.bat`. / フォルダ内の `start_comic_transration.bat` をダブルクリックします。
    *(Node.js required / 事前にNode.jsのインストールが必要です)*
-4. **Start**: The system will automatically install dependencies and launch the browser.
-   必要なライブラリが自動インストールされ、ブラウザが立ち上がります。
+4. **Start**: The system will automatically install dependencies and launch the browser. / 必要なライブラリが自動インストールされ、ブラウザが立ち上がります。
 
 ---
 
 ## ⚖️ Compliance & Legal Stance / 法的遵守について
 
-### Japanese Copyright Law (Article 30-4)
+### Japanese Copyright Law (Article 30-4) / 日本の著作権法（第30条の4）
 
-This project is developed in full compliance with **Article 30-4 of the Japanese Copyright Act**, which allows for the exploitation of copyrighted works for information analysis and technological development of AI.
-本プロジェクトは、日本の著作権法第30条の4（情報解析目的の利用）に基づき、技術検証および情報解析を目的として開発されており、法的に適正な範囲内で公開されています。
+This project is developed in full compliance with **Article 30-4 of the Japanese Copyright Act**, which allows for the exploitation of copyrighted works for information analysis and technological development of AI. / 本プロジェクトは、日本の著作権法第30条の4（情報解析目的の利用）に基づき、技術検証および情報解析を目的として開発されており、法的に適正な範囲内で公開されています。
 
-### Official API Usage
+### Official API Usage / 公式APIの利用
 
-All generations are performed through the **official Google Gemini API and OpenAI API**. This system adheres strictly to the Terms of Service and Forbidden Use Policies of both Google and OpenAI.
-本システムはGoogle公式のGemini APIおよびOpenAI公式のAPIを介して動作しており、各社が定める「生成AI禁止事項」および利用規約を厳格に遵守しています。
+All generations are performed through the **official Google Gemini API and OpenAI API**. This system adheres strictly to the Terms of Service and Forbidden Use Policies of both Google and OpenAI. / 本システムはGoogle公式のGemini APIおよびOpenAI公式のAPIを介して動作しており、各社が定める「生成AI禁止事項」および利用規約を厳格に遵守しています。
 
-### Translation Purpose
+### Translation Purpose / 翻訳の目的
 
-This tool is designed for **translation assistance** of original works by their rightful owners. It is not intended for unauthorized reproduction or distribution of copyrighted material.
-本ツールは、正当な権利者による**翻訳支援**を目的としています。著作権のある素材の無許可複製や配布を意図したものではありません。
+This tool is designed for **translation assistance** of original works by their rightful owners. It is not intended for unauthorized reproduction or distribution of copyrighted material. / 本ツールは、正当な権利者による**翻訳支援**を目的としています。著作権のある素材の無許可複製や配布を意図したものではありません。
 
 ---
 
@@ -218,95 +192,85 @@ These are custom source-available terms. Restrictions on productization mean tha
 
 ---
 
-## 利用規約 / Terms of Use
+## Terms of Use / 利用規約
 
-### 1. 目的 / Purpose
+### Purpose / 1. 目的
 
-本ツールは漫画翻訳の技術検証および創作支援を目的としたものであり、既存の著作物の無断複製・無断翻訳・無断配布を推奨するものではありません。
-This tool is intended for technical verification of manga translation and creative assistance, and does not endorse unauthorized reproduction, translation, or distribution of copyrighted works.
-
----
-
-### 2. 生成コンテンツに関する禁止事項 / Prohibited Uses
-
-ユーザーは、本ツールを使用して以下の行為を行ってはなりません。
-Users must not engage in the following:
-
-#### (1) 著作権・知的財産権侵害 / Intellectual Property Infringement
-- 権利者の許可なく第三者の著作物を翻訳・配布する行為
-- 商業漫画の無断翻訳版を公開・販売する行為
-
-Translating and distributing copyrighted works without permission from the rights holder.
-
-#### (2) 入力データの不正利用 / Misuse of Input Data
-- ユーザーは、入力する画像について、適法な権利または使用許諾を有することを保証するものとします
-- 権利を有しない第三者コンテンツを入力として使用する行為
-
-Users must have legal rights to all input images.
-
-#### (3) 法令違反・不正行為 / Illegal Activities
-- 適用される法令に違反する行為
-- 詐欺、不正行為、または有害な目的での利用
-
-Any illegal or harmful use.
+This tool is intended for technical verification of manga translation and creative assistance, and does not endorse unauthorized reproduction, translation, or distribution of copyrighted works. / 本ツールは漫画翻訳の技術検証および創作支援を目的としたものであり、既存の著作物の無断複製・無断翻訳・無断配布を推奨するものではありません。
 
 ---
 
-### 3. 生成物の責任および権利 / Responsibility & Ownership
+### Prohibited Uses / 2. 生成コンテンツに関する禁止事項
 
-生成されたコンテンツの内容および利用に関するすべての責任はユーザーに帰属します。
-The user bears full responsibility for generated content.
+Users must not engage in the following: / ユーザーは、本ツールを使用して以下の行為を行ってはなりません。
 
-本ツールの利用によって生成されたコンテンツについて、開発者は著作権その他の権利を主張しませんが、その適法性・利用可能性を保証するものではありません。
-The developer does not claim ownership of generated content but does not guarantee its legality or usability.
+#### Intellectual Property Infringement / (1) 著作権・知的財産権侵害
+- Translating or distributing another party's works without permission from the rights holder. / 権利者の許可なく第三者の著作物を翻訳・配布する行為
+- Publishing or selling unauthorized translations of commercial manga. / 商業漫画の無断翻訳版を公開・販売する行為
 
----
+Translating and distributing copyrighted works without permission from the rights holder. / 権利者の許可を得ずに、著作物を翻訳・配布する行為。
 
-### 4. 免責事項 / Disclaimer
+#### Misuse of Input Data / (2) 入力データの不正利用
+- Users must have lawful rights or permission to use the images they supply. / ユーザーは、入力する画像について、適法な権利または使用許諾を有することを保証するものとします
+- Using third-party content as input without the necessary rights. / 権利を有しない第三者コンテンツを入力として使用する行為
 
-本ツールは「現状有姿（AS IS）」で提供され、明示または黙示を問わず、いかなる保証も行いません。
-This tool is provided "as is" without any warranties.
+Users must have legal rights to all input images. / 入力画像について適法な権利または利用許諾を持つ必要があります。
 
-開発者は、本ツールの利用または生成コンテンツに起因するいかなる損害についても責任を負いません。
-The developer shall not be liable for any damages arising from use.
+#### Illegal Activities / (3) 法令違反・不正行為
+- Violating applicable law. / 適用される法令に違反する行為
+- Use for fraud, misconduct or harmful purposes. / 詐欺、不正行為、または有害な目的での利用
 
----
-
-### 5. 権利侵害への対応 / Infringement & Takedown
-
-権利侵害の申し立てがあった場合、開発者は独自の判断により以下の対応を行う場合があります。
-Upon receiving a valid claim, the developer may:
-
-- 該当コンテンツの削除要請または削除
-- 利用の制限または禁止
-- リポジトリの公開停止等の措置
-
-Remove content, restrict usage, or take necessary actions.
+Any illegal or harmful use. / 違法または有害な利用。
 
 ---
 
-### 6. 規約の変更 / Changes
+### Responsibility & Ownership / 3. 生成物の責任および権利
 
-本規約は予告なく変更される場合があります。
-These terms may be updated without notice.
+The user bears full responsibility for generated content. / 生成されたコンテンツの内容および利用に関するすべての責任はユーザーに帰属します。
+
+The developer does not claim ownership of generated content but does not guarantee its legality or usability. / 本ツールの利用によって生成されたコンテンツについて、開発者は著作権その他の権利を主張しませんが、その適法性・利用可能性を保証するものではありません。
 
 ---
 
-### 7. 準拠法 / Governing Law
+### Disclaimer / 4. 免責事項
 
-本規約は日本法に準拠します。
-These terms are governed by the laws of Japan.
+This tool is provided "as is" without any warranties. / 本ツールは「現状有姿（AS IS）」で提供され、明示または黙示を問わず、いかなる保証も行いません。
+
+The developer shall not be liable for any damages arising from use. / 開発者は、本ツールの利用または生成コンテンツに起因するいかなる損害についても責任を負いません。
+
+---
+
+### Infringement & Takedown / 5. 権利侵害への対応
+
+Upon receiving a valid claim, the developer may: / 権利侵害の申し立てがあった場合、開発者は独自の判断により以下の対応を行う場合があります。
+
+- Requesting removal of, or removing, the content concerned. / 該当コンテンツの削除要請または削除
+- Restricting or prohibiting use. / 利用の制限または禁止
+- Taking measures such as stopping public access to the repository. / リポジトリの公開停止等の措置
+
+Remove content, restrict usage, or take necessary actions. / コンテンツの削除、利用の制限、その他必要な対応。
+
+---
+
+### Changes / 6. 規約の変更
+
+These terms may be updated without notice. / 本規約は予告なく変更される場合があります。
+
+---
+
+### Governing Law / 7. 準拠法
+
+These terms are governed by the laws of Japan. / 本規約は日本法に準拠します。
 
 ---
 
 ## AI Manga Creative Suite / AIまんが制作エコシステム
 
-This project is part of an integrated ecosystem designed to support AI-powered manga and story creation.
-本プロジェクトは、AIを活用した漫画・ストーリー制作を支援する統合エコシステムの一部です。
+This project is part of an integrated ecosystem designed to support AI-powered manga and story creation. / 本プロジェクトは、AIを活用した漫画・ストーリー制作を支援する統合エコシステムの一部です。
 
 ### Ecosystem Components / 構成システム
 
-#### 1. Super FURU AI 4-koma System
+#### 1. Super FURU AI 4-koma System / Super FURU AI 4コマシステム
 A system specialized in creating 4-panel manga with AI. / AIを活用した4コマ漫画制作に特化したシステムです。
 - [Explanation / 解説](https://note.com/happy_duck780/n/ndf063558c1f5)
 - [Demo / デモ](https://furuyan1234.github.io/nano-banana-pro/)
@@ -318,25 +282,25 @@ A tool for generating creative stories and plots using AI. / AIを用いてク�
 - [Demo / デモ](https://furuyan1234.github.io/story-maker/)
 - [Code / コード](https://github.com/FURUYAN1234/story-maker)
 
-#### 3. AI Character Sheet Maker
+#### 3. AI Character Sheet Maker / AIキャラクターシートメーカー
 An assistant for designing detailed character sheets and settings. / 詳細なキャラクターシートや設定をデザインするための支援ツールです。
 - [Explanation / 解説](https://note.com/happy_duck780/n/neccbebd7d957)
 - [Demo / デモ](https://furuyan1234.github.io/character-sheet-maker/)
 - [Code / コード](https://github.com/FURUYAN1234/character-sheet-maker)
 
-#### 4. AI Comic Translation Tool
+#### 4. AI Comic Translation Tool / AI漫画翻訳ツール
 A tool for translating manga into 10 languages using AI. / AIを使って漫画を10言語に翻訳するツールです。
 - [Explanation / 解説](https://note.com/happy_duck780/n/nbdf826604ce7)
 - [Demo / デモ](https://furuyan1234.github.io/comic-translation/)
 - [Code / コード](https://github.com/FURUYAN1234/comic-translation)
 
-#### 5. 360° AI Panorama Generator
+#### 5. 360° AI Panorama Generator / 360度AIパノラマ生成ツール
 A tool that generates seamless 360-degree spatial backgrounds to provide background assets for manga and video. / シームレスな360度空間の背景を生成し、漫画や動画の背景素材として提供するツールです。
 - [Explanation / 解説](https://note.com/happy_duck780/n/nb53b121fef88)
 - [Demo / デモ](https://furuyan1234.github.io/panoforge/)
 - [Code / コード](https://github.com/FURUYAN1234/panoforge)
 
-#### 6. AI Voice Comic Maker
+#### 6. AI Voice Comic Maker / AI音声コミックメーカー
 A tool to automatically convert static 4-koma manga into fully voiced animated videos. / 静止画の4コマ漫画をフルボイスの動画に自動変換するツールです。
 - [Explanation / 解説](https://note.com/happy_duck780/n/ndc6533c1512f)
 - [Code / コード](https://github.com/FURUYAN1234/ai-voice-comic-maker)
@@ -347,9 +311,7 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 This update further strengthens security while preserving the existing creation workflow. / 今回の更新では、既存の制作フローを保ちながらセキュリティをさらに強化しました。
 
-The app limits script execution and API connections with Content Security Policy, disables embedded frames and form submissions, and sends no referrer. Open the app directly in its own tab. API keys remain sensitive while in memory; these protections do not guarantee the absence of every vulnerability. Every deployment checks dependencies, source safeguards and the built policy.
-
-CSPでスクリプト実行・API接続先を制限し、埋め込み表示とフォーム送信を禁止、参照元情報を送信しません。アプリは直接タブで開いてください。メモリー内のAPIキーも機密情報であり、すべての脆弱性がないことを保証するものではありません。毎回のデプロイで依存ライブラリ・ソースの防御・ビルド後の設定を検査します。
+The app limits script execution and API connections with Content Security Policy, disables embedded frames and form submissions, and sends no referrer. Open the app directly in its own tab. API keys remain sensitive while in memory; these protections do not guarantee the absence of every vulnerability. Every deployment checks dependencies, source safeguards and the built policy. / CSPでスクリプト実行・API接続先を制限し、埋め込み表示とフォーム送信を禁止、参照元情報を送信しません。アプリは直接タブで開いてください。メモリー内のAPIキーも機密情報であり、すべての脆弱性がないことを保証するものではありません。毎回のデプロイで依存ライブラリ・ソースの防御・ビルド後の設定を検査します。
 
 ## 🔄 Changelog / 更新履歴
 
@@ -368,9 +330,7 @@ CSPでスクリプト実行・API接続先を制限し、埋め込み表示と�
 
 ### v1.9.3 (2026-10-04)
 
-Clarify free personal, business and commissioned use and monetization of users' own outputs. Paid redistribution, paid services based on the app and bundling with paid information products require prior written permission. Valid prior grants and third-party terms remain available.
-
-個人・業務・受託制作での無料利用と、自分の投稿・作品の収益化を明確化。アプリ本体の有料再配布・有料サービス化・有料商材への同梱は事前許可制です。過去の有効な許諾と第三者の条件は保持します。
+Clarify free personal, business and commissioned use and monetization of users' own outputs. Paid redistribution, paid services based on the app and bundling with paid information products require prior written permission. Valid prior grants and third-party terms remain available. / 個人・業務・受託制作での無料利用と、自分の投稿・作品の収益化を明確化。アプリ本体の有料再配布・有料サービス化・有料商材への同梱は事前許可制です。過去の有効な許諾と第三者の条件は保持します。
 
 ### v1.9.2 (2026-10-01)
 
@@ -495,4 +455,4 @@ Clarify free personal, business and commissioned use and monetization of users' 
 
 ---
 
-Developed by **FURU**
+Developed by **FURU** / 開発：**FURU**
