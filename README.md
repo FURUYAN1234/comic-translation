@@ -3,7 +3,9 @@
 > **Source code available; free to use.** Ordinary use, free integration and free provision require no application, prior contact or permission from FURU. You may sell and monetize your own works. External API costs and third-party terms are separate. See Terms & Output Rights below. / **ソースコード公開・利用無料。** 通常利用と無料の組み込み・無料提供に、申請・事前連絡・FURUの許可は不要です。自分の作品は販売・収益化できます。外部API料金と第三者の条件は別です。詳しくは「利用条件・作品の権利」をご確認ください。
 
 
-[![Demo / デモ](https://img.shields.io/badge/Demo-Play_Now-blue?style=for-the-badge)](https://furuyan1234.github.io/comic-translation/)
+[![AI漫画翻訳ツール デモサイトを開く。リンク先: https://furuyan1234.github.io/comic-translation/](docs/assets/demo-site-button.png)](https://furuyan1234.github.io/comic-translation/)
+
+Demo URL / デモサイト: [https://furuyan1234.github.io/comic-translation/](https://furuyan1234.github.io/comic-translation/)
 
 > **"Translate manga into 10 languages with one click."** / **「漫画をワンクリックで10言語に翻訳する実験的Webアプリケーション」**
 >
