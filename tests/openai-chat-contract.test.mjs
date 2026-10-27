@@ -1,15 +1,26 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { OPENAI_TEXT_MODELS, OPENAI_MODEL_OPTIONS, DEFAULT_OPENAI_MODEL, fallbackModels, chatOptions, completedText, terminalOpenAIError } from '../src/lib/openai-chat-contract.js';
+import { OPENAI_TEXT_MODELS, OPENAI_MODEL_OPTIONS, OPENAI_MODEL_PRICE_SNAPSHOT_DATE, DEFAULT_OPENAI_MODEL, fallbackModels, chatOptions, completedText, terminalOpenAIError } from '../src/lib/openai-chat-contract.js';
 test('Sol first and compatible request with unchanged legacy options',()=>{
- assert.equal(OPENAI_TEXT_MODELS.length,11);
+ assert.equal(OPENAI_TEXT_MODELS.length,12);
  assert.equal(OPENAI_TEXT_MODELS[0],'gpt-6-astra');
  assert.equal(DEFAULT_OPENAI_MODEL,'gpt-6.1-sol');
  assert.equal(fallbackModels()[0],DEFAULT_OPENAI_MODEL);
- assert.equal(OPENAI_MODEL_OPTIONS.length,11);
+ assert.equal(OPENAI_MODEL_OPTIONS.length,12);
  for(const model of OPENAI_TEXT_MODELS.filter(id=>/^gpt-(6|5\.6)/.test(id))) assert.deepEqual(chatOptions(model),{max_completion_tokens:32768});
  assert.deepEqual(chatOptions('gpt-6.1-sol'),{max_completion_tokens:32768});
  assert.deepEqual(chatOptions('gpt-4.1',{temperature:0.1}),{temperature:0.1});
+});
+test('Terra is selectable at official standard pricing and falls only to lower models',()=>{
+ const terra=OPENAI_MODEL_OPTIONS.find(model=>model.id==='gpt-6.1-terra');
+ assert.equal(terra?.label,'GPT-6.1 Terra');
+ assert.equal(terra?.inputPriceUsdPerM,1);
+ assert.equal(terra?.outputPriceUsdPerM,5);
+ assert.equal(OPENAI_MODEL_PRICE_SNAPSHOT_DATE,'2026-10-27');
+ assert.deepEqual(fallbackModels('gpt-6.1-sol').slice(0,3),['gpt-6.1-sol','gpt-6.1-terra','gpt-6-sol']);
+ assert.equal(fallbackModels('gpt-6.1-terra')[0],'gpt-6.1-terra');
+ assert.equal(fallbackModels('gpt-6.1-terra').includes('gpt-6.1-sol'),false);
+ assert.deepEqual(chatOptions('gpt-6.1-terra'),{max_completion_tokens:32768});
 });
 test('complete response accepted; length, empty and refusal fail closed',()=>{
  const data=(finish_reason,content,refusal)=>({choices:[{finish_reason,message:{content,refusal}}]});
@@ -55,6 +66,16 @@ test('selection strictly limits fallback to lower models and rejects unknown IDs
  for(const model of OPENAI_TEXT_MODELS) assert.deepEqual(fallbackModels(model),OPENAI_TEXT_MODELS.slice(OPENAI_TEXT_MODELS.indexOf(model)));
  for(const invalid of ['unknown','',null,{},'gpt-image-2.5-sunburst']) assert.throws(()=>fallbackModels(invalid));
  assert.deepEqual(fallbackModels('gpt-4o'),['gpt-4o']);
+});
+test('Terra selection is sent to translation and falls back to GPT-6 Sol only after a model error',async()=>{
+ const originalFetch=globalThis.fetch;const calls=[];
+ setOpenAIApiKey('test-only-placeholder');setOpenAITextModel('gpt-6.1-terra');
+ globalThis.fetch=async (_url,options)=>{calls.push(JSON.parse(options.body).model);return calls.length===1
+  ? {ok:false,status:404,json:async()=>({error:{code:'model_not_found',message:'unavailable'}})}
+  : {ok:true,json:async()=>({choices:[{finish_reason:'stop',message:{content:'translated'}}]})};};
+ try {assert.equal(await translateSingleTextOAI('sample'),'translated');assert.deepEqual(calls,['gpt-6.1-terra','gpt-6-sol']);
+  assert.deepEqual(getOpenAITextModelStatus(),{selected:'gpt-6.1-terra',attempted:calls,adopted:'gpt-6-sol'});}
+ finally {globalThis.fetch=originalFetch;setOpenAIApiKey('');setOpenAITextModel(DEFAULT_OPENAI_MODEL);}
 });
 
 test('real lower-model selection never calls a higher model',async()=>{

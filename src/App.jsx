@@ -3,7 +3,7 @@ import React, { useState, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 import { setApiKey, IMAGE_MODEL_OPTIONS } from './lib/gemini';
 import { setOpenAIApiKey, setOpenAITextModel, getOpenAITextModelStatus } from './lib/openai';
-import { OPENAI_MODEL_OPTIONS, DEFAULT_OPENAI_MODEL, fallbackModels } from './lib/openai-chat-contract.js';
+import { OPENAI_MODEL_OPTIONS, OPENAI_MODEL_PRICE_SNAPSHOT_DATE, DEFAULT_OPENAI_MODEL, fallbackModels } from './lib/openai-chat-contract.js';
 import {
   setActiveEngine,
   extractTranslationsAI,
@@ -12,7 +12,7 @@ import {
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "1.9.6";
+const SYSTEM_VERSION = "1.9.7";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -711,7 +711,7 @@ Output the final translated image only. No explanations needed.`;
                 </select>
                 <small className="openai-model-help">{OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.description}<br/>入力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.inputPriceUsdPerM} / 出力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.outputPriceUsdPerM} per 1M tokens</small>
                 <p className="openai-model-help">選択: {textModel} / 試行: {textModelStatus.attempted.join(' → ') || 'なし'} / 採用: {textModelStatus.adopted || '未採用'}</p>
-                <details className="openai-model-help"><summary>下位フォールバック / 料金</summary><p>{fallbackModels(textModel).join(' → ')}</p><p>入力/出力 USD per 1M tokens。推論トークン・修正回数で総額は変わります。価格確認日: 2026-09-30。</p></details>
+                <details className="openai-model-help"><summary>下位フォールバック / 料金</summary><p>{fallbackModels(textModel).join(' → ')}</p><p>入力/出力 USD per 1M tokens。推論トークン・修正回数で総額は変わります。価格確認日: {OPENAI_MODEL_PRICE_SNAPSHOT_DATE}。</p></details>
               </div>}
               {/* エンジンバッジ */}
               <span className={`engine-badge ${engineMode === 'openai' ? 'engine-openai' : 'engine-gemini'}`}>

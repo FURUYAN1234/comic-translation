@@ -17,12 +17,12 @@ Demo URL / デモサイト: [https://furuyan1234.github.io/comic-translation/](h
 
 This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API and OpenAI API. / 本プロジェクトは、Gemini APIおよびOpenAI APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
 
-**v1.9.6 (2026-10-07)** — Updated Gemini request parameters for API compatibility. / Gemini APIの仕様変更に合わせ、翻訳用の文字抽出で非推奨の送信設定を除きました。
+**v1.9.7 (2026-10-27)** — Added GPT-6.1 Terra for OpenAI text and vision at $1 input / $5 output per million tokens. / OpenAIのテキスト・画像解析にGPT-6.1 Terraを追加しました。入力$1・出力$5／100万トークンです。
 
-Select from all 11 models, with Astra highest and 6.1 Sol default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls. / 全11モデルを選択できます。GPT-6 Astraを最上位、GPT-6.1 Solを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。
+Select from all 12 models, with Astra highest and 6.1 Sol default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls. / 全12モデルを選択できます。GPT-6 Astraを最上位、GPT-6.1 Solを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。
 
 
-OpenAI fallback: `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`. GPT-6.1 Sol uses a 32,768-token completion budget. Incomplete, refused and empty responses are rejected; output-budget exhaustion, authentication, billing/quota and policy failures stop retries. / 途中終了・拒否・空応答を成功扱いせず、出力上限到達・認証・残高不足・ポリシー拒否は連続試行を停止します。画像モデルと既存翻訳ルールは維持します。
+OpenAI fallback: `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6.1-terra` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`. GPT-6.1 Sol and Terra use a 32,768-token completion budget. Incomplete, refused and empty responses are rejected; output-budget exhaustion, authentication, billing/quota and policy failures stop retries. / 途中終了・拒否・空応答を成功扱いせず、出力上限到達・認証・残高不足・ポリシー拒否は連続試行を停止します。画像モデルと既存翻訳ルールは維持します。
 
 ## 🚀 Overview / 概要
 
@@ -36,7 +36,7 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-The current public line is **v1.9.6**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing. / 現行公開系統は **v1.9.6** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
+The current release line is **v1.9.7**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing. / 現行リリース系統は **v1.9.7** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path. / Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
 * **OpenAI image generation / OpenAI画像生成**: OpenAI first uses `gpt-image-2.5-sunburst` at xhigh quality through the image edit API. If that provider request cannot complete, it automatically falls back to `gpt-image-2` at high quality within the same 600-second window. / OpenAIはまず `gpt-image-2.5-sunburst` をxhigh品質で画像編集APIに使用し、同モデルのリクエストが完了できない場合だけ、同じ600秒枠内で `gpt-image-2` のhigh品質へ自動フォールバックします。
@@ -325,6 +325,10 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 | Narration Video Maker / ナレーション動画メーカー | Video generation with narration, subtitles, and BGM / ナレーション・字幕・BGM付き動画生成 | [gemini-narration-studio](https://github.com/FURUYAN1234/gemini-narration-studio) |
 
 ## 🔄 Changelog / 更新履歴
+
+### v1.9.7 (2026-10-27)
+
+- Added GPT-6.1 Terra after Sol in the selectable OpenAI text/Vision chain with the official $1 input / $5 output per million token standard rates. Image editing routes are unchanged. / OpenAIのテキスト・画像解析の選択肢にGPT-6.1 TerraをSolの次に追加し、標準単価の入力$1・出力$5／100万トークンを表示します。画像編集の経路は従来どおりです。
 
 ### v1.9.6 (2026-10-07)
 
