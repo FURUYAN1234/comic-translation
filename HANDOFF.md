@@ -1,3 +1,7 @@
+# ACTIVE — v1.9.8 third-party notices release and full backup (2026-10-30)
+
+Authorized: official publication/deploy, then full backup and independent verification. Canonical checkout comic_translation, origin FURUYAN1234/comic-translation. Initial main bb6b842; clean. Prepared commits absent locally; prepared paths absent in local Ubuntu and branch absent remotely, so reconstruct equivalent minimal fix. Keep existing LICENSE and public/LICENSE.txt byte-for-byte. Evidence: output/license-notices-20261030. Reconstructed build-boundary generator/verifier, source notices, 13 focused license checks, source CI and v1.9.8 bilingual docs. All 26 tests passed; strict lint, build, postbuild license/security checks and npm audit (0 vulnerabilities) passed. Initial regression failed on the missing distribution notice. FURU licenses retain their initial SHA256. Remaining: official release, candidate CI, public/full ZIP checks, official backup and independent hashes. Preserve all existing root modifications and jobs. Backup retention/managed mirror coordination must be reconciled with current user constraints before launch. No external effects yet.
+
 # HANDOFF (Comic Translation → Codex)
 
 ## GPT-6.1 Sol candidate v1.9.2 — 2026-10-01

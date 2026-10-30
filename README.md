@@ -17,7 +17,7 @@ Demo URL / デモサイト: [https://furuyan1234.github.io/comic-translation/](h
 
 This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API and OpenAI API. / 本プロジェクトは、Gemini APIおよびOpenAI APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
 
-**v1.9.7 (2026-10-27)** — Added GPT-6.1 Terra for OpenAI text and vision at $1 input / $5 output per million tokens. / OpenAIのテキスト・画像解析にGPT-6.1 Terraを追加しました。入力$1・出力$5／100万トークンです。
+**v1.9.8 (2026-10-30)** — Included full third-party license notices in distributed builds and added automatic checks for missing or stale notices. / 配布物に第三者ライセンス通知全文を同梱し、通知の欠落や版違いをビルド後に検査するようにしました。
 
 Select from all 12 models, with Astra highest and 6.1 Sol default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls. / 全12モデルを選択できます。GPT-6 Astraを最上位、GPT-6.1 Solを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。
 
@@ -36,7 +36,7 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-The current release line is **v1.9.7**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing. / 現行リリース系統は **v1.9.7** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
+The current release line is **v1.9.8**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing. / 現行リリース系統は **v1.9.8** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path. / Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
 * **OpenAI image generation / OpenAI画像生成**: OpenAI first uses `gpt-image-2.5-sunburst` at xhigh quality through the image edit API. If that provider request cannot complete, it automatically falls back to `gpt-image-2` at high quality within the same 600-second window. / OpenAIはまず `gpt-image-2.5-sunburst` をxhigh品質で画像編集APIに使用し、同モデルのリクエストが完了できない場合だけ、同じ600秒枠内で `gpt-image-2` のhigh品質へ自動フォールバックします。
@@ -171,6 +171,8 @@ Free redistribution, free integration and free provision outside the paid cases 
 Independently authored Web articles, paid note articles, explanations, reviews, introductions and courses, whether paid or free, require no permission, prior contact or fee to FURU when copies or modified versions of the Covered Software are not included in the product. App screenshots and operation videos for introduction or explanation may be included insofar as FURU can authorize them. Ordinary links to distribution pages and lawful quotation are allowed. Check third-party rights in works or assets shown in screenshots and videos separately. / 自分で作成したWeb記事、note等の有料記事、解説、レビュー、紹介記事、講座は、有料・無料を問わず、対象ソフトウェアの複製や改変版を商品に含めなければ、FURUへの許可、事前連絡、FURUへの利用料は不要です。紹介・解説のためにFURUが権利を持つアプリの操作画面や操作動画を掲載すること、公式配布ページへの通常のリンク、法令上認められる引用も認めます。画面や動画に含まれる第三者の作品・素材等の権利は別途確認してください。
 
 ### Output rights and third-party terms / 作品の権利と第三者の条件
+
+Third-party software retains its own terms. Full notices for React, React DOM, Scheduler and code inserted by Vite are in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt), also included at the root of the built distribution. The existing FURU license text is unchanged. / 第三者ソフトウェアにはそれぞれの利用条件が適用されます。React、React DOM、Scheduler、Vite挿入コードの通知全文は [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt) に収録し、ビルドした配布物の直下にも同梱します。既存のFURU独自ライセンス本文は変更していません。
 
 Using the Covered Software does not cause FURU to acquire rights in your outputs or cause these terms to apply to your outputs. / 対象ソフトウェアを利用したことを理由に、FURUが利用者の成果物の権利を取得したり、本条件を成果物に適用したりすることはありません。
 
@@ -325,6 +327,11 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 | Narration Video Maker / ナレーション動画メーカー | Video generation with narration, subtitles, and BGM / ナレーション・字幕・BGM付き動画生成 | [gemini-narration-studio](https://github.com/FURUYAN1234/gemini-narration-studio) |
 
 ## 🔄 Changelog / 更新履歴
+
+### v1.9.8 (2026-10-30)
+
+- Distributed builds now include complete third-party notices; postbuild rejects missing, changed or stale notices. / 第三者通知全文を配布物に同梱し、ビルド後に欠落・改変・版違いを検査します。
+- Preserved the existing FURU license and translation workflow. / FURU独自ライセンスと翻訳処理は維持しています。
 
 ### v1.9.7 (2026-10-27)
 

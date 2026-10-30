@@ -10,3 +10,9 @@
 ```powershell
 powershell -ExecutionPolicy Bypass -File ..\scripts\publish_app_release.ps1 -App comic_translation -NotesPath <absolute-vX.Y.Z.md> -ReleaseTitle "Comic Translation Tool vX.Y.Z"
 ```
+
+## Third-party notices / 第三者通知
+
+- Normal Vite builds emit `THIRD_PARTY_NOTICES.txt` from installed dependency license files. `npm run build` also verifies the distributed notices, locked versions and unchanged FURU license. / 通常のViteビルドで依存パッケージのライセンス原文から通知を出力します。`npm run build` は通知全文、ロック版、FURU独自ライセンスの保持も検査します。
+- After a dependency update, run `npm run licenses:generate` and commit the reviewed source notice with the lockfile. New runtime dependencies or changed license metadata require notice coverage review. / 依存更新時は `npm run licenses:generate` を実行し、内容を確認した通知をロックファイルとともにコミットしてください。新しい実行時依存やライセンス種別の変更は通知の対象確認が必要です。
+- After publication, retrieve `THIRD_PARTY_NOTICES.txt` and `LICENSE.txt` from Pages and check the source ZIP notice against the same build. / 公開後はPagesの両通知とソースZIP内の通知を同じビルドと照合してください。
