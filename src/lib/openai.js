@@ -90,7 +90,7 @@ const callChatCompletion = async (modelId, messages, apiKey, timeout = 120000) =
 
   } catch (e) {
     clearTimeout(timeoutId);
-    if (e.name === 'AbortError') throw new Error(`Timeout (${timeout / 1000}s)`);
+    if (e.name === 'AbortError') throw new Error(`Timeout (${timeout / 1000}s)`, { cause: e });
     throw e;
   }
 };
@@ -491,11 +491,11 @@ VERIFICATION BEFORE OUTPUT:
 
   } catch (err) {
     if (err.name === 'AbortError') {
-      throw new Error(`Image generation timed out (${OPENAI_IMAGE_TIMEOUT_MS / 1000}s). Please retry later.`);
+      throw new Error(`Image generation timed out (${OPENAI_IMAGE_TIMEOUT_MS / 1000}s). Please retry later.`, { cause: err });
     }
     // 安全フィルターの検出
     if (err.message.includes("safety") || err.message.includes("SAFETY") || err.message.includes("content_policy")) {
-      throw new Error("【コンテンツ制限】安全フィルターにより画像生成がブロックされました。");
+      throw new Error("【コンテンツ制限】安全フィルターにより画像生成がブロックされました。", { cause: err });
     }
     throw err;
   } finally {

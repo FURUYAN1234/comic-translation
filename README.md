@@ -1,5 +1,7 @@
 # AI Comic Translation Tool / AI漫画翻訳ツール
 
+**Gemini model route / Geminiモデル候補**: `gemini-3.8-flash` → `gemini-3.6-flash` → `gemini-3.5-flash-lite` → `gemini-3.1-flash-lite`. Explicit stable IDs avoid the December 1, 2026 redirects; image-generation models keep their dedicated routes. / 2026年12月1日の旧モデル自動転送に依存しないよう、現行GAモデルを明示します。画像生成は専用のモデル経路を使います。
+
 > **Source code available; free to use.** Ordinary use, free integration and free provision require no application, prior contact or permission from FURU. You may sell and monetize your own works. External API costs and third-party terms are separate. See Terms & Output Rights below. / **ソースコード公開・利用無料。** 通常利用と無料の組み込み・無料提供に、申請・事前連絡・FURUの許可は不要です。自分の作品は販売・収益化できます。外部API料金と第三者の条件は別です。詳しくは「利用条件・作品の権利」をご確認ください。
 
 
@@ -17,7 +19,7 @@ Demo URL / デモサイト: [https://furuyan1234.github.io/comic-translation/](h
 
 This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API and OpenAI API. / 本プロジェクトは、Gemini APIおよびOpenAI APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
 
-**v1.9.8 (2026-10-30)** — Included full third-party license notices in distributed builds and added automatic checks for missing or stale notices. / 配布物に第三者ライセンス通知全文を同梱し、通知の欠落や版違いをビルド後に検査するようにしました。
+**v1.9.9 (2026-10-30)** — Included full third-party license notices in distributed builds and added automatic checks for missing or stale notices. / 配布物に第三者ライセンス通知全文を同梱し、通知の欠落や版違いをビルド後に検査するようにしました。
 
 Select from all 12 models, with Astra highest and 6.1 Sol default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls. / 全12モデルを選択できます。GPT-6 Astraを最上位、GPT-6.1 Solを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。
 
@@ -36,7 +38,7 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-The current release line is **v1.9.8**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing. / 現行リリース系統は **v1.9.8** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
+The current release line is **v1.9.9**. The two-stage translation workflow remains intact, with GPT Image 2.5 first and GPT Image 2.0 retained as a fallback for OpenAI image editing. / 現行リリース系統は **v1.9.9** です。2段階翻訳ワークフローを維持し、OpenAI画像編集はGPT Image 2.5を優先し、GPT Image 2.0をフォールバックとして残しています。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path. / Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
 * **OpenAI image generation / OpenAI画像生成**: OpenAI first uses `gpt-image-2.5-sunburst` at xhigh quality through the image edit API. If that provider request cannot complete, it automatically falls back to `gpt-image-2` at high quality within the same 600-second window. / OpenAIはまず `gpt-image-2.5-sunburst` をxhigh品質で画像編集APIに使用し、同モデルのリクエストが完了できない場合だけ、同じ600秒枠内で `gpt-image-2` のhigh品質へ自動フォールバックします。
@@ -81,7 +83,7 @@ This system goes beyond simple machine translation by implementing strict contro
 
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS / フロントエンド：React 19／Vite 8／Vanilla CSS。
 * **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction) / AI経路：両エンジンを抽象化するZenith Protocol。
-* **LLM/VFM (Gemini)**: Text/OCR `gemini-3.5-flash` -> `gemini-2.5-flash` -> `gemini-2.5-pro` -> `gemini-flash-latest` -> `gemini-pro-latest`; Image `gemini-nano-banana-2.1` / Gemini：文章／OCRは記載した順のフォールバック、画像はgemini-nano-banana-2.1。
+* **LLM/VFM (Gemini)**: Text/OCR `gemini-3.8-flash` → `gemini-3.6-flash` → `gemini-3.5-flash-lite` → `gemini-3.1-flash-lite`; Image `gemini-nano-banana-2.1` / Gemini：文章／OCRは記載した順のフォールバック、画像はgemini-nano-banana-2.1。
 * **LLM/VFM (OpenAI)**: Text `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`; Image `gpt-image-2.5-sunburst` (Edit API, PNG/xhigh) -> `gpt-image-2` (PNG/high fallback, shared 600s timeout) / OpenAI：文章は記載した順のフォールバック。画像はGPT Image 2.5 SunburstのEdit API・PNG／xhighを優先し、共有600秒枠内でGPT Image 2のPNG／highへ切り替えます。
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
 * **Security**: Memory-only API key management (no localStorage, no hardcoding) / 安全対策：APIキーはメモリだけに保持し、localStorageへの保存や埋め込みを行いません。
