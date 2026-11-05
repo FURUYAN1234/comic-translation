@@ -1,11 +1,11 @@
 /**
  * OpenAI API Client for AI漫画翻訳ツール
- * Dual Engine: ChatGPT テキスト処理 + GPT Image 2.5 / 2.0 fallback 画像編集
+ * Dual Engine: ChatGPT テキスト処理 + GPT Image 2.6 Sunburst / 2.0 fallback 画像編集
  *
  * 3つの機能:
  * 1. extractTranslationsOAI() — GPT-4.1 Vision でテキスト抽出+翻訳
  * 2. translateSingleTextOAI() — GPT-4.1-mini で個別再翻訳
- * 3. generateTranslatedImageOAI() — gpt-image-2 で翻訳済み画像を生成
+ * 3. generateTranslatedImageOAI() — 画像編集APIで翻訳済み画像を生成
  */
 
 import { DEFAULT_OPENAI_MODEL, fallbackModels, chatOptions, completedText, terminalOpenAIError } from './openai-chat-contract.js';
@@ -270,7 +270,7 @@ export const translateSingleTextOAI = async (originalText, targetLang = 'en', so
 };
 
 // ══════════════════════════════════════════════
-// STEP 2: 翻訳済み画像生成（GPT Image 2.5 primary / 2.0 fallback Edit API）
+// STEP 2: 翻訳済み画像生成（GPT Image 2.6 Sunburst primary / 2.0 fallback Edit API）
 // ══════════════════════════════════════════════
 
 /**
