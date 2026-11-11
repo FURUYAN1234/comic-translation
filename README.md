@@ -38,10 +38,10 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-Version **v2.0.0** uses a two-stage translation workflow. OpenAI image editing tries GPT Image 2.6 Sunburst first, with GPT Image 2.0 available as a fallback. / **v2.0.0** は2段階で翻訳します。OpenAIで画像を編集する際はGPT Image 2.6 Sunburstを優先し、対象のエラーではGPT Image 2.0に切り替えます。
+Version **v2.0.1** uses a two-stage translation workflow. OpenAI image editing uses GPT Image 2.6 Sunburst; failures retain their cause without switching to GPT Image 2.0. / **v2.0.1** は2段階で翻訳します。OpenAI画像編集はGPT Image 2.6 Sunburstを使用し、失敗時は原因を表示して停止します。GPT Image 2.0への自動切替は行いません。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path. / Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
-* **OpenAI image generation / OpenAI画像生成**: OpenAI first uses `gpt-image-2.6-sunburst` at xhigh quality through the image edit API. On a retry-eligible provider error, it automatically falls back to `gpt-image-2` at high quality within the same 600-second window. / OpenAIはまず `gpt-image-2.6-sunburst` をxhigh品質で画像編集APIに使用し、フォールバック対象のエラー時だけ、同じ600秒枠内で `gpt-image-2` のhigh品質へ自動フォールバックします。
+* **OpenAI image generation / OpenAI画像生成**: `gpt-image-2.6-sunburst`, xhigh quality, PNG output through the edit API, with a 600-second limit and no automatic image-model fallback. / `gpt-image-2.6-sunburst` のxhigh品質・PNG出力を編集APIで使用します。上限は600秒で、画像モデルは自動切替しません。
 * **Security boundary / セキュリティ境界**: API keys remain memory-only. The app does not write provider keys to localStorage, source files, or generated artifacts. / APIキーはメモリ限定です。localStorage、ソースファイル、生成物にはプロバイダーキーを書き込みません。
 * **Iteration model / 反復修正モデル**: When the user regenerates, the translated image can be used as the next base image, so corrections are layered through explicit user instructions rather than hidden automatic rewriting. / 再生成時は翻訳済み画像を次のベースにできるため、隠れた自動改変ではなく、ユーザーが明示した修正指示を重ねる形で反復改善します。
 
@@ -84,7 +84,7 @@ This system goes beyond simple machine translation by implementing strict contro
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS / フロントエンド：React 19／Vite 8／Vanilla CSS。
 * **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction) / AI経路：両エンジンを抽象化するZenith Protocol。
 * **LLM/VFM (Gemini)**: Text/OCR `gemini-3.8-flash` → `gemini-3.6-flash` → `gemini-3.5-flash-lite` → `gemini-3.1-flash-lite`; Image `gemini-nano-banana-2.1` / Gemini：文章／OCRは記載した順のフォールバック、画像はgemini-nano-banana-2.1。
-* **LLM/VFM (OpenAI)**: Text `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`; Image `gpt-image-2.6-sunburst` (Edit API, PNG/xhigh) -> `gpt-image-2` (PNG/high fallback, shared 600s timeout) / OpenAI：文章は記載した順のフォールバック。画像はGPT Image 2.6 SunburstのEdit API・PNG／xhighを優先し、共有600秒枠内でGPT Image 2のPNG／highへ切り替えます。
+* **LLM/VFM (OpenAI)**: Text `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`; Image `gpt-image-2.6-sunburst` (Edit API, PNG/xhigh, 600s timeout, no automatic model fallback) / OpenAI：文章は記載した順のフォールバック。画像はGPT Image 2.6 SunburstのEdit API・PNG／xhighを使い、600秒上限で自動モデル切替は行いません。
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
 * **Security**: Memory-only API key management (no localStorage, no hardcoding) / 安全対策：APIキーはメモリだけに保持し、localStorageへの保存や埋め込みを行いません。
 
@@ -329,6 +329,10 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 | Narration Video Maker / ナレーション動画メーカー | Video generation with narration, subtitles, and BGM / ナレーション・字幕・BGM付き動画生成 | [gemini-narration-studio](https://github.com/FURUYAN1234/gemini-narration-studio) |
 
 ## 🔄 Changelog / 更新履歴
+
+### v2.0.1 (2026-11-11)
+
+- Removed the GPT Image 2.0 fallback route. GPT Image 2.6 remains the image model; provider failures do not silently switch to the retired model. / GPT Image 2.0への代替経路を除去しました。画像モデルのGPT Image 2.6を維持し、失敗時に旧モデルへ自動切替しません。
 
 ### v2.0.0 (2026-11-05)
 - OpenAI translation image editing starts with GPT Image 2.6 Sunburst / xhigh. / OpenAIでの翻訳画像編集ではGPT Image 2.6 Sunburst / xhighを優先します。

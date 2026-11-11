@@ -3,26 +3,15 @@ import assert from 'node:assert/strict';
 import { generateTranslatedImageOAI, setOpenAIApiKey } from '../src/lib/openai.js';
 import {
   getOpenAIImageFallbackChain,
-  shouldFallbackOpenAIImage,
 } from '../src/lib/openai-image-fallback.js';
 
-test('OpenAI image chain prefers GPT Image 2.6 and retains GPT Image 2.0 as fallback', () => {
+test('OpenAI image chain prefers GPT Image 2.6 without a retired-model fallback', () => {
   assert.deepEqual(
     getOpenAIImageFallbackChain().map(({ id, quality }) => ({ id, quality })),
     [
       { id: 'gpt-image-2.6-sunburst', quality: 'xhigh' },
-      { id: 'gpt-image-2', quality: 'high' },
     ],
   );
-});
-
-test('OpenAI image fallback does not bypass timeout or content policy failures', () => {
-  assert.equal(shouldFallbackOpenAIImage({ name: 'AbortError' }), false);
-  assert.equal(shouldFallbackOpenAIImage(new Error('Timeout (600s)')), false);
-  assert.equal(shouldFallbackOpenAIImage({ code: 'content_policy_violation' }), false);
-  assert.equal(shouldFallbackOpenAIImage({ status: 401, message: 'invalid API key' }), false);
-  assert.equal(shouldFallbackOpenAIImage({ status: 404, message: 'model not found' }), true);
-  assert.equal(shouldFallbackOpenAIImage(new Error('model unavailable')), true);
 });
 
 test('the translation path sends 2.6 and the source image together as a single PNG edit request', async (t) => {

@@ -1,3 +1,9 @@
+## GPT Image 2.0 route retirement candidate v2.0.1 — 2026-11-11
+
+- Authorized existing-app fix, official deployment and existing note/X/Facebook updates. Full backup is deferred until every app update and announcement is complete.
+- Removed active 2.0 routes while preserving the accepted 2.6 normal request/output behavior. Provider-error regression failed before correction and passes after correction. All 28 tests, strict lint and production build pass. Normal-UI extraction completed with GPT-6.1 Sol, followed by GPT Image 2.6 Sunburst/xhigh editing at 1024x1536. The rendered English page preserves the five story scenes and horizontal flip, with the title, four dialogue lines and two sound effects present. Original and translated PNGs are preserved for the authorized two-image social posts. Official delivery remains pending.
+- The existing private task record owns cross-app progress; no credentials are stored in this file.
+
 ## Gemini December migration candidate v1.9.9 — 2026-11-03
 
 - Current task: update Gemini fallback candidates and displays, verify real API behavior, and deploy through the established release transaction. No new backup or social publication.

@@ -10,7 +10,7 @@
 
 import { DEFAULT_OPENAI_MODEL, fallbackModels, chatOptions, completedText, terminalOpenAIError } from './openai-chat-contract.js';
 import { getLanguageInfo } from './languages.js';
-import { getOpenAIImageFallbackChain, shouldFallbackOpenAIImage } from './openai-image-fallback.js';
+import { getOpenAIImageFallbackChain } from './openai-image-fallback.js';
 
 // ── APIキー管理（メモリ限定・localStorage永続化なし） ──
 let currentOpenAIApiKey = "";
@@ -479,9 +479,7 @@ VERIFICATION BEFORE OUTPUT:
         throw new Error("APIレスポンスに画像データが含まれていませんでした。");
       } catch (err) {
         lastError = err;
-        const canFallback = index < imageModels.length - 1 && shouldFallbackOpenAIImage(err);
-        if (!canFallback) throw err;
-        if (onStatus) onStatus(`> [生成/Generate] ${imageModel.label} が利用できないため、GPT Image 2.0へ自動切替します。`);
+        throw err;
       } finally {
         clearTimeout(timeoutId);
       }
