@@ -840,3 +840,10 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
 }
 
 .openai-model-help { display: block; font-size: 10px; font-weight: 400; line-height: 1.35; color: var(--text-secondary); overflow-wrap: anywhere; }
+
+.manual-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:.4rem .65rem;margin:.75rem 0;font-size:.8rem;line-height:1.5}
+.manual-links a{display:flex;align-items:center;justify-content:center;min-width:0;min-height:42px;padding:.6rem .75rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text-primary);text-align:center;text-decoration:none;overflow-wrap:anywhere}
+.manual-links span{grid-column:1/-1;color:var(--text-secondary);font-size:.72rem;text-align:center}
+.manual-links a:hover{border-color:var(--text-secondary)}
+.manual-links a:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+@media(max-width:360px){.manual-links{grid-template-columns:1fr}}

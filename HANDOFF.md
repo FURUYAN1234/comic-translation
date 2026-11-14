@@ -1,3 +1,8 @@
+## Local candidate checkpoint v2.0.2 — 2026-11-14
+
+- Existing-app update: operation/API PDFs, visible separate-tab manual links, bilingual README and release notes are prepared. Local candidate only; no push, tag, release, deployment or backup.
+- The private task ledger /home/furu/Codex/work/story-manga-contract-20261114 owns acceptance and saved test/build evidence. Shared preflight will be recorded after this local commit; a clean candidate is not deployment authorization. Historical sections below retain their original timestamps.
+
 ## GPT Image 2.0 route retirement candidate v2.0.1 — 2026-11-11
 
 - Authorized existing-app fix, official deployment and existing note/X/Facebook updates. Full backup is deferred until every app update and announcement is complete.

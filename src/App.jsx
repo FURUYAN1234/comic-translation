@@ -12,7 +12,15 @@ import {
 } from './lib/ai-provider';
 import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSourceLanguageOptions, getTargetLanguageOptions } from './lib/languages';
 
-const SYSTEM_VERSION = "2.0.1";
+function ManualLinks() {
+  return <nav className="manual-links" aria-label="PDF manuals / PDFマニュアル">
+    <a href="./downloads/comic-translation-manual.pdf" target="_blank" rel="noopener noreferrer">📖 操作マニュアル PDF / Manual ↗</a>
+    <a href="./downloads/comic-translation-api-guide.pdf" target="_blank" rel="noopener noreferrer">🔑 API設定ガイド PDF / API guide ↗</a>
+    <span>画像の読み込み・翻訳・保存とAPIの準備を確認できます。 / Read about translation, saving and API setup.</span>
+  </nav>;
+}
+
+const SYSTEM_VERSION = "2.0.2";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -621,6 +629,7 @@ Output the final translated image only. No explanations needed.`;
               )}
             </div>
 
+            <ManualLinks />
             <p className="api-gate-note">※ APIキーはセッション限定（ブラウザに保存されません） / Session-only (Not saved)</p>
             <div className="api-gate-links">
               <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="api-link api-link-gemini">🔵 Gemini キー取得</a>
@@ -760,6 +769,8 @@ Output the final translated image only. No explanations needed.`;
               </div>
             </div>
           </header>
+
+          <ManualLinks />
 
           {/* ステータス */}
           {statusMessage && (

@@ -9,6 +9,16 @@
 
 Demo URL / デモサイト: [https://furuyan1234.github.io/comic-translation/](https://furuyan1234.github.io/comic-translation/)
 
+### PDF manuals / PDFマニュアル
+
+Japanese A4 guides cover application operation and OpenAI / Gemini API setup. / 日本語A4版でアプリの操作とOpenAI・Gemini APIの取得・設定を説明します。
+
+[![Open the application manual PDF / 操作マニュアルPDFを開く](docs/assets/comic-translation-manual-button.png)](https://furuyan1234.github.io/comic-translation/downloads/comic-translation-manual.pdf)
+
+[![Open the OpenAI / Gemini API setup guide PDF / OpenAI・Gemini API設定ガイドPDFを開く](docs/assets/comic-translation-api-guide-button.png)](https://furuyan1234.github.io/comic-translation/downloads/comic-translation-api-guide.pdf)
+
+
+
 > **"Translate manga into 10 languages with one click."** / **「漫画をワンクリックで10言語に翻訳する実験的Webアプリケーション」**
 >
 >[!['ChatGPT Image 2026年6月25日 22_19_30'](https://github.com/user-attachments/assets/d850ac7f-aa1c-40cc-a378-b8c6673c726c)](https://youtu.be/pqYVxUUg0Cs?si=27g1I3tO2EuZkOuxJ)
@@ -19,7 +29,7 @@ Demo URL / デモサイト: [https://furuyan1234.github.io/comic-translation/](h
 
 This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API and OpenAI API. / 本プロジェクトは、Gemini APIおよびOpenAI APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
 
-**v1.9.9 (2026-10-30)** — Included full third-party license notices in distributed builds and added automatic checks for missing or stale notices. / 配布物に第三者ライセンス通知全文を同梱し、通知の欠落や版違いをビルド後に検査するようにしました。
+**v2.0.2** — Added Japanese application and API PDF guides with in-app links. / 日本語の操作・API設定PDFとアプリ内リンクを追加しました。
 
 Select from all 12 models, with Astra highest and 6.1 Sol default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls. / 全12モデルを選択できます。GPT-6 Astraを最上位、GPT-6.1 Solを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。
 
@@ -38,7 +48,7 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-Version **v2.0.1** uses a two-stage translation workflow. OpenAI image editing uses GPT Image 2.6 Sunburst; failures retain their cause without switching to GPT Image 2.0. / **v2.0.1** は2段階で翻訳します。OpenAI画像編集はGPT Image 2.6 Sunburstを使用し、失敗時は原因を表示して停止します。GPT Image 2.0への自動切替は行いません。
+Version **v2.0.2** uses a two-stage translation workflow. OpenAI image editing uses GPT Image 2.6 Sunburst; failures retain their cause without switching to GPT Image 2.0. / **v2.0.2** は2段階で翻訳します。OpenAI画像編集はGPT Image 2.6 Sunburstを使用し、失敗時は原因を表示して停止します。GPT Image 2.0への自動切替は行いません。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path. / Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
 * **OpenAI image generation / OpenAI画像生成**: `gpt-image-2.6-sunburst`, xhigh quality, PNG output through the edit API, with a 600-second limit and no automatic image-model fallback. / `gpt-image-2.6-sunburst` のxhigh品質・PNG出力を編集APIで使用します。上限は600秒で、画像モデルは自動切替しません。
