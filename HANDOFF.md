@@ -1,3 +1,7 @@
+## Disabled emergency stop v2.0.4 — 2026-11-14
+
+- Root observed idle disabled=true still dark red. Final emergency-specific rule overrode generic disabled opacity with background#743132/opacity1. Only disabled stop fill/border now gray#525252/#a3a3a3; active red and all API/action behavior unchanged. API requests/results/cancel logic unaffected; root owns live visual acceptance and publication. Existing2.0.3 tags/notes remain immutable.
+
 ## Emergency AI stop candidate v2.0.3 — 2026-11-14 (local checks passed; real API root-owned)
 
 - Added always-visible red `#ai-emergency-stop`, disabled idle/stopped and enabled for active thinking/request/body reception. Preserves inputs and accepted results. A new explicit action resets the cancelled signal.

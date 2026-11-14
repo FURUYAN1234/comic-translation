@@ -859,7 +859,7 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
 .emergency-stop-bar{min-height:44px;margin:0 0 12px}
 .emergency-stop-bar::before{content:"";position:fixed;inset:0 0 auto;height:76px;background:var(--bg-base);z-index:1000}
 .emergency-stop-bar .ai-emergency-stop{position:fixed;top:20px;right:12px;z-index:1001;max-width:calc(100vw - 24px);white-space:nowrap;box-sizing:border-box}
-.ai-emergency-stop:disabled{background:#743132;color:#fff;opacity:1}
+.ai-emergency-stop:disabled{background:#525252;border-color:#a3a3a3;color:#fff;opacity:1}
 .emergency-stop-ready .sticky-top{top:76px;display:flow-root}
 .emergency-stop-ready .api-gate,.emergency-stop-ready .prompt-modal-overlay{top:76px}
 .api-gate-card,.prompt-modal{max-height:calc(100dvh - 108px);overflow-y:auto}
