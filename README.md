@@ -7,6 +7,11 @@
 
 [![AI漫画翻訳ツール デモサイトを開く。リンク先: https://furuyan1234.github.io/comic-translation/](docs/assets/demo-site-button.png)](https://furuyan1234.github.io/comic-translation/)
 
+[![Download the Windows local app ZIP / Windows用ローカルアプリZIPをダウンロード](docs/assets/local-download-banner.png)](https://github.com/FURUYAN1234/comic-translation/archive/refs/heads/main.zip)
+
+**Local app ZIP / ローカルアプリZIP:** Download and extract the entire ZIP, then double-click `start_comic_translation.bat` on Windows. Node.js / npm must be installed first. Internet access and the selected provider's API key are required for AI API features; API charges are separate. / ZIP全体をダウンロードしてすべて展開し、Windowsで `start_comic_translation.bat` をダブルクリックします。Node.js / npm を事前に導入。AIのAPI機能にはインターネット接続と利用する事業者のAPIキーが必要で、API利用料金は別途かかります。
+
+
 Demo URL / デモサイト: [https://furuyan1234.github.io/comic-translation/](https://furuyan1234.github.io/comic-translation/)
 
 ### PDF manuals / PDFマニュアル
@@ -112,7 +117,7 @@ This system goes beyond simple machine translation by implementing strict contro
 
 1. **Download**: Download the Source Code (ZIP) from [Releases](../../releases) or click "Code" -> "Download ZIP". / [Releases](../../releases) または "Code" ボタンからZIPファイルをダウンロードします。
 2. **Unzip**: Extract the ZIP file to any folder. / ダウンロードしたZIPファイルを解凍してください。
-3. **Run**: Double-click `start_comic_transration.bat`. / フォルダ内の `start_comic_transration.bat` をダブルクリックします。
+3. **Run**: Double-click `start_comic_translation.bat`. / フォルダ内の `start_comic_translation.bat` をダブルクリックします。
    *(Node.js required / 事前にNode.jsのインストールが必要です)*
 4. **Start**: The system will automatically install dependencies and launch the browser. / 必要なライブラリが自動インストールされ、ブラウザが立ち上がります。
 
