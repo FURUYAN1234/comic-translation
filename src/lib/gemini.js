@@ -1,3 +1,4 @@
+import {createApiWorkFetch,throwIfApiWorkCancelled} from './api-work.js';
 /**
  * Gemini API Client for AI漫画翻訳ツール
  * 共通モジュール準拠の Zenith Protocol フォールバック
@@ -7,7 +8,7 @@
  * 2. generateTranslatedImage() — 画像モデルで翻訳済み画像を生成
  */
 
-import { getLanguageInfo } from './languages';
+import { getLanguageInfo } from './languages.js';
 
 // ── APIキー管理（メモリ限定・localStorage永続化なし） ──
 let currentApiKey = "";
@@ -38,11 +39,12 @@ export const IMAGE_MODEL_OPTIONS = [
 
 // ── 診断機能 ──
 export const diagnoseConnection = async () => {
+  const fetchForWork = createApiWorkFetch();
   if (!currentApiKey) return "API Key not set.";
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒タイムアウト
   try {
-    const response = await fetch(
+    const response = await fetchForWork(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${currentApiKey}`,
       { signal: controller.signal }
     );
@@ -54,6 +56,7 @@ export const diagnoseConnection = async () => {
       .filter(name => name.includes("gemini") || name.includes("imagen"));
     return `Available Models: ${relevant.join(", ")}`;
   } catch (e) {
+      throwIfApiWorkCancelled(e);
     let msg = e.message;
     if (e.name === 'AbortError') msg = "Timeout (10s)";
     return `Diagnostic Failed: ${msg}`;
@@ -72,6 +75,7 @@ export const diagnoseConnection = async () => {
  * @returns {Object} {layout, texts}
  */
 export const extractTranslations = async (base64Image, onStatus, targetLang = 'en', sourceLang = 'auto') => {
+  const fetchForWork = createApiWorkFetch();
   if (!currentApiKey) throw new Error("API Key が設定されていません。");
 
   const langInfo = getLanguageInfo(targetLang);
@@ -157,7 +161,7 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
       const controller = new AbortController();
       timeoutId = setTimeout(() => controller.abort(), 25000);
 
-      const response = await fetch(
+      const response = await fetchForWork(
         `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${currentApiKey}`,
         {
           method: "POST",
@@ -214,6 +218,7 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
       return { layout, texts, detectedSourceLang };
 
     } catch (err) {
+      throwIfApiWorkCancelled(err);
       let msg = err.message;
       if (err.name === "AbortError") msg = "Timeout (25s)";
       console.warn(`[Extract] ${modelId} failed:`, msg);
@@ -237,6 +242,7 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
  * @param {string} sourceLang ソース言語コード（デフォルト: 'auto'）
  */
 export const translateSingleText = async (originalText, targetLang = 'en', sourceLang = 'auto') => {
+  const fetchForWork = createApiWorkFetch();
   if (!currentApiKey) throw new Error("API Key が設定されていません。");
   const langInfo = getLanguageInfo(targetLang);
   const langName = langInfo.name;
@@ -263,7 +269,7 @@ export const translateSingleText = async (originalText, targetLang = 'en', sourc
     try {
       const controller = new AbortController();
       timeoutId = setTimeout(() => controller.abort(), 25000);
-      const response = await fetch(
+      const response = await fetchForWork(
         `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${currentApiKey}`,
         {
           method: "POST",
@@ -277,6 +283,7 @@ export const translateSingleText = async (originalText, targetLang = 'en', sourc
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
       if (text) return text.trim();
     } catch (e) {
+      throwIfApiWorkCancelled(e);
       console.warn(`[SingleTranslate] ${modelId} failed:`, e.message);
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
@@ -299,6 +306,7 @@ export const translateSingleText = async (originalText, targetLang = 'en', sourc
  * @returns {{ base64Img: string, usedModel: string }}
  */
 export const generateTranslatedImage = async (base64Image, translations, selectedModel, onStatus, instructionRules = [], customPrompt = "", targetLang = 'en', sourceLang = 'auto', isRefinement = false) => {
+  const fetchForWork = createApiWorkFetch();
   if (!currentApiKey) throw new Error("API Key が設定されていません。");
 
   const langInfo = getLanguageInfo(targetLang);
@@ -408,7 +416,7 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
       const controller = new AbortController();
       timeoutId = setTimeout(() => controller.abort(), 180000); // 3分タイムアウト
 
-      const response = await fetch(
+      const response = await fetchForWork(
         'https://generativelanguage.googleapis.com/v1beta/interactions',
         {
           method: "POST",
@@ -441,6 +449,7 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
       throw new Error(`画像データなし (${modelId})`);
 
     } catch (err) {
+      throwIfApiWorkCancelled(err);
       let msg = err.message;
       if (err.name === "AbortError") msg = "Timeout (180s)";
       console.warn(`[ImageGen] ${modelId} failed:`, msg);

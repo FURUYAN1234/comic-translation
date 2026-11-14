@@ -1,3 +1,4 @@
+import {createApiWorkFetch,throwIfApiWorkCancelled} from './api-work.js';
 /**
  * OpenAI API Client for AI漫画翻訳ツール
  * Dual Engine: ChatGPT テキスト処理 + GPT Image 2.6 Sunburst / 2.0 fallback 画像編集
@@ -60,11 +61,12 @@ const detectOutputSize = async (base64) => {
 
 /** OpenAI Chat Completions API 共通呼び出し */
 const callChatCompletion = async (modelId, messages, apiKey, timeout = 120000) => {
+  const fetchForWork = createApiWorkFetch();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetchForWork("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -80,7 +82,7 @@ const callChatCompletion = async (modelId, messages, apiKey, timeout = 120000) =
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(error => { throwIfApiWorkCancelled(error); return {}; });
       throw Object.assign(new Error(`${response.status} ${errorData.error?.message || response.statusText}`), { status: response.status, code: errorData.error?.code });
     }
 
@@ -89,7 +91,8 @@ const callChatCompletion = async (modelId, messages, apiKey, timeout = 120000) =
     return { text, model: modelId };
 
   } catch (e) {
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
+    throwIfApiWorkCancelled(e);
     if (e.name === 'AbortError') throw new Error(`Timeout (${timeout / 1000}s)`, { cause: e });
     throw e;
   }
@@ -215,6 +218,7 @@ export const extractTranslationsOAI = async (base64Image, onStatus, targetLang =
       return { layout, texts, detectedSourceLang, modelStatus: getOpenAITextModelStatus() };
 
     } catch (err) {
+      throwIfApiWorkCancelled(err);
       if (terminalOpenAIError(err)) throw err;
       console.warn(`[OpenAI Extract] ${modelId} failed:`, err.message);
       if (onStatus) onStatus(`> [抽出] OpenAI ${modelId} 失敗。次のモデルへ...`);
@@ -262,6 +266,7 @@ export const translateSingleTextOAI = async (originalText, targetLang = 'en', so
       const result = await callChatCompletion(modelId, messages, currentOpenAIApiKey, 120000);
       if (result.text) { textModelStatus.adopted = modelId; return result.text.trim(); }
     } catch (e) {
+      throwIfApiWorkCancelled(e);
       if (terminalOpenAIError(e)) throw e;
       console.warn(`[OpenAI SingleTranslate] ${modelId} failed:`, e.message);
     }
@@ -333,6 +338,7 @@ export const generateTranslatedImageOAI = async (
   instructionRules = [], customPrompt = "",
   targetLang = 'en', sourceLang = 'auto', isRefinement = false
 ) => {
+  const fetchForWork = createApiWorkFetch();
   if (!currentOpenAIApiKey) throw new Error("OpenAI API Key が設定されていません。");
 
   const langInfo = getLanguageInfo(targetLang);
@@ -456,7 +462,7 @@ VERIFICATION BEFORE OUTPUT:
         formData.append('output_format', 'png');
         formData.append('n', '1');
 
-        const response = await fetch("https://api.openai.com/v1/images/edits", {
+        const response = await fetchForWork("https://api.openai.com/v1/images/edits", {
           method: "POST",
           headers: { "Authorization": `Bearer ${currentOpenAIApiKey}` },
           body: formData,
@@ -464,7 +470,7 @@ VERIFICATION BEFORE OUTPUT:
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+          const errorData = await response.json().catch(error => { throwIfApiWorkCancelled(error); return {}; });
           const error = new Error(`OpenAI API Error: ${response.status} ${errorData.error?.message || response.statusText}`);
           error.status = response.status;
           error.code = errorData.error?.code;
@@ -478,6 +484,7 @@ VERIFICATION BEFORE OUTPUT:
         }
         throw new Error("APIレスポンスに画像データが含まれていませんでした。");
       } catch (err) {
+      throwIfApiWorkCancelled(err);
         lastError = err;
         throw err;
       } finally {
@@ -488,6 +495,7 @@ VERIFICATION BEFORE OUTPUT:
     throw lastError || new Error('OpenAI画像生成に失敗しました。');
 
   } catch (err) {
+      throwIfApiWorkCancelled(err);
     if (err.name === 'AbortError') {
       throw new Error(`Image generation timed out (${OPENAI_IMAGE_TIMEOUT_MS / 1000}s). Please retry later.`, { cause: err });
     }

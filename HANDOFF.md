@@ -1,3 +1,12 @@
+## Emergency AI stop candidate v2.0.3 — 2026-11-14 (local checks passed; real API root-owned)
+
+- Added always-visible red `#ai-emergency-stop`, disabled idle/stopped and enabled for active thinking/request/body reception. Preserves inputs and accepted results. A new explicit action resets the cancelled signal.
+- Provider requests capture their action signal before asynchronous preprocessing. Header/body waits settle on cancellation; CANCELLED is terminal across fallback/diagnosis/backup handling. UI action identity prevents old results, status callbacks and finally from changing a new action. Comic includes single-row translation and conflict retranslations.
+- Actual baseline UI action accepted a delayed response after stop; current action rejects it: private `ui-abort-baseline-regression.json`. Mock-provider cancellation covers text/image paths; this is not live API evidence.
+- Full prebuild tests: 35/35 pass,0fail. Production build/security pass; strict lint and third-party notices pass. New PDF version/manual stop page rendered; all pages visually checked and bounds pass. Existing README image banners and targets unchanged.
+- Root owns normal-UI/API interruption, idle/active/stopped display, restart, publication and final integration. No API calls, commit, push, deploy, note/SNS or backup performed by this worker. Do not describe this candidate as real-API accepted yet.
+- Evidence `/home/furu/Codex/work/story-abort-20261114/`; stop contract and source refs in character-comic-cancellation-inventory.json. Other agents are working; preserve their changes.
+
 ## Local candidate checkpoint v2.0.2 — 2026-11-14
 
 - Existing-app update: operation/API PDFs, visible separate-tab manual links, bilingual README and release notes are prepared. Local candidate only; no push, tag, release, deployment or backup.

@@ -1,3 +1,4 @@
+import {beginApiWork,cancelApiWork,isCurrentApiWork,isApiWorkCancelled} from './lib/api-work.js';
 // AI Comic Translation Tool V1.6.0 — Dual Engine (Gemini + OpenAI) 対応
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import './App.css';
@@ -20,7 +21,7 @@ function ManualLinks() {
   </nav>;
 }
 
-const SYSTEM_VERSION = "2.0.2";
+const SYSTEM_VERSION = "2.0.3";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -57,6 +58,21 @@ const App = () => {
     flipManualOverrideRef.current = false;
     setFlipEnabled(getDefaultFlip(sourceLanguage, langCode));
   }, [sourceLanguage]);
+
+  const [apiBusy, setApiBusy] = useState(false);
+  const startAiWork = () => {
+    const run = beginApiWork();
+    setIsExtracting(false); setIsGenerating(false); setTranslatingRow(null);
+    setApiBusy(true);
+    return run;
+  };
+  const stopAiWork = () => {
+    cancelApiWork();
+    setIsExtracting(false); setIsGenerating(false); setTranslatingRow(null);
+    setApiBusy(false);
+    extractionSessionRef.current += 1;
+    showStatus('⏹ AI通信を緊急停止しました。入力と取得済み結果は保持しています。送信済み処理の課金は取り消せません。');
+  };
 
   // 入力
   const [originalImage, setOriginalImage] = useState(null);
@@ -297,6 +313,7 @@ Output the final translated image only. No explanations needed.`;
   const runExtraction = async (imageDataUrl, langOverride) => {
     const dataUrl = imageDataUrl || originalImage;
     if (!dataUrl) return;
+    const run = startAiWork();
     setIsExtracting(true);
     setErrorMessage('');
     const lang = langOverride || targetLanguage;
@@ -309,12 +326,12 @@ Output the final translated image only. No explanations needed.`;
     try {
       const base64 = dataUrl.split(',')[1];
       const result = await extractTranslationsAI(base64, (s) => {
-        if (currentSession === extractionSessionRef.current) { showStatus(s); if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus()); }
+        if (isCurrentApiWork(run) && currentSession === extractionSessionRef.current) { showStatus(s); if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus()); }
       }, lang, sourceLanguage);
       if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       
       // もし抽出中に別の画像がドロップされセッションが変わっていたら、古い結果は画面に反映せず破棄する
-      if (currentSession !== extractionSessionRef.current) return;
+      if (!isCurrentApiWork(run) || currentSession !== extractionSessionRef.current) return;
 
       // 新形式 {layout, texts, detectedSourceLang} を分離して保存
       if (result.layout && result.texts) {
@@ -340,12 +357,15 @@ Output the final translated image only. No explanations needed.`;
                 const translated = await translateSingleTextAI(t.original, finalTarget, result.detectedSourceLang);
                 return { ...t, translated };
              }));
+             if (!isCurrentApiWork(run)) return;
              result.texts = retranslated;
           } catch(e) {
+             if (!isCurrentApiWork(run) || isApiWorkCancelled(e)) return;
              console.warn("Retranslation failed:", e);
           }
         }
 
+        if (!isCurrentApiWork(run)) return;
         setTranslations(result.texts);
 
         const layoutLabel = result.layout.type === '4koma' ? '四コマ / 4-koma' : `一般漫画 / Comic (${result.layout.panels.length}コマ/panels)`;
@@ -357,13 +377,13 @@ Output the final translated image only. No explanations needed.`;
       }
     } catch (err) {
       if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
-      if (currentSession !== extractionSessionRef.current) return;
+      if (!isCurrentApiWork(run) || currentSession !== extractionSessionRef.current) return;
       setErrorMessage(`テキスト抽出エラー: ${err.message}`);
       showStatus('', false);
     } finally {
       // 自分が最新のセッションである場合のみ Loading を解除
-      if (currentSession === extractionSessionRef.current) {
-        setIsExtracting(false);
+      if (isCurrentApiWork(run) && currentSession === extractionSessionRef.current) {
+        setIsExtracting(false); setApiBusy(false);
       }
     }
   };
@@ -401,20 +421,23 @@ Output the final translated image only. No explanations needed.`;
   const handleSingleTranslate = async (index) => {
     const item = translations[index];
     if (!item.original) return;
+    const run = startAiWork();
     setTranslatingRow(index);
     showStatus(`🔄 テキスト #${index + 1} を翻訳中... / Translating text #${index + 1}...`);
     try {
       const langInfo = getLanguageInfo(targetLanguage);
       const translated = await translateSingleTextAI(item.original, targetLanguage, sourceLanguage);
+      if (!isCurrentApiWork(run)) return;
       if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       updateTranslation(index, translated);
       showStatus(`✅ テキスト #${index + 1} → ${langInfo.nativeName} 翻訳完了 / Translation complete`, true);
     } catch (err) {
+      if (!isCurrentApiWork(run) || isApiWorkCancelled(err)) return;
       if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       setErrorMessage(`個別翻訳エラー / Translation Error: ${err.message}`);
       showStatus('', false);
     } finally {
-      setTranslatingRow(null);
+      if (isCurrentApiWork(run)) { setTranslatingRow(null); setApiBusy(false); }
     }
   };
 
@@ -498,6 +521,7 @@ Output the final translated image only. No explanations needed.`;
   // ── 画像生成 ──
   const handleGenerate = async (forceOriginal = false) => {
     if (!originalImage || isGenerating) return;
+    const run = startAiWork();
     setIsGenerating(true);
     setErrorMessage('');
     
@@ -523,10 +547,12 @@ Output the final translated image only. No explanations needed.`;
         showStatus('📋 画像を準備中...');
         inputBase64 = originalImage.split(',')[1];
       }
+      if (!isCurrentApiWork(run)) return;
       showStatus(`🌐 ${langInfo.nativeName}画像を${isRefinement ? '修正' : '生成'}中...`);
       const result = await generateTranslatedImageAI(
-        inputBase64, translations, selectedModel, (s) => showStatus(s), instructionRules, customPrompt, targetLanguage, sourceLanguage, isRefinement
+        inputBase64, translations, selectedModel, (s) => { if (isCurrentApiWork(run)) showStatus(s); }, instructionRules, customPrompt, targetLanguage, sourceLanguage, isRefinement
       );
+      if (!isCurrentApiWork(run)) return;
       const imgSrc = `data:${result.mimeType || 'image/png'};base64,${result.base64Img}`;
       setTranslatedImage(imgSrc);
       setUsedModel(result.usedModel);
@@ -541,11 +567,12 @@ Output the final translated image only. No explanations needed.`;
         setShowBuilder(false);
       }
     } catch (err) {
+      if (!isCurrentApiWork(run) || isApiWorkCancelled(err)) return;
       if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       setErrorMessage(err.message);
       showStatus('', false);
     } finally {
-      setIsGenerating(false);
+      if (isCurrentApiWork(run)) { setIsGenerating(false); setApiBusy(false); }
     }
   };
 
@@ -590,13 +617,14 @@ Output the final translated image only. No explanations needed.`;
     setApiKeyInput('');
   };
 
-  const isWorking = isExtracting || isGenerating;
+  const isWorking = apiBusy || isExtracting || isGenerating || translatingRow !== null;
   const canGenerate = originalImage && !isWorking && translations.length > 0;
   const typeIcon = (t) => ({ title: '📌', dialogue: '💬', narration: '📝', sfx: '💥' }[t] || '📎');
 
   // ═══════════ レンダリング ═══════════
   return (
-    <div className="app-container">
+    <div className={`app-container${isUnlocked || apiBusy ? ' emergency-stop-ready' : ''}`}>
+      {(isUnlocked || apiBusy) && <div className="emergency-stop-bar"><button id="ai-emergency-stop" type="button" className="ai-emergency-stop" disabled={!apiBusy} aria-label="AI通信を緊急停止" onClick={stopAiWork} title={apiBusy ? '進行中のAI通信を停止します。入力・取得済み結果は保持します。' : '現在停止できるAI通信はありません。'}>■ 緊急停止 / Stop AI</button></div>}
       {/* APIゲート */}
       {!isUnlocked && (
         <div className="api-gate">
@@ -713,15 +741,6 @@ Output the final translated image only. No explanations needed.`;
               </div>
             </div>
             <div className="header-actions">
-              {engineMode === 'openai' && <div className="model-select-wrap">
-                <label className="model-label" htmlFor="openai-text-model">OpenAI text / Vision</label>
-                <select id="openai-text-model" value={textModel} onChange={e => updateTextModel(e.target.value)} disabled={isWorking}>
-                  {OPENAI_MODEL_OPTIONS.map(model => <option key={model.id} value={model.id}>{model.label}</option>)}
-                </select>
-                <small className="openai-model-help">{OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.description}<br/>入力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.inputPriceUsdPerM} / 出力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.outputPriceUsdPerM} per 1M tokens</small>
-                <p className="openai-model-help">選択: {textModel} / 試行: {textModelStatus.attempted.join(' → ') || 'なし'} / 採用: {textModelStatus.adopted || '未採用'}</p>
-                <details className="openai-model-help"><summary>下位フォールバック / 料金</summary><p>{fallbackModels(textModel).join(' → ')}</p><p>入力/出力 USD per 1M tokens。推論トークン・修正回数で総額は変わります。価格確認日: {OPENAI_MODEL_PRICE_SNAPSHOT_DATE}。</p></details>
-              </div>}
               {/* エンジンバッジ */}
               <span className={`engine-badge ${engineMode === 'openai' ? 'engine-openai' : 'engine-gemini'}`}>
                 {engineMode === 'openai' ? '🟢 ChatGPT' : '🔵 Gemini'}
@@ -780,6 +799,23 @@ Output the final translated image only. No explanations needed.`;
             <div className="error-bar"><span>⚠️ {errorMessage}</span><button onClick={() => setErrorMessage('')}>✕</button></div>
           )}
         </div>
+
+        {engineMode === 'openai' && <section className="openai-model-panel" aria-label="OpenAIモデルと料金 / Model and pricing">
+          <div className="model-select-wrap">
+            <label className="model-label" htmlFor="openai-text-model">OpenAI text / Vision model</label>
+            <select id="openai-text-model" className="model-select" value={textModel} onChange={e => updateTextModel(e.target.value)} disabled={isWorking}>
+              {OPENAI_MODEL_OPTIONS.map(model => <option key={model.id} value={model.id}>{model.label}</option>)}
+            </select>
+          </div>
+          <div className="openai-model-summary">
+            <p>{OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.description}</p>
+            <p>入力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.inputPriceUsdPerM} / 出力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.outputPriceUsdPerM} per 1M tokens</p>
+          </div>
+          <div className="openai-model-meta">
+            <p>選択: {textModel} / 試行: {textModelStatus.attempted.join(' → ') || 'なし'} / 採用: {textModelStatus.adopted || '未採用'}</p>
+            <details><summary>下位フォールバック / 料金</summary><p>{fallbackModels(textModel).join(' → ')}</p><p>入力/出力 USD per 1M tokens。推論トークン・修正回数で総額は変わります。価格確認日: {OPENAI_MODEL_PRICE_SNAPSHOT_DATE}。</p></details>
+          </div>
+        </section>}
 
         {/* ════ メイン2カラム ════ */}
         <div className="main-grid">

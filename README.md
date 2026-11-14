@@ -53,7 +53,7 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-Version **v2.0.2** uses a two-stage translation workflow. OpenAI image editing uses GPT Image 2.6 Sunburst; failures retain their cause without switching to GPT Image 2.0. / **v2.0.2** は2段階で翻訳します。OpenAI画像編集はGPT Image 2.6 Sunburstを使用し、失敗時は原因を表示して停止します。GPT Image 2.0への自動切替は行いません。
+Version **v2.0.3** uses a two-stage translation workflow. OpenAI image editing uses GPT Image 2.6 Sunburst; failures retain their cause without switching to GPT Image 2.0. / **v2.0.3** は2段階で翻訳します。OpenAI画像編集はGPT Image 2.6 Sunburstを使用し、失敗時は原因を表示して停止します。GPT Image 2.0への自動切替は行いません。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path. / Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
 * **OpenAI image generation / OpenAI画像生成**: `gpt-image-2.6-sunburst`, xhigh quality, PNG output through the edit API, with a 600-second limit and no automatic image-model fallback. / `gpt-image-2.6-sunburst` のxhigh品質・PNG出力を編集APIで使用します。上限は600秒で、画像モデルは自動切替しません。
@@ -232,6 +232,11 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
+### v2.0.3
+
+- Add a red emergency stop for active AI transport and response reception, with terminal cancellation, retained input/results and restart protection. / AI通信・応答受信中の赤い緊急停止、モデル切替の停止、入力・結果の保持、再実行の保護を追加しました。
+
+
 ### v2.0.1 (2026-11-11)
 
 - Removed the GPT Image 2.0 fallback route. GPT Image 2.6 remains the image model; provider failures do not silently switch to the retired model. / GPT Image 2.0への代替経路を除去しました。画像モデルのGPT Image 2.6を維持し、失敗時に旧モデルへ自動切替しません。
@@ -389,3 +394,15 @@ Clarify free personal, business and commissioned use and monetization of users' 
 ---
 
 Developed by **FURU** / 開発：**FURU**
+
+
+## Emergency stop / 緊急停止
+
+Use the red **Stop AI / 緊急停止** button while an AI request is thinking, generating or receiving its response. It is disabled while idle and after stopping. / AIが思考・生成・応答受信中のときは、赤い「緊急停止」ボタンで通信を止められます。待機中と停止後は非活性です。
+
+Stopping preserves your inputs and previously accepted results. It cancels local transport/body reception, blocks fallback and later processing for that request, and ignores late results. Start the desired operation explicitly to try again. A request already submitted may still run on the provider and incur charges; stopping does not revoke payment. / 入力と取得済み結果を保持し、ローカルの通信・応答受信と、その実行のモデル切替・後続処理を止め、遅れて届いた結果を採用しません。再開する操作は改めて押してください。送信済み処理は提供元で継続・課金される場合があり、料金の取り消しを保証しません。
+
+
+**Model information and emergency stop / モデル情報と緊急停止:** OpenAI selection, full descriptions, prices and attempted/adopted routes have a dedicated full-width panel, separate from language/action controls. The red emergency stop remains at the screen’s top-right while scrolling and over app overlays; idle/stopped is disabled. / OpenAIのモデル選択・説明全文・料金・試行／採用経路は、言語・操作欄と分けた専用の全幅パネルに表示します。赤い緊急停止はスクロール中やアプリ内オーバーレイ中も画面右上に固定し、待機中・停止済みは無効です。
+
+Initial empty API setup hides the emergency control and its reserved space; active requests and an opened/local workspace retain the normal stop control. / 初期のAPI入力画面では緊急停止とその予約欄を表示しません。起動後は待機中も右上に表示し、処理中だけ押せます。
