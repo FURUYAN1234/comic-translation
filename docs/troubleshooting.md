@@ -1,0 +1,5 @@
+# Dependency-lock version corruption / 依存ロックの版情報の破損
+
+Application version replacement across package-lock.json changed transitive dependency metadata: esutils was changed to an unpublished archive, which no longer matched its tarball version, and lightningcss's dependency requirement changed. A warm local build could succeed with previously installed packages while GitHub Actions npm ci failed with E404. / package-lock.json全体へのアプリ版の置換で、esutilsが未公開アーカイブへ変わり、whichの宣言版とtarballが不一致になり、lightningcssの依存条件も変わりました。既存node_modulesでローカルビルドできても、GitHub Actionsのnpm ciはE404になります。
+
+Update only package.json.version, package-lock.json.version and package-lock.json.packages[""].version for application metadata. Do not replace matching version strings in dependency entries. The lockfile-integrity regression checks every registry tarball/version pair; a clean npm ci with a fresh cache additionally verifies that the referenced archives exist. / アプリ版はpackage.json.version、package-lock.json.version、package-lock.json.packages[""].versionだけを更新し、依存欄の同じ文字列は置換しません。lockfile-integrity回帰でregistryのtarballと宣言版を照合し、新しいcacheを使うnpm ciでアーカイブの実在も確認します。

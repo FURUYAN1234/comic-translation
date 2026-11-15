@@ -1,3 +1,10 @@
+## Clean install repair v2.0.5 — 2026-11-15 (candidate)
+
+- GitHub Actions v2.0.4/main source validation failed npm ci on esutils2.0.4 E404; the later green gh-pages job only deployed static files. Local/remote main11ec7c7 retained the faulty lock.
+- Earlier broad application-version replacement also corrupted which metadata and lightningcss's detect-libc requirement. Restored registry-confirmed esutils2.0.3/which2.0.2 and original detect-libc^2.0.3 without changing application logic/provider settings. New tarball/version regression failed before repair and passes after it.
+- Fresh-cache normal npm ci reproduced E404 before repair, then installed189 packages/audited190 in23s with0 vulnerabilities after repair. Full37 tests, warnings0 lint, production build/security/third-party notice checks passed. Translation/image/API behavior is unchanged; no new paid AI request was needed to verify this install failure.
+- README/current version2.0.5, bilingual release notes and manuals5+4pages synchronized; all9 pages visually inspected, cover/version/footer updated and layout/bounds passed. Public PDFs match generated files. Formal release and source main/tag CI verification remain pending; root owns note/SNS and final backup. Private evidence: /home/furu/Codex/work/manga-step2-scroll-20261115/comic-ci/.
+
 ## Disabled emergency stop v2.0.4 — 2026-11-14
 
 - Root observed idle disabled=true still dark red. Final emergency-specific rule overrode generic disabled opacity with background#743132/opacity1. Only disabled stop fill/border now gray#525252/#a3a3a3; active red and all API/action behavior unchanged. API requests/results/cancel logic unaffected; root owns live visual acceptance and publication. Existing2.0.3 tags/notes remain immutable.

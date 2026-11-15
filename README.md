@@ -53,7 +53,7 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-Version **v2.0.4** uses a two-stage translation workflow. OpenAI image editing uses GPT Image 2.6 Sunburst; failures retain their cause without switching to GPT Image 2.0. / **v2.0.3** は2段階で翻訳します。OpenAI画像編集はGPT Image 2.6 Sunburstを使用し、失敗時は原因を表示して停止します。GPT Image 2.0への自動切替は行いません。
+Version **v2.0.5** uses a two-stage translation workflow. OpenAI image editing uses GPT Image 2.6 Sunburst; failures retain their cause without switching to GPT Image 2.0. / **v2.0.5** は2段階で翻訳します。OpenAI画像編集はGPT Image 2.6 Sunburstを使用し、失敗時は原因を表示して停止します。GPT Image 2.0への自動切替は行いません。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path. / Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
 * **OpenAI image generation / OpenAI画像生成**: `gpt-image-2.6-sunburst`, xhigh quality, PNG output through the edit API, with a 600-second limit and no automatic image-model fallback. / `gpt-image-2.6-sunburst` のxhigh品質・PNG出力を編集APIで使用します。上限は600秒で、画像モデルは自動切替しません。
@@ -232,6 +232,12 @@ A tool to automatically convert static 4-koma manga into fully voiced animated v
 
 ## 🔄 Changelog / 更新履歴
 
+### v2.0.5
+Repair corrupted dependency-lock metadata so a clean npm ci can retrieve the published packages. Restore esutils 2.0.3, which 2.0.2 and the original lightningcss dependency requirement; add a registry tarball/version consistency check. Translation, image generation and stop behavior are unchanged. / 依存ロックの版情報を修正し、クリーンなnpm ciで実在するパッケージを取得できるようにしました。esutils 2.0.3、which 2.0.2、lightningcssの元の依存条件を復旧し、tarballと版の整合を検査します。翻訳・画像生成・停止の動作は変更していません。
+
+### v2.0.4
+Emergency stop stays red during AI work and is disabled gray while idle, finished, stopped or after errors. API requests, retained images/results and cancellation are unchanged. / 緊急停止はAI処理中に赤で有効、待機・完了・停止・エラー後はグレーで無効になります。API通信・画像や結果の保持・中断処理は変更していません。
+
 ### v2.0.3
 
 - Add a red emergency stop for active AI transport and response reception, with terminal cancellation, retained input/results and restart protection. / AI通信・応答受信中の赤い緊急停止、モデル切替の停止、入力・結果の保持、再実行の保護を追加しました。
@@ -406,6 +412,3 @@ Stopping preserves your inputs and previously accepted results. It cancels local
 **Model information and emergency stop / モデル情報と緊急停止:** OpenAI selection, full descriptions, prices and attempted/adopted routes have a dedicated full-width panel, separate from language/action controls. The red emergency stop remains at the screen’s top-right while scrolling and over app overlays; idle/stopped is disabled. / OpenAIのモデル選択・説明全文・料金・試行／採用経路は、言語・操作欄と分けた専用の全幅パネルに表示します。赤い緊急停止はスクロール中やアプリ内オーバーレイ中も画面右上に固定し、待機中・停止済みは無効です。
 
 Initial empty API setup hides the emergency control and its reserved space; active requests and an opened/local workspace retain the normal stop control. / 初期のAPI入力画面では緊急停止とその予約欄を表示しません。起動後は待機中も右上に表示し、処理中だけ押せます。
-
-### v2.0.4
-Emergency stop stays red during AI work and is disabled gray while idle, finished, stopped or after errors. API requests, retained images/results and cancellation are unchanged. / 緊急停止はAI処理中に赤で有効、待機・完了・停止・エラー後はグレーで無効になります。API通信・画像や結果の保持・中断処理は変更していません。
