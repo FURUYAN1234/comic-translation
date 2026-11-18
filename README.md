@@ -1,5 +1,9 @@
 # AI Comic Translation Tool / AI漫画翻訳ツール
 
+OpenAI text extraction and translation now offers **GPT-6.2 Sol** and **GPT-6.2 Astra**. The initial selection is **GPT-6 Luna**. / OpenAIによる台詞の抽出・翻訳に **GPT-6.2 Sol** と **GPT-6.2 Astra** を追加しました。初期選択は **GPT-6 Luna** です。
+
+Standard input / output per million tokens: GPT-6 Luna $0.10 / $0.50, GPT-6.2 Sol $2 / $10, GPT-6.2 Astra $8 / $40 (November 18, 2026). / 100万トークン当たりの通常入力／出力単価はGPT-6 Luna $0.10／$0.50、GPT-6.2 Sol $2／$10、GPT-6.2 Astra $8／$40です（2026年11月18日確認）。
+
 **Gemini model route / Geminiモデル候補**: `gemini-3.8-flash` → `gemini-3.6-flash` → `gemini-3.5-flash-lite` → `gemini-3.1-flash-lite`. Explicit stable IDs avoid the December 1, 2026 redirects; image-generation models keep their dedicated routes. / 2026年12月1日の旧モデル自動転送に依存しないよう、現行GAモデルを明示します。画像生成は専用のモデル経路を使います。
 
 > **MIT License; your outputs remain yours.** You may use, modify, redistribute and sell the app, including in paid products and services, without individual permission from FURU. Retain the copyright and MIT license notices in copies or substantial portions of the software. External API fees and third-party terms are separate. / **アプリはMITライセンス。成果物の権利は従来どおり利用者に帰属します。** アプリの利用・改変・再配布・販売、有料商品やサービスへの組み込みに、FURUへの個別許可は不要です。ソフトウェアの複製または重要な部分には著作権表示とMITの許諾表示を残してください。外部API料金と第三者の条件は別です。
@@ -36,10 +40,10 @@ This project is an experimental tool designed to automate the labor-intensive pr
 
 **v2.0.2** — Added Japanese application and API PDF guides with in-app links. / 日本語の操作・API設定PDFとアプリ内リンクを追加しました。
 
-Select from all 12 models, with Astra highest and 6.1 Sol default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls. / 全12モデルを選択できます。GPT-6 Astraを最上位、GPT-6.1 Solを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。
+Select from all 14 models, with Astra highest and GPT-6 Luna default. Fallback starts at the selected model and only moves downward; selection, attempts and adoption are shown. Unknown IDs are rejected before API calls. / 全14モデルを選択できます。GPT-6 Astraを最上位、GPT-6 Lunaを既定とし、選択モデルから下位のみ試行します。選択・試行・採用を表示し、未知IDはAPI呼び出し前に拒否します。価格は入力/出力USD per 1M tokensで表示し、推論トークンや処理回数で実費が変わります。
 
 
-OpenAI fallback: `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6.1-terra` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`. GPT-6.1 Sol and Terra use a 32,768-token completion budget. Incomplete, refused and empty responses are rejected; output-budget exhaustion, authentication, billing/quota and policy failures stop retries. / 途中終了・拒否・空応答を成功扱いせず、出力上限到達・認証・残高不足・ポリシー拒否は連続試行を停止します。画像モデルと既存翻訳ルールは維持します。
+OpenAI fallback: `gpt-6.2-astra` → `gpt-6-astra` → `gpt-6.2-sol` → `gpt-6.1-sol` → `gpt-6.1-terra` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`. GPT-6.1 Sol and Terra use a 32,768-token completion budget. Incomplete, refused and empty responses are rejected; output-budget exhaustion, authentication, billing/quota and policy failures stop retries. / 途中終了・拒否・空応答を成功扱いせず、出力上限到達・認証・残高不足・ポリシー拒否は連続試行を停止します。画像モデルと既存翻訳ルールは維持します。
 
 ## 🚀 Overview / 概要
 
@@ -53,7 +57,7 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-Version **v2.0.5** uses a two-stage translation workflow. OpenAI image editing uses GPT Image 2.6 Sunburst; failures retain their cause without switching to GPT Image 2.0. / **v2.0.5** は2段階で翻訳します。OpenAI画像編集はGPT Image 2.6 Sunburstを使用し、失敗時は原因を表示して停止します。GPT Image 2.0への自動切替は行いません。
+Version **v2.0.6** uses a two-stage translation workflow. OpenAI image editing uses GPT Image 2.6 Sunburst; failures retain their cause without switching to GPT Image 2.0. / **v2.0.6** は2段階で翻訳します。OpenAI画像編集はGPT Image 2.6 Sunburstを使用し、失敗時は原因を表示して停止します。GPT Image 2.0への自動切替は行いません。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path. / Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
 * **OpenAI image generation / OpenAI画像生成**: `gpt-image-2.6-sunburst`, xhigh quality, PNG output through the edit API, with a 600-second limit and no automatic image-model fallback. / `gpt-image-2.6-sunburst` のxhigh品質・PNG出力を編集APIで使用します。上限は600秒で、画像モデルは自動切替しません。
@@ -99,7 +103,7 @@ This system goes beyond simple machine translation by implementing strict contro
 * **Frontend**: React 19 / Vite 8 / Vanilla CSS / フロントエンド：React 19／Vite 8／Vanilla CSS。
 * **AI Routing**: Zenith Protocol Architecture (Dual Engine Abstraction) / AI経路：両エンジンを抽象化するZenith Protocol。
 * **LLM/VFM (Gemini)**: Text/OCR `gemini-3.8-flash` → `gemini-3.6-flash` → `gemini-3.5-flash-lite` → `gemini-3.1-flash-lite`; Image `gemini-nano-banana-2.1` / Gemini：文章／OCRは記載した順のフォールバック、画像はgemini-nano-banana-2.1。
-* **LLM/VFM (OpenAI)**: Text `gpt-6-astra` → `gpt-6.1-sol` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`; Image `gpt-image-2.6-sunburst` (Edit API, PNG/xhigh, 600s timeout, no automatic model fallback) / OpenAI：文章は記載した順のフォールバック。画像はGPT Image 2.6 SunburstのEdit API・PNG／xhighを使い、600秒上限で自動モデル切替は行いません。
+* **LLM/VFM (OpenAI)**: Text `gpt-6.2-astra` → `gpt-6-astra` → `gpt-6.2-sol` → `gpt-6.1-sol` → `gpt-6.1-terra` → `gpt-6-sol` → `gpt-5.6-sol` → `gpt-5.6-terra` → `gpt-6-luna` → `gpt-5.6-luna` → `gpt-4.1` → `gpt-4.1-mini` → `gpt-4.1-nano` → `gpt-4o`; Image `gpt-image-2.6-sunburst` (Edit API, PNG/xhigh, 600s timeout, no automatic model fallback) / OpenAI：文章は記載した順のフォールバック。画像はGPT Image 2.6 SunburstのEdit API・PNG／xhighを使い、600秒上限で自動モデル切替は行いません。
 * **Image Processing**: Canvas API (Horizontal Flip / 左右反転処理)
 * **Security**: Memory-only API key management (no localStorage, no hardcoding) / 安全対策：APIキーはメモリだけに保持し、localStorageへの保存や埋め込みを行いません。
 

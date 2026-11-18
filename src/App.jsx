@@ -21,7 +21,7 @@ function ManualLinks() {
   </nav>;
 }
 
-const SYSTEM_VERSION = "2.0.5";
+const SYSTEM_VERSION = "2.0.6";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {

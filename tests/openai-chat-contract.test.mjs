@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { OPENAI_TEXT_MODELS, OPENAI_MODEL_OPTIONS, OPENAI_MODEL_PRICE_SNAPSHOT_DATE, DEFAULT_OPENAI_MODEL, fallbackModels, chatOptions, completedText, terminalOpenAIError } from '../src/lib/openai-chat-contract.js';
-test('Sol first and compatible request with unchanged legacy options',()=>{
- assert.equal(OPENAI_TEXT_MODELS.length,12);
- assert.equal(OPENAI_TEXT_MODELS[0],'gpt-6-astra');
- assert.equal(DEFAULT_OPENAI_MODEL,'gpt-6.1-sol');
+test('Luna first and compatible request with unchanged legacy options',()=>{
+ assert.equal(OPENAI_TEXT_MODELS.length,14);
+ assert.equal(OPENAI_TEXT_MODELS[0],'gpt-6.2-astra');
+ assert.equal(DEFAULT_OPENAI_MODEL,'gpt-6-luna');
  assert.equal(fallbackModels()[0],DEFAULT_OPENAI_MODEL);
- assert.equal(OPENAI_MODEL_OPTIONS.length,12);
+ assert.equal(OPENAI_MODEL_OPTIONS.length,14);
  for(const model of OPENAI_TEXT_MODELS.filter(id=>/^gpt-(6|5\.6)/.test(id))) assert.deepEqual(chatOptions(model),{max_completion_tokens:32768});
  assert.deepEqual(chatOptions('gpt-6.1-sol'),{max_completion_tokens:32768});
  assert.deepEqual(chatOptions('gpt-4.1',{temperature:0.1}),{temperature:0.1});
@@ -16,7 +16,7 @@ test('Terra is selectable at official standard pricing and falls only to lower m
  assert.equal(terra?.label,'GPT-6.1 Terra');
  assert.equal(terra?.inputPriceUsdPerM,1);
  assert.equal(terra?.outputPriceUsdPerM,5);
- assert.equal(OPENAI_MODEL_PRICE_SNAPSHOT_DATE,'2026-10-27');
+ assert.equal(OPENAI_MODEL_PRICE_SNAPSHOT_DATE,'2026-11-18');
  assert.deepEqual(fallbackModels('gpt-6.1-sol').slice(0,3),['gpt-6.1-sol','gpt-6.1-terra','gpt-6-sol']);
  assert.equal(fallbackModels('gpt-6.1-terra')[0],'gpt-6.1-terra');
  assert.equal(fallbackModels('gpt-6.1-terra').includes('gpt-6.1-sol'),false);
@@ -38,7 +38,7 @@ test('terminal account/policy errors stop; temporary/model errors permit fallbac
 });
 
 import { setOpenAIApiKey, setOpenAITextModel, getOpenAITextModelStatus, translateSingleTextOAI } from '../src/lib/openai.js';
-test('real translation caller sends Sol first and stops on truncation', async () => {
+test('real translation caller sends Luna first by default and stops on truncation', async () => {
  const originalFetch=globalThis.fetch;
  const calls=[];
  setOpenAIApiKey('test-only-placeholder');
@@ -48,10 +48,17 @@ test('real translation caller sends Sol first and stops on truncation', async ()
  };
  try {
   await assert.rejects(()=>translateSingleTextOAI('sample'),/length/);
-  assert.deepEqual(calls.map(c=>c.model),['gpt-6.1-sol']);
+  assert.deepEqual(calls.map(c=>c.model),['gpt-6-luna']);
+  for (const id of ['gpt-6.2-sol','gpt-6.2-astra']) {
+   setOpenAITextModel(id);
+   assert.equal(await translateSingleTextOAI('sample'), 'translated');
+   assert.equal(calls.at(-1).model, id);
+   assert.equal(calls.at(-1).max_completion_tokens, 32768);
+   assert.ok(!('temperature' in calls.at(-1)));
+  }
   assert.equal(calls[0].max_completion_tokens,32768);
   assert.ok(!('temperature' in calls[0]));
- } finally {globalThis.fetch=originalFetch;setOpenAIApiKey('');}
+ } finally {globalThis.fetch=originalFetch;setOpenAIApiKey('');setOpenAITextModel(DEFAULT_OPENAI_MODEL);}
 });
 test('real translation caller stops after terminal quota failure', async () => {
  const originalFetch=globalThis.fetch;
