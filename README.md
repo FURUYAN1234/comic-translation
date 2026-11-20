@@ -36,6 +36,10 @@ Japanese A4 guides cover application operation and OpenAI / Gemini API setup. / 
 >
 > Powered by Dual API Architecture (Gemini & OpenAI) — Automatic text extraction, translation, horizontal flip, and image regeneration. / Gemini & OpenAIのDual APIアーキテクチャを活用し、テキスト抽出・多言語翻訳・左右反転・画像再生成を完全自動化。
 
+## Introduction video / 紹介動画
+
+[![Watch the AI Comic Translation Tool introduction / AI Comic Translation Toolの紹介動画を見る](https://i.ytimg.com/vi/KV7C6_y7-4w/hqdefault.jpg)](https://youtu.be/KV7C6_y7-4w)
+
 ---
 
 This project is an experimental tool designed to automate the labor-intensive process of manga translation, typesetting, and redrawing by leveraging the multimodal capabilities of the Gemini API and OpenAI API. / 本プロジェクトは、Gemini APIおよびOpenAI APIのマルチモーダル機能を活用し、漫画の翻訳、写植、リドローという労働集約的な作業を自動化することを目的とした実験的ツールです。
