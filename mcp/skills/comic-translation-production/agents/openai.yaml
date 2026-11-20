@@ -1,0 +1,3 @@
+interface:
+  display_name: "AI漫画翻訳ツール"
+  short_description: "漫画ページの訳文、吹き出しの順序、左右反転、画質を確認"

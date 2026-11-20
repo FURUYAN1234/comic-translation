@@ -1,6 +1,7 @@
 import {beginApiWork,cancelApiWork,isCurrentApiWork,isApiWorkCancelled} from './lib/api-work.js';
 // AI Comic Translation Tool V1.6.0 — Dual Engine (Gemini + OpenAI) 対応
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { connectFuruMcp, mcpAppError } from './mcp-connection.js';
 import './App.css';
 import { setApiKey, IMAGE_MODEL_OPTIONS } from './lib/gemini';
 import { setOpenAIApiKey, setOpenAITextModel, getOpenAITextModelStatus } from './lib/openai';
@@ -21,10 +22,12 @@ function ManualLinks() {
   </nav>;
 }
 
-const SYSTEM_VERSION = "2.0.6";
+const SYSTEM_VERSION = "2.0.7";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
+  const mcpMount = useRef(null);
+  const mcpActions = useRef(null);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [selectedModel, setSelectedModel] = useState(IMAGE_MODEL_OPTIONS[0].value);
@@ -310,7 +313,7 @@ Output the final translated image only. No explanations needed.`;
   const extractionSessionRef = useRef(0);
 
   // ── テキスト抽出 ──
-  const runExtraction = async (imageDataUrl, langOverride) => {
+  const runExtraction = async (imageDataUrl, langOverride, forMcp = false) => {
     const dataUrl = imageDataUrl || originalImage;
     if (!dataUrl) return;
     const run = startAiWork();
@@ -370,16 +373,19 @@ Output the final translated image only. No explanations needed.`;
 
         const layoutLabel = result.layout.type === '4koma' ? '四コマ / 4-koma' : `一般漫画 / Comic (${result.layout.panels.length}コマ/panels)`;
         showStatus(`✅ ${result.texts.length}件検出 / ${result.texts.length} texts detected | ${layoutLabel}`, true);
+        return { rows: result.texts, targetLanguage: finalTarget };
       } else {
         // 万一旧形式が返った場合のフォールバック
         setTranslations(Array.isArray(result) ? result : []);
         showStatus(`✅ 検出完了 / Extraction Complete`, true);
+        return { rows: Array.isArray(result) ? result : [], targetLanguage: lang };
       }
     } catch (err) {
       if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       if (!isCurrentApiWork(run) || currentSession !== extractionSessionRef.current) return;
       setErrorMessage(`テキスト抽出エラー: ${err.message}`);
       showStatus('', false);
+      if (forMcp) throw err;
     } finally {
       // 自分が最新のセッションである場合のみ Loading を解除
       if (isCurrentApiWork(run) && currentSession === extractionSessionRef.current) {
@@ -519,7 +525,7 @@ Output the final translated image only. No explanations needed.`;
   };
 
   // ── 画像生成 ──
-  const handleGenerate = async (forceOriginal = false) => {
+  const handleGenerate = async (forceOriginal = false, forMcp = false) => {
     if (!originalImage || isGenerating) return;
     const run = startAiWork();
     setIsGenerating(true);
@@ -566,11 +572,13 @@ Output the final translated image only. No explanations needed.`;
         setCustomPrompt('');
         setShowBuilder(false);
       }
+      return { imageData: imgSrc, model: result.usedModel || '' };
     } catch (err) {
       if (!isCurrentApiWork(run) || isApiWorkCancelled(err)) return;
       if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       setErrorMessage(err.message);
       showStatus('', false);
+      if (forMcp) throw err;
     } finally {
       if (isCurrentApiWork(run)) { setIsGenerating(false); setApiBusy(false); }
     }
@@ -619,11 +627,44 @@ Output the final translated image only. No explanations needed.`;
 
   const isWorking = apiBusy || isExtracting || isGenerating || translatingRow !== null;
   const canGenerate = originalImage && !isWorking && translations.length > 0;
+  useEffect(() => {
+    mcpActions.current = {
+      readiness: () => isUnlocked,
+      stop: stopAiWork,
+      async execute(operation, { action }) {
+        if (operation !== 'process_page') throw mcpAppError('OUTPUT_INVALID');
+        if (!isUnlocked) throw mcpAppError('API_REQUIRED');
+        if (isWorking) throw mcpAppError('APP_BUSY');
+        if (!originalImage) throw mcpAppError('INPUT_REQUIRED');
+        if (action === 'extract') {
+          const result = await runExtraction(originalImage, targetLanguage, true);
+          if (!result) throw mcpAppError('OUTPUT_INVALID');
+          return { kind: 'translations', targetLanguage: result.targetLanguage, rows: result.rows.map(row => ({
+            original: String(row.original ?? ''), translated: String(row.translated ?? ''),
+          })) };
+        }
+        if (!canGenerate || (action === 'refine' && (!translatedImage || !instructionRules.length))) {
+          throw mcpAppError('INPUT_REQUIRED');
+        }
+        const result = await handleGenerate(action === 'render_original', true);
+        if (!result) throw mcpAppError('OUTPUT_INVALID');
+        return { kind: 'image', ...result };
+      },
+    };
+  });
+  useEffect(() => connectFuruMcp({
+    appId: 'comic-translation',
+    mount: mcpMount.current,
+    readiness: () => mcpActions.current.readiness(),
+    stop: () => mcpActions.current.stop(),
+    execute: (action, input) => mcpActions.current.execute(action, input),
+  }), []);
   const typeIcon = (t) => ({ title: '📌', dialogue: '💬', narration: '📝', sfx: '💥' }[t] || '📎');
 
   // ═══════════ レンダリング ═══════════
   return (
     <div className={`app-container${isUnlocked || apiBusy ? ' emergency-stop-ready' : ''}`}>
+      <div className="mcp-launch-strip" ref={mcpMount} />
       {(isUnlocked || apiBusy) && <div className="emergency-stop-bar"><button id="ai-emergency-stop" type="button" className="ai-emergency-stop" disabled={!apiBusy} aria-label="AI通信を緊急停止" onClick={stopAiWork} title={apiBusy ? '進行中のAI通信を停止します。入力・取得済み結果は保持します。' : '現在停止できるAI通信はありません。'}>■ 緊急停止 / Stop AI</button></div>}
       {/* APIゲート */}
       {!isUnlocked && (

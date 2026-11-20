@@ -877,3 +877,8 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
 .openai-model-meta summary{cursor:pointer}
 @media(min-width:1024px){.main-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.openai-model-panel{grid-template-columns:minmax(0,1fr)}.openai-model-meta{display:grid;grid-template-columns:minmax(0,1fr)}.openai-model-meta>p,.openai-model-meta details{min-width:0}.header-actions{width:100%}.header-actions .model-select-wrap{flex:1 1 180px}.lang-select,.model-select{min-width:0;max-width:100%;width:100%}}
+
+.mcp-launch-strip {
+  position: relative;
+  z-index: 101; /* Keep MCP controls reachable above the API setup panel. */
+}
