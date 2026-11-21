@@ -19,7 +19,7 @@ function showMcpResources(appId, mount) {
   return nav;
 }
 
-export function connectFuruMcp({ appId, execute, stop, mount = document.body, readiness = () => false, onConnection = () => {} }) {
+export function connectFuruMcp({ appId, execute, stop, mount = document.body, statusMount, readiness = () => false, onConnection = () => {} }) {
   const toolbar = showMcpResources(appId, mount);
   const removeResources = () => toolbar.remove();
   if (!['127.0.0.1', 'localhost'].includes(location.hostname) || typeof __FURU_MCP_IDENTITY__ === 'undefined') return removeResources;
@@ -35,7 +35,7 @@ export function connectFuruMcp({ appId, execute, stop, mount = document.body, re
   button.type = 'button';
   button.textContent = 'MCP接続';
   bar.append(status, button);
-  toolbar.append(bar);
+  (statusMount ?? toolbar).append(bar);
 
   let session;
   let connecting = false;
@@ -151,7 +151,7 @@ export function connectFuruMcp({ appId, execute, stop, mount = document.body, re
       onConnection(true);
       status.textContent = 'MCP 接続済み';
       button.textContent = '停止して手動に戻る';
-      button.onclick = () => endSession('MCPを切断しました。手動操作に戻れます。', true, true);
+      button.onclick = () => endSession('MCP 停止済み', true, true);
       void poll(session);
     } catch (error) {
       status.textContent = error.message || 'MCPに接続できませんでした。';

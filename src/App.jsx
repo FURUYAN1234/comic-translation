@@ -21,11 +21,12 @@ function ManualLinks() {
   </nav>;
 }
 
-const SYSTEM_VERSION = "2.0.8";
+const SYSTEM_VERSION = "2.0.9";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
   const mcpMount = useRef(null);
+  const mcpStatusMount = useRef(null);
   const stickyTop = useRef(null);
   const mcpActions = useRef(null);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -655,6 +656,7 @@ Output the final translated image only. No explanations needed.`;
   useEffect(() => connectFuruMcp({
     appId: 'comic-translation',
     mount: mcpMount.current,
+    statusMount: mcpStatusMount.current,
     readiness: () => mcpActions.current.readiness(),
     stop: () => mcpActions.current.stop(),
     execute: (action, input) => mcpActions.current.execute(action, input),
@@ -677,9 +679,14 @@ Output the final translated image only. No explanations needed.`;
     <div className="app-container">
       <div className="sticky-top" ref={stickyTop}>
         <div className="app-top-tools">
-          <div className="mcp-launch-strip" ref={mcpMount} />
-          <ManualLinks />
-          {(isUnlocked || apiBusy) && <div className="emergency-stop-bar"><button id="ai-emergency-stop" type="button" className="ai-emergency-stop" disabled={!apiBusy} aria-label="AI通信を緊急停止" onClick={stopAiWork} title={apiBusy ? '進行中のAI通信を停止します。入力・取得済み結果は保持します。' : '現在停止できるAI通信はありません。'}>■ 緊急停止 / Stop AI</button></div>}
+          <div className="app-top-links">
+            <div ref={mcpMount} />
+            <ManualLinks />
+          </div>
+          <div className="app-top-actions">
+            <div ref={mcpStatusMount} />
+            {(isUnlocked || apiBusy) && <div className="emergency-stop-bar"><button id="ai-emergency-stop" type="button" className="ai-emergency-stop" disabled={!apiBusy} aria-label="AI通信を緊急停止" onClick={stopAiWork} title={apiBusy ? '進行中のAI通信を停止します。入力・取得済み結果は保持します。' : '現在停止できるAI通信はありません。'}>■ 緊急停止<span className="stop-english" aria-hidden="true"> / Stop AI</span></button></div>}
+          </div>
         </div>
         {isUnlocked && <>
           <header className="app-header">
