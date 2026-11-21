@@ -1,6 +1,6 @@
 # AI Comic Translation Tool / AI漫画翻訳ツール
 
-[Release notes / 更新内容](docs/releases/v2.0.7.md)
+[Release notes / 更新内容](docs/releases/v2.0.8.md)
 
 OpenAI text extraction and translation now offers **GPT-6.2 Sol** and **GPT-6.2 Astra**. The initial selection is **GPT-6 Luna**. / OpenAIによる台詞の抽出・翻訳に **GPT-6.2 Sol** と **GPT-6.2 Astra** を追加しました。初期選択は **GPT-6 Luna** です。
 
@@ -21,6 +21,8 @@ Standard input / output per million tokens: GPT-6 Luna $0.10 / $0.50, GPT-6.2 So
 Demo URL / デモサイト: [https://furuyan1234.github.io/comic-translation/](https://furuyan1234.github.io/comic-translation/)
 
 ### PDF manuals / PDFマニュアル
+
+The toolbar includes both PDFs, the production skill and the MCP setup guide before and after connecting. / 接続前後とも画面上部に操作マニュアル、API設定ガイド、制作スキル、MCP導入ガイドがあります。
 
 Japanese A4 guides cover application operation and OpenAI / Gemini API setup. / 日本語A4版でアプリの操作とOpenAI・Gemini APIの取得・設定を説明します。
 
@@ -63,7 +65,7 @@ This tool automates the process of translating manga pages into 10 languages (En
 
 ## Current Release Line / 現行仕様
 
-Version **v2.0.7** uses a two-stage translation workflow. OpenAI image editing uses GPT Image 2.6 Sunburst; failures retain their cause without switching to GPT Image 2.0. / **v2.0.7** は2段階で翻訳します。OpenAI画像編集はGPT Image 2.6 Sunburstを使用し、失敗時は原因を表示して停止します。GPT Image 2.0への自動切替は行いません。
+Version **v2.0.8** uses a two-stage translation workflow. OpenAI image editing uses GPT Image 2.6 Sunburst; failures retain their cause without switching to GPT Image 2.0. / **v2.0.8** は2段階で翻訳します。OpenAI画像編集はGPT Image 2.6 Sunburstを使用し、失敗時は原因を表示して停止します。GPT Image 2.0への自動切替は行いません。
 
 * **Gemini image generation / Gemini画像生成**: The active Gemini image path is `gemini-nano-banana-2.1` only. Legacy preview and old 2.5 image options have been removed from the user-facing image generation path. / Gemini画像生成の現行経路は `gemini-nano-banana-2.1` のみです。旧プレビュー系や古い2.5画像オプションは、ユーザー向けの画像生成経路から外しています。
 * **OpenAI image generation / OpenAI画像生成**: `gpt-image-2.6-sunburst`, xhigh quality, PNG output through the edit API, with a 600-second limit and no automatic image-model fallback. / `gpt-image-2.6-sunburst` のxhigh品質・PNG出力を編集APIで使用します。上限は600秒で、画像モデルは自動切替しません。

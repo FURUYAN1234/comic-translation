@@ -16,17 +16,17 @@ import { LANGUAGES, getDefaultFlip, getLanguageInfo, getLanguageLabel, getSource
 
 function ManualLinks() {
   return <nav className="manual-links" aria-label="PDF manuals / PDFマニュアル">
-    <a href="./downloads/comic-translation-manual.pdf" target="_blank" rel="noopener noreferrer">📖 操作マニュアル PDF / Manual ↗</a>
-    <a href="./downloads/comic-translation-api-guide.pdf" target="_blank" rel="noopener noreferrer">🔑 API設定ガイド PDF / API guide ↗</a>
-    <span>画像の読み込み・翻訳・保存とAPIの準備を確認できます。 / Read about translation, saving and API setup.</span>
+    <a href="./downloads/comic-translation-manual.pdf" target="_blank" rel="noopener noreferrer">📖 操作マニュアル PDF ↗</a>
+    <a href="./downloads/comic-translation-api-guide.pdf" target="_blank" rel="noopener noreferrer">🔑 API設定ガイド PDF ↗</a>
   </nav>;
 }
 
-const SYSTEM_VERSION = "2.0.7";
+const SYSTEM_VERSION = "2.0.8";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
   const mcpMount = useRef(null);
+  const stickyTop = useRef(null);
   const mcpActions = useRef(null);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -659,13 +659,95 @@ Output the final translated image only. No explanations needed.`;
     stop: () => mcpActions.current.stop(),
     execute: (action, input) => mcpActions.current.execute(action, input),
   }), []);
+  useEffect(() => {
+    const toolbar = stickyTop.current;
+    const container = toolbar.parentElement;
+    const updateToolbarOffset = () => {
+      container.style.setProperty('--toolbar-height', Math.ceil(toolbar.getBoundingClientRect().height) + 'px');
+    };
+    const observer = new ResizeObserver(updateToolbarOffset);
+    observer.observe(toolbar);
+    updateToolbarOffset();
+    return () => observer.disconnect();
+  }, []);
   const typeIcon = (t) => ({ title: '📌', dialogue: '💬', narration: '📝', sfx: '💥' }[t] || '📎');
 
   // ═══════════ レンダリング ═══════════
   return (
-    <div className={`app-container${isUnlocked || apiBusy ? ' emergency-stop-ready' : ''}`}>
-      <div className="mcp-launch-strip" ref={mcpMount} />
-      {(isUnlocked || apiBusy) && <div className="emergency-stop-bar"><button id="ai-emergency-stop" type="button" className="ai-emergency-stop" disabled={!apiBusy} aria-label="AI通信を緊急停止" onClick={stopAiWork} title={apiBusy ? '進行中のAI通信を停止します。入力・取得済み結果は保持します。' : '現在停止できるAI通信はありません。'}>■ 緊急停止 / Stop AI</button></div>}
+    <div className="app-container">
+      <div className="sticky-top" ref={stickyTop}>
+        <div className="app-top-tools">
+          <div className="mcp-launch-strip" ref={mcpMount} />
+          <ManualLinks />
+          {(isUnlocked || apiBusy) && <div className="emergency-stop-bar"><button id="ai-emergency-stop" type="button" className="ai-emergency-stop" disabled={!apiBusy} aria-label="AI通信を緊急停止" onClick={stopAiWork} title={apiBusy ? '進行中のAI通信を停止します。入力・取得済み結果は保持します。' : '現在停止できるAI通信はありません。'}>■ 緊急停止 / Stop AI</button></div>}
+        </div>
+        {isUnlocked && <>
+          <header className="app-header">
+            <div className="header-brand">
+              <div className="header-icon">🌐</div>
+              <div>
+                <h1 className="header-title">{APP_NAME} <span>V{SYSTEM_VERSION}</span></h1>
+                <p className="header-subtitle">COMIC TRANSLATION TOOL</p>
+              </div>
+            </div>
+            <div className="header-actions">
+              {/* エンジンバッジ */}
+              <span className={`engine-badge ${engineMode === 'openai' ? 'engine-openai' : 'engine-gemini'}`}>
+                {engineMode === 'openai' ? '🟢 ChatGPT' : '🔵 Gemini'}
+              </span>
+              <div className="model-select-wrap">
+                <label className="model-label">入力言語 / Source</label>
+                <select className="lang-select" value={sourceLanguage}
+                  onChange={(e) => handleSourceLanguageChange(e.target.value)} disabled={isWorking}>
+                  {getSourceLanguageOptions().map(l => (
+                    <option key={l.code} value={l.code}>{getLanguageLabel(l)}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="model-select-wrap">
+                <label className="model-label">翻訳先 / Target</label>
+                <select className="lang-select" value={targetLanguage}
+                  onChange={(e) => handleTargetLanguageChange(e.target.value)} disabled={isWorking}>
+                  {getTargetLanguageOptions(sourceLanguage).map(l => (
+                    <option key={l.code} value={l.code}>{getLanguageLabel(l)}</option>
+                  ))}
+                </select>
+              </div>
+              {/* モデル選択 — Geminiモード時のみ表示 */}
+              {engineMode === 'gemini' && (
+                <div className="model-select-wrap">
+                  <label className="model-label">生成モデル / Model</label>
+                  <select className="model-select" value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)} disabled={isWorking}>
+                    {IMAGE_MODEL_OPTIONS.map(m => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {/* 汎用プロンプト — OpenAIモード時のみ表示 */}
+              {engineMode === 'openai' && (
+                <div className="btn-icon-labeled">
+                  <span className="btn-icon-label">汎用プロンプト<br />Universal Prompt</span>
+                  <button className="btn-icon-only" onClick={() => setShowUniversalPrompt(true)} title="汎用プロンプト / Universal Prompt">📋</button>
+                </div>
+              )}
+              <div className="btn-icon-labeled">
+                <span className="btn-icon-label">API切替<br />API Switch</span>
+                <button className="btn-icon-only" onClick={handleFullReset} title="API切替 / API Switch">🔌</button>
+              </div>
+            </div>
+          </header>
+
+          {/* ステータス */}
+          {statusMessage && (
+            <div className="inline-status"><span>{statusMessage}</span><button onClick={() => setStatusMessage('')}>✕</button></div>
+          )}
+          {errorMessage && (
+            <div className="error-bar"><span>⚠️ {errorMessage}</span><button onClick={() => setErrorMessage('')}>✕</button></div>
+          )}
+        </>}
+      </div>
       {/* APIゲート */}
       {!isUnlocked && (
         <div className="api-gate">
@@ -698,7 +780,6 @@ Output the final translated image only. No explanations needed.`;
               )}
             </div>
 
-            <ManualLinks />
             <p className="api-gate-note">※ APIキーはセッション限定（ブラウザに保存されません） / Session-only (Not saved)</p>
             <div className="api-gate-links">
               <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="api-link api-link-gemini">🔵 Gemini キー取得</a>
@@ -770,76 +851,7 @@ Output the final translated image only. No explanations needed.`;
         </div>
       )}
 
-      <div className={!isUnlocked ? 'app-locked' : ''}>
-        {/* ─── 固定ヘッダー＋ステータスエリア ─── */}
-        <div className="sticky-top">
-          <header className="app-header">
-            <div className="header-brand">
-              <div className="header-icon">🌐</div>
-              <div>
-                <h1 className="header-title">{APP_NAME} <span>V{SYSTEM_VERSION}</span></h1>
-                <p className="header-subtitle">COMIC TRANSLATION TOOL</p>
-              </div>
-            </div>
-            <div className="header-actions">
-              {/* エンジンバッジ */}
-              <span className={`engine-badge ${engineMode === 'openai' ? 'engine-openai' : 'engine-gemini'}`}>
-                {engineMode === 'openai' ? '🟢 ChatGPT' : '🔵 Gemini'}
-              </span>
-              <div className="model-select-wrap">
-                <label className="model-label">入力言語 / Source</label>
-                <select className="lang-select" value={sourceLanguage}
-                  onChange={(e) => handleSourceLanguageChange(e.target.value)} disabled={isWorking}>
-                  {getSourceLanguageOptions().map(l => (
-                    <option key={l.code} value={l.code}>{getLanguageLabel(l)}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="model-select-wrap">
-                <label className="model-label">翻訳先 / Target</label>
-                <select className="lang-select" value={targetLanguage}
-                  onChange={(e) => handleTargetLanguageChange(e.target.value)} disabled={isWorking}>
-                  {getTargetLanguageOptions(sourceLanguage).map(l => (
-                    <option key={l.code} value={l.code}>{getLanguageLabel(l)}</option>
-                  ))}
-                </select>
-              </div>
-              {/* モデル選択 — Geminiモード時のみ表示 */}
-              {engineMode === 'gemini' && (
-                <div className="model-select-wrap">
-                  <label className="model-label">生成モデル / Model</label>
-                  <select className="model-select" value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)} disabled={isWorking}>
-                    {IMAGE_MODEL_OPTIONS.map(m => (
-                      <option key={m.value} value={m.value}>{m.label}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              {/* 汎用プロンプト — OpenAIモード時のみ表示 */}
-              {engineMode === 'openai' && (
-                <div className="btn-icon-labeled">
-                  <span className="btn-icon-label">汎用プロンプト<br />Universal Prompt</span>
-                  <button className="btn-icon-only" onClick={() => setShowUniversalPrompt(true)} title="汎用プロンプト / Universal Prompt">📋</button>
-                </div>
-              )}
-              <div className="btn-icon-labeled">
-                <span className="btn-icon-label">API切替<br />API Switch</span>
-                <button className="btn-icon-only" onClick={handleFullReset} title="API切替 / API Switch">🔌</button>
-              </div>
-            </div>
-          </header>
-
-          <ManualLinks />
-
-          {/* ステータス */}
-          {statusMessage && (
-            <div className="inline-status"><span>{statusMessage}</span><button onClick={() => setStatusMessage('')}>✕</button></div>
-          )}
-          {errorMessage && (
-            <div className="error-bar"><span>⚠️ {errorMessage}</span><button onClick={() => setErrorMessage('')}>✕</button></div>
-          )}
-        </div>
+      <div hidden={!isUnlocked}>
 
         {engineMode === 'openai' && <section className="openai-model-panel" aria-label="OpenAIモデルと料金 / Model and pricing">
           <div className="model-select-wrap">
