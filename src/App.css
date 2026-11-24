@@ -44,6 +44,11 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
   color: var(--text-primary);
 }
 .api-gate-input:focus { border-color: var(--indigo) !important; }
+.api-gate-billing {
+  margin: 0 0 0.8rem; color: var(--text-primary);
+  font-size: 0.8rem; line-height: 1.6; text-align: left;
+}
+.api-gate-billing a { text-decoration: underline; }
 .api-gate-btn {
   width: 100%; padding: 0.9rem; background: var(--indigo); color: white;
   font-weight: 800; font-size: 0.85rem; border-radius: var(--radius-lg);

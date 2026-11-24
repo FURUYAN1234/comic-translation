@@ -21,7 +21,7 @@ function ManualLinks() {
   </nav>;
 }
 
-const SYSTEM_VERSION = "2.1.0";
+const SYSTEM_VERSION = "2.1.1";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -763,8 +763,13 @@ Output the final translated image only. No explanations needed.`;
             <h1 className="api-gate-title">{APP_NAME}</h1>
             <p className="api-gate-sub">V{SYSTEM_VERSION} — Multilingual Comic Translation Tool</p>
             <input type="password" className="api-gate-input" placeholder="Gemini API Key または OpenAI Key (sk-...) を入力..."
+              aria-describedby="gemini-billing-notice"
               value={apiKeyInput} onChange={(e) => setApiKeyInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleApiKeySubmit()} />
+            <p id="gemini-billing-notice" className="api-gate-billing">
+              アプリ本体は無料です。Geminiでの画像再生成には、課金を有効にしたGemini APIプロジェクトが必要です。
+              {' '}<a href="https://aistudio.google.com/docs/pricing#gemini-nano-banana-2.1" target="_blank" rel="noreferrer" className="api-link-gemini">公式料金表</a>
+            </p>
             <button className={`api-gate-btn ${apiKeyInput.trim().startsWith('sk-') ? 'api-gate-btn-openai' : ''}`} onClick={handleApiKeySubmit}>🔓 起動する / Start</button>
 
 
