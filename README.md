@@ -81,7 +81,7 @@ Version **v2.1.0** uses a two-stage translation workflow. OpenAI image editing u
 This system goes beyond simple machine translation by implementing strict controls to preserve the original artistic intent while adapting to different languages. / 本システムは単純な機械翻訳にとどまらず、言語の適応を行いながらもオリジナルの芸術的意図を維持するための厳密な制御を実装しています。
 
 * **Dual API Architecture (Zenith Protocol) / デュアルAPIアーキテクチャ**: Seamlessly switch between two powerful AI engines based on the input API key. / 入力されたAPIキーから自動でエンジンを判別し、ルーティング層を介して処理を切り替えます。
-  * **🔵 Gemini Mode (Default)**: Extremely fast processing, zero intervention required. Free to use within Google AI Studio limits. / 圧倒的な処理速度。Google AI Studioの無料枠内で利用可能。
+  * **🔵 Gemini Mode (Default)**: Uses the Gemini API for translation and image regeneration. / 翻訳と画像再生成にGemini APIを使用します。
   * **🟢 ChatGPT Mode (OpenAI)**: World-class translation quality, perfectly capturing cultural nuances and character voices (role-language). Note: Uses a pay-as-you-go billing model. / 世界最高峰の翻訳精度。意訳やキャラクターの役割語を完璧に捉えます。※OpenAIの従量課金モデルが適用されます。
 
 * **Context-Aware Multimodal Translation / コンテキストを維持したマルチモーダル翻訳**: Unlike standard OCR+GPT workflows that translate text line-by-line, this tool leverages the AI engine's massive context window and native vision capabilities. It reads the entire manga page as a single cohesive unit, understanding the flow of conversation, character tone, and visual context simultaneously. This prevents awkward literal translations and maintains character voice across the scene.
@@ -122,6 +122,10 @@ This system goes beyond simple machine translation by implementing strict contro
 ## 📝 Setup & Launch / セットアップと起動
 
 ### 🌍 Cloud / Browser (Deploy) / ブラウザー公開版
+
+The app itself is free. Regenerating images with Gemini requires a Gemini API project with billing enabled. / アプリ本体は無料です。Geminiでの画像再生成には、課金を有効にしたGemini APIプロジェクトが必要です。
+
+[Gemini API pricing for Nano Banana 2.1 / Nano Banana 2.1の公式料金表](https://aistudio.google.com/docs/pricing#gemini-nano-banana-2.1)
 
 1. **Get API Key**: Obtain a Gemini API key at [Google AI Studio](https://aistudio.google.com/) or an OpenAI API key at [OpenAI Platform](https://platform.openai.com/). / Google AI StudioでGemini APIキー、またはOpenAI PlatformでOpenAI APIキーを取得します。
    Obtain a Gemini API key from Google AI Studio or an OpenAI API key from OpenAI Platform. / [Google AI Studio](https://aistudio.google.com/) で Gemini API キー、または [OpenAI Platform](https://platform.openai.com/) で OpenAI API キーを取得してください。
@@ -375,7 +379,7 @@ Clarify free personal, business and commissioned use and monetization of users' 
 - **[Docs]** Updated README and UI strings to accurately reflect the Dual API Architecture (Gemini API & OpenAI API) throughout the project, ensuring there are no misleading references to Gemini as the sole engine. / アプリ内UIとREADMEを全面改訂し、Gemini APIとOpenAI APIのDual APIアーキテクチャであることを正確に表記するよう修正しました。
 
 ### v1.6.0
-- **[Feature]** Dual API Architecture (Gemini + OpenAI): The application now supports both Google Gemini API (default, fast, free tier) and OpenAI API (high-quality, pay-as-you-go). / Dual APIアーキテクチャ（Gemini + OpenAI）に対応しました。入力されたAPIキー（`sk-` プレフィックス）を検知し、内部のルーティング層で自動的に「🔵Geminiモード（無料枠・高速）」と「🟢ChatGPTモード（高品質・従量課金）」を切り替えます。
+- **[Feature]** Dual API Architecture (Gemini + OpenAI): Added support for Google Gemini API and OpenAI API. / Dual APIアーキテクチャ（Gemini + OpenAI）に対応しました。入力されたAPIキー（`sk-` プレフィックス）を検知し、内部のルーティング層で「🔵Geminiモード」と「🟢ChatGPTモード」を切り替えます。
 - **[Integration]** Implemented full pipeline for OpenAI API: `gpt-4.1` Vision for text extraction and layout analysis, `gpt-4.1-mini` for targeted single-text re-translation, and `gpt-image-2` (Edit API) for high-fidelity translated image regeneration. / OpenAI APIのフルパイプラインを実装しました。`gpt-4.1` Visionによるテキスト抽出とレイアウト解析、`gpt-4.1-mini`による単一テキスト再翻訳、そして`gpt-image-2` Edit APIによる高精細な画像再生成に対応しています。
 - **[UI]** Unified API Gateway UI: Redesigned the start screen with real-time API key detection, dynamic engine badges, and specific key-acquisition links. Removed the universal prompt modal from the Gemini flow to streamline the UI. Added explicit wait-time warnings (2-4 minutes) during OpenAI image generation. / 統合APIゲート画面：APIキーの自動判別、リアルタイムエンジンインジケーター、専用のAPI取得リンクを実装しました。Geminiモードでは不要となった「汎用翻訳プロンプト」を削除し、UIを洗練化。また、処理時間の長いOpenAI画像生成時には待ち時間（2〜4分）の警告を表示するように改善しました。
 
