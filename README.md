@@ -432,3 +432,9 @@ Stopping preserves your inputs and previously accepted results. It cancels local
 **Model information and emergency stop / モデル情報と緊急停止:** OpenAI selection, full descriptions, prices and attempted/adopted routes have a dedicated full-width panel, separate from language/action controls. The red emergency stop remains at the screen’s top-right while scrolling and over app overlays; idle/stopped is disabled. / OpenAIのモデル選択・説明全文・料金・試行／採用経路は、言語・操作欄と分けた専用の全幅パネルに表示します。赤い緊急停止はスクロール中やアプリ内オーバーレイ中も画面右上に固定し、待機中・停止済みは無効です。
 
 Initial empty API setup hides the emergency control and its reserved space; active requests and an opened/local workspace retain the normal stop control. / 初期のAPI入力画面では緊急停止とその予約欄を表示しません。起動後は待機中も右上に表示し、処理中だけ押せます。
+
+## CLIP Drop / 習作・ベータ版
+
+クリスタの .clip を SVG・PSD・PNG に変換するWindows用の習作です。 / An experimental Windows converter for Clip Studio Paint files.
+
+- [GitHub](https://github.com/FURUYAN1234/clip-drop) · [note](https://note.com/happy_duck780/n/n8a38199a75db)
