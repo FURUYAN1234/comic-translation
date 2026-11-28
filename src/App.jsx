@@ -3,6 +3,7 @@ import {beginApiWork,cancelApiWork,isCurrentApiWork,isApiWorkCancelled} from './
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { connectFuruMcp, mcpAppError } from './mcp-connection.js';
 import './App.css';
+import { downloadComicPng, prepareComicInput, readTranslatedImage } from './lib/comic-image.js';
 import { setApiKey, IMAGE_MODEL_OPTIONS } from './lib/gemini';
 import { setOpenAIApiKey, setOpenAITextModel, getOpenAITextModelStatus } from './lib/openai';
 import { OPENAI_MODEL_OPTIONS, OPENAI_MODEL_PRICE_SNAPSHOT_DATE, DEFAULT_OPENAI_MODEL, fallbackModels } from './lib/openai-chat-contract.js';
@@ -21,7 +22,7 @@ function ManualLinks() {
   </nav>;
 }
 
-const SYSTEM_VERSION = "2.1.1";
+const SYSTEM_VERSION = "2.1.2";
 const APP_NAME = "AI漫画翻訳ツール";
 
 const App = () => {
@@ -93,9 +94,10 @@ const App = () => {
   // { type: "4koma"|"general", panels: ["1コマ目", ...] }
 
   // 出力
-  const [translatedImage, setTranslatedImage] = useState(null);
+  const [imageResult, setImageResult] = useState(null);
+  const translatedImage = imageResult?.translated ?? null;
+  const usedModel = imageResult?.model ?? '';
   const [isGenerating, setIsGenerating] = useState(false);
-  const [usedModel, setUsedModel] = useState('');
 
   // ステータス
   const [statusMessage, setStatusMessage] = useState('');
@@ -289,8 +291,7 @@ Output the final translated image only. No explanations needed.`;
     setErrorMessage('');
     setTranslations([]);
     setPanelLayout(null);
-    setTranslatedImage(null);
-    setUsedModel('');
+    setImageResult(null);
     setOriginalFileName(file.name);
 
     // ビルダー関連のリセット
@@ -328,10 +329,11 @@ Output the final translated image only. No explanations needed.`;
     const currentSession = extractionSessionRef.current;
 
     try {
-      const base64 = dataUrl.split(',')[1];
-      const result = await extractTranslationsAI(base64, (s) => {
+      const input = await prepareComicInput(dataUrl);
+      if (!isCurrentApiWork(run) || currentSession !== extractionSessionRef.current) return;
+      const result = await extractTranslationsAI(input.base64, (s) => {
         if (isCurrentApiWork(run) && currentSession === extractionSessionRef.current) { showStatus(s); if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus()); }
-      }, lang, sourceLanguage);
+      }, lang, sourceLanguage, input.mimeType);
       if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       
       // もし抽出中に別の画像がドロップされセッションが変わっていたら、古い結果は画面に反映せず破棄する
@@ -497,34 +499,6 @@ Output the final translated image only. No explanations needed.`;
   };
 
 
-  // ── Canvas左右反転 ──
-  const flipImageHorizontally = (dataUrl) => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            reject(new Error("Canvas 2D context の取得に失敗しました。"));
-            return;
-          }
-          ctx.scale(-1, 1);
-          ctx.drawImage(img, -canvas.width, 0);
-          resolve(canvas.toDataURL('image/png').split(',')[1]);
-        } catch (e) {
-          reject(e);
-        }
-      };
-      img.onerror = () => {
-        reject(new Error("左右反転のための画像読み込みに失敗しました。"));
-      };
-      img.src = dataUrl;
-    });
-  };
-
   // ── 画像生成 ──
   const handleGenerate = async (forceOriginal = false, forMcp = false) => {
     if (!originalImage || isGenerating) return;
@@ -542,28 +516,31 @@ Output the final translated image only. No explanations needed.`;
     const isRefinement = !forceOriginal && instructionRules.length > 0 && translatedImage !== null;
 
     try {
-      let inputBase64;
       if (isRefinement) {
-        // 修正モード: 翻訳済み画像（右側）をベースにする（既にFlip適用済み）
         showStatus('🔧 翻訳済み画像をベースに修正中... / Refining translated image...');
-        inputBase64 = translatedImage.split(',')[1];
       } else if (flipEnabled) {
         showStatus('🔄 画像を左右反転中...');
-        inputBase64 = await flipImageHorizontally(originalImage);
       } else {
         showStatus('📋 画像を準備中...');
-        inputBase64 = originalImage.split(',')[1];
       }
+      const input = await prepareComicInput(isRefinement ? translatedImage : originalImage, !isRefinement && flipEnabled);
       if (!isCurrentApiWork(run)) return;
       showStatus(`🌐 ${langInfo.nativeName}画像を${isRefinement ? '修正' : '生成'}中...`);
       const result = await generateTranslatedImageAI(
-        inputBase64, translations, selectedModel, (s) => { if (isCurrentApiWork(run)) showStatus(s); }, instructionRules, customPrompt, targetLanguage, sourceLanguage, isRefinement
+        input.base64, translations, selectedModel, (s) => { if (isCurrentApiWork(run)) showStatus(s); }, instructionRules, customPrompt, targetLanguage, sourceLanguage, isRefinement, input.mimeType
       );
       if (!isCurrentApiWork(run)) return;
-      const imgSrc = `data:${result.mimeType || 'image/png'};base64,${result.base64Img}`;
-      setTranslatedImage(imgSrc);
-      setUsedModel(result.usedModel);
-      setHistory(prev => [{ translated: imgSrc, model: result.usedModel, fileName: originalFileName, timestamp: Date.now() }, ...prev]);
+      const imgSrc = await readTranslatedImage(result.base64Img);
+      if (!isCurrentApiWork(run)) return;
+      const entry = {
+        translated: imgSrc,
+        model: result.usedModel,
+        fileName: isRefinement ? imageResult.fileName || originalFileName : originalFileName,
+        targetLanguage,
+        timestamp: Date.now()
+      };
+      setImageResult(entry);
+      setHistory(prev => [entry, ...prev]);
       showStatus(`✅ ${langInfo.nativeName}${isRefinement ? '修正' : '翻訳'}完了 (${result.usedModel})`, true);
       // 修正モード成功後: ビルダーを自動リセット（次の修正は白紙から）
       if (isRefinement) {
@@ -586,13 +563,17 @@ Output the final translated image only. No explanations needed.`;
   };
 
   // ── ダウンロード ──
-  const handleDownload = () => {
-    if (!translatedImage) return;
-    const langCode = targetLanguage.toUpperCase().replace('-', '_');
-    const link = document.createElement('a');
-    link.href = translatedImage;
-    link.download = `${(originalFileName || 'manga').replace(/\.[^.]+$/, '')}_${langCode}_${Date.now()}.png`;
-    link.click();
+  const handleDownload = async () => {
+    if (!imageResult) return;
+    try {
+      await downloadComicPng({
+        ...imageResult,
+        fileName: imageResult.fileName || originalFileName,
+        targetLanguage: imageResult.targetLanguage || targetLanguage
+      });
+    } catch (err) {
+      setErrorMessage(err.message);
+    }
   };
 
   // ── 画像リセット ──
@@ -601,8 +582,7 @@ Output the final translated image only. No explanations needed.`;
     setOriginalFileName('');
     setTranslations([]);
     setPanelLayout(null);
-    setTranslatedImage(null);
-    setUsedModel('');
+    setImageResult(null);
     setErrorMessage('');
     showStatus('🔄 リセット完了', true);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -1050,7 +1030,7 @@ Output the final translated image only. No explanations needed.`;
                 </div>
                 <div className="history-grid">
                   {history.map((item, idx) => (
-                    <div key={idx} className="history-thumb" onClick={() => { setTranslatedImage(item.translated); setUsedModel(item.model); }}>
+                    <div key={idx} className="history-thumb" onClick={() => setImageResult(item)}>
                       <img src={item.translated} alt={`#${idx + 1}`} />
                     </div>
                   ))}

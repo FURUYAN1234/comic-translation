@@ -41,18 +41,18 @@ const base64ToBlob = (base64, mimeType = 'image/png') => {
 };
 
 /** base64画像の縦横サイズを取得 */
-const getImageDimensions = (base64) => {
+const getImageDimensions = (base64, mimeType) => {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
     img.onerror = () => resolve({ width: 1024, height: 1536 }); // フォールバック: 縦長想定
-    img.src = `data:image/png;base64,${base64}`;
+    img.src = `data:${mimeType};base64,${base64}`;
   });
 };
 
 /** アスペクト比からOpenAI APIのサイズパラメータを決定 */
-const detectOutputSize = async (base64) => {
-  const { width, height } = await getImageDimensions(base64);
+const detectOutputSize = async (base64, mimeType) => {
+  const { width, height } = await getImageDimensions(base64, mimeType);
   const ratio = width / height;
   if (ratio > 1.2) return '1536x1024';   // 横長
   if (ratio < 0.8) return '1024x1536';   // 縦長
@@ -106,7 +106,7 @@ const callChatCompletion = async (modelId, messages, apiKey, timeout = 120000) =
  * 画像からテキストを抽出し翻訳する
  * gemini.js の extractTranslations と同一シグネチャ
  */
-export const extractTranslationsOAI = async (base64Image, onStatus, targetLang = 'en', sourceLang = 'auto') => {
+export const extractTranslationsOAI = async (base64Image, onStatus, targetLang = 'en', sourceLang = 'auto', imageMimeType = 'image/png') => {
   if (!currentOpenAIApiKey) throw new Error("OpenAI API Key が設定されていません。");
 
   const langInfo = getLanguageInfo(targetLang);
@@ -181,7 +181,7 @@ export const extractTranslationsOAI = async (base64Image, onStatus, targetLang =
     {
       type: "image_url",
       image_url: {
-        url: `data:image/png;base64,${base64Image}`,
+        url: `data:${imageMimeType};base64,${base64Image}`,
         detail: "high"
       }
     },
@@ -336,7 +336,7 @@ ${commonRules}`;
 export const generateTranslatedImageOAI = async (
   base64Image, translations, selectedModel, onStatus,
   instructionRules = [], customPrompt = "",
-  targetLang = 'en', sourceLang = 'auto', isRefinement = false
+  targetLang = 'en', sourceLang = 'auto', isRefinement = false, imageMimeType = 'image/png'
 ) => {
   const fetchForWork = createApiWorkFetch();
   if (!currentOpenAIApiKey) throw new Error("OpenAI API Key が設定されていません。");
@@ -424,10 +424,11 @@ VERIFICATION BEFORE OUTPUT:
   }
 
   // 画像をBlobに変換
-  const imageBlob = base64ToBlob(base64Image);
+  const imageBlob = base64ToBlob(base64Image, imageMimeType);
+  const imageExtension = imageMimeType === 'image/jpeg' ? 'jpg' : imageMimeType.split('/')[1];
 
   // アスペクト比からサイズ決定
-  const outputSize = await detectOutputSize(base64Image);
+  const outputSize = await detectOutputSize(base64Image, imageMimeType);
 
   let seconds = 0;
   let activeImageModel = getOpenAIImageFallbackChain()[0];
@@ -455,7 +456,7 @@ VERIFICATION BEFORE OUTPUT:
         if (onStatus) onStatus(`> [生成/Generate] ${imageModel.label} で${langName}画像を${isRefinement ? '修正' : '生成'}中... (${outputSize}, ${seconds}秒経過) / Generating...`);
         const formData = new FormData();
         formData.append('model', imageModel.id);
-        formData.append('image', imageBlob, 'manga.png');
+        formData.append('image', imageBlob, `manga.${imageExtension}`);
         formData.append('prompt', prompt);
         formData.append('size', outputSize);
         formData.append('quality', imageModel.quality);

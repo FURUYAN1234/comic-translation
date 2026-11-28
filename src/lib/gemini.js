@@ -74,7 +74,7 @@ export const diagnoseConnection = async () => {
  * @param {string} sourceLang ソース言語コード（デフォルト: 'auto' = 自動検出）
  * @returns {Object} {layout, texts}
  */
-export const extractTranslations = async (base64Image, onStatus, targetLang = 'en', sourceLang = 'auto') => {
+export const extractTranslations = async (base64Image, onStatus, targetLang = 'en', sourceLang = 'auto', imageMimeType = 'image/png') => {
   const fetchForWork = createApiWorkFetch();
   if (!currentApiKey) throw new Error("API Key が設定されていません。");
 
@@ -148,7 +148,7 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
 
   const imagePayload = {
     inlineData: {
-      mimeType: "image/png",
+      mimeType: imageMimeType,
       data: base64Image
     }
   };
@@ -305,7 +305,7 @@ export const translateSingleText = async (originalText, targetLang = 'en', sourc
  * @param {string} sourceLang ソース言語コード（デフォルト: 'auto'）
  * @returns {{ base64Img: string, usedModel: string }}
  */
-export const generateTranslatedImage = async (base64Image, translations, selectedModel, onStatus, instructionRules = [], customPrompt = "", targetLang = 'en', sourceLang = 'auto', isRefinement = false) => {
+export const generateTranslatedImage = async (base64Image, translations, selectedModel, onStatus, instructionRules = [], customPrompt = "", targetLang = 'en', sourceLang = 'auto', isRefinement = false, imageMimeType = 'image/png') => {
   const fetchForWork = createApiWorkFetch();
   if (!currentApiKey) throw new Error("API Key が設定されていません。");
 
@@ -401,7 +401,7 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
 
   const prompt = basePrompt;
 
-  const imagePayload = { type: 'image', mime_type: 'image/png', data: base64Image };
+  const imagePayload = { type: 'image', mime_type: imageMimeType, data: base64Image };
 
   // 選択モデル → フォールバックリスト構築
   const selectedImageModel = IMAGE_MODEL_OPTIONS.find(m => m.value === selectedModel)?.value || IMAGE_MODEL_OPTIONS[0].value;
