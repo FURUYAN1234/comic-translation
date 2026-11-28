@@ -2,6 +2,8 @@
 
 [Release notes / 更新内容](docs/releases/v2.1.2.md)
 
+[Technical paper (English)](https://docs.google.com/document/d/1JaLNsuSGZ_79uV8m5I1LYRSAeqcue9p7YbkHmD8N_pU/edit) · [技術論文（日本語）](https://docs.google.com/document/d/1l6cn7ssZZkKnrz8LjKiH_RQOpjGd0XCvWzXOCoqQ8u0/edit)
+
 OpenAI text extraction and translation now offers **GPT-6.2 Sol** and **GPT-6.2 Astra**. The initial selection is **GPT-6 Luna**. / OpenAIによる台詞の抽出・翻訳に **GPT-6.2 Sol** と **GPT-6.2 Astra** を追加しました。初期選択は **GPT-6 Luna** です。
 
 Standard input / output per million tokens: GPT-6 Luna $0.10 / $0.50, GPT-6.2 Sol $2 / $10, GPT-6.2 Astra $8 / $40 (November 18, 2026). / 100万トークン当たりの通常入力／出力単価はGPT-6 Luna $0.10／$0.50、GPT-6.2 Sol $2／$10、GPT-6.2 Astra $8／$40です（2026年11月18日確認）。
