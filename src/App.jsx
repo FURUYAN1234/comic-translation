@@ -31,12 +31,19 @@ const App = () => {
   const mcpStatusMount = useRef(null);
   const stickyTop = useRef(null);
   const mcpActions = useRef(null);
+  const apiKeyField = useRef(null);
   const [apiKeyInput, setApiKeyInput] = useState('');
+  const [apiKeyError, setApiKeyError] = useState('');
+  const [isApiSettingsOpen, setIsApiSettingsOpen] = useState(false);
+  const [draftTextModel, setDraftTextModel] = useState(DEFAULT_OPENAI_MODEL);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [isCheckingApiKey, setIsCheckingApiKey] = useState(false);
   const apiKeyCheckPending = useRef(false);
   const needsApiKey = connectionStatus === 'rejected';
+  useEffect(() => {
+    if (isApiSettingsOpen) apiKeyField.current?.focus();
+  }, [isApiSettingsOpen]);
   const [selectedModel, setSelectedModel] = useState(IMAGE_MODEL_OPTIONS[0].value);
   const [textModel, setTextModel] = useState(DEFAULT_OPENAI_MODEL);
   const [textModelStatus, setTextModelStatus] = useState({ attempted: [], adopted: null });
@@ -271,7 +278,7 @@ Output the final translated image only. No explanations needed.`;
     if (apiKeyCheckPending.current) return;
     const cleanKey = apiKeyInput.replace(/[^\x20-\x7E]/g, '').trim();
     if (!cleanKey) {
-      setErrorMessage('APIキーを入力してください。 / Enter an API key.');
+      setApiKeyError('APIキーを入力してください。 / Enter an API key.');
       return;
     }
 
@@ -280,7 +287,7 @@ Output the final translated image only. No explanations needed.`;
     const run = startAiWork();
     apiKeyCheckPending.current = true;
     setIsCheckingApiKey(true);
-    setErrorMessage('');
+    setApiKeyError('');
 
     try {
       const verified = await checkProviderKey(nextEngine, cleanKey);
@@ -289,8 +296,12 @@ Output the final translated image only. No explanations needed.`;
       setOpenAIApiKey(nextEngine === 'openai' ? cleanKey : '');
       setActiveEngine(nextEngine);
       setEngineMode(nextEngine);
+      if (nextEngine === 'openai' && draftTextModel !== textModel) updateTextModel(draftTextModel);
+      if (engineMode !== nextEngine) setTextModelStatus({ attempted: [], adopted: null });
       setConnectionStatus(verified ? 'verified' : 'unverified');
       setApiKeyInput('');
+      setErrorMessage('');
+      setIsApiSettingsOpen(false);
       setIsUnlocked(true);
 
       if (!verified) {
@@ -301,7 +312,7 @@ Output the final translated image only. No explanations needed.`;
         showStatus(`${provider} APIキーを確認しました。 / API key verified.`, true);
       }
     } catch (err) {
-      if (isCurrentApiWork(run) && !isApiWorkCancelled(err)) setErrorMessage(err.message);
+      if (isCurrentApiWork(run) && !isApiWorkCancelled(err)) setApiKeyError(err.message);
     } finally {
       apiKeyCheckPending.current = false;
       setIsCheckingApiKey(false);
@@ -352,7 +363,7 @@ Output the final translated image only. No explanations needed.`;
   // ── テキスト抽出 ──
   const runExtraction = async (imageDataUrl, langOverride, forMcp = false) => {
     const dataUrl = imageDataUrl || originalImage;
-    if (!dataUrl || needsApiKey) return;
+    if (!dataUrl || needsApiKey || isApiSettingsOpen) return;
     const run = startAiWork();
     setIsExtracting(true);
     setErrorMessage('');
@@ -467,7 +478,7 @@ Output the final translated image only. No explanations needed.`;
 
   const handleSingleTranslate = async (index) => {
     const item = translations[index];
-    if (!item.original || needsApiKey) return;
+    if (!item.original || needsApiKey || isApiSettingsOpen) return;
     const run = startAiWork();
     setTranslatingRow(index);
     showStatus(`🔄 テキスト #${index + 1} を翻訳中... / Translating text #${index + 1}...`);
@@ -539,7 +550,7 @@ Output the final translated image only. No explanations needed.`;
 
   // ── 画像生成 ──
   const handleGenerate = async (forceOriginal = false, forMcp = false) => {
-    if (!originalImage || isGenerating || needsApiKey) return;
+    if (!originalImage || isGenerating || needsApiKey || isApiSettingsOpen) return;
     const run = startAiWork();
     setIsGenerating(true);
     setErrorMessage('');
@@ -610,8 +621,10 @@ Output the final translated image only. No explanations needed.`;
         fileName: imageResult.fileName || originalFileName,
         targetLanguage: imageResult.targetLanguage || targetLanguage
       });
+      setErrorMessage('');
+      showStatus('PNGのダウンロードを開始しました。 / PNG download requested.', true);
     } catch (err) {
-      setErrorMessage(err.message);
+      setErrorMessage(`PNGを保存できませんでした。 ${err.message}`);
     }
   };
 
@@ -634,35 +647,30 @@ Output the final translated image only. No explanations needed.`;
     setShowBuilder(false);
   };
 
-  // ── APIキーの再入力（画像・設定は維持） ──
-  const handleRetryApiKey = () => {
-    setApiKey('');
-    setOpenAIApiKey('');
-    setConnectionStatus(null);
-    setErrorMessage('');
-    showStatus('', false);
+  const openApiSettings = () => {
+    setDraftTextModel(textModel);
     setApiKeyInput('');
-    setIsUnlocked(false);
+    setApiKeyError('');
+    setIsApiSettingsOpen(true);
   };
 
-  // ── 全リセットとAPI切替 ──
-  const handleFullReset = () => {
-    handleImageReset();
-    handleRetryApiKey();
-    setActiveEngine('gemini');
-    setEngineMode('gemini');
+  const closeApiSettings = () => {
+    if (apiKeyCheckPending.current) return;
+    setApiKeyInput('');
+    setApiKeyError('');
+    setIsApiSettingsOpen(false);
   };
 
   const isWorking = apiBusy || isExtracting || isGenerating || translatingRow !== null;
-  const canGenerate = originalImage && !isWorking && !needsApiKey && translations.length > 0;
+  const canGenerate = originalImage && !isWorking && !needsApiKey && !isApiSettingsOpen && translations.length > 0;
   useEffect(() => {
     mcpActions.current = {
-      readiness: () => isUnlocked && !needsApiKey,
+      readiness: () => isUnlocked && !needsApiKey && !isApiSettingsOpen,
       stop: stopAiWork,
       async execute(operation, { action }) {
         if (operation !== 'process_page') throw mcpAppError('OUTPUT_INVALID');
         if (!isUnlocked || needsApiKey) throw mcpAppError('API_REQUIRED');
-        if (isWorking) throw mcpAppError('APP_BUSY');
+        if (isWorking || isApiSettingsOpen) throw mcpAppError('APP_BUSY');
         if (!originalImage) throw mcpAppError('INPUT_REQUIRED');
         if (action === 'extract') {
           const result = await runExtraction(originalImage, targetLanguage, true);
@@ -716,7 +724,7 @@ Output the final translated image only. No explanations needed.`;
           </div>
         </div>
         {isUnlocked && <>
-          <header className="app-header">
+          <header className="app-header" inert={isApiSettingsOpen}>
             <div className="header-brand">
               <div className="header-icon">🌐</div>
               <div>
@@ -767,10 +775,9 @@ Output the final translated image only. No explanations needed.`;
                   <button className="btn-icon-only" onClick={() => setShowUniversalPrompt(true)} title="汎用プロンプト / Universal Prompt">📋</button>
                 </div>
               )}
-              <div className="btn-icon-labeled">
-                <span className="btn-icon-label">API切替<br />API Switch</span>
-                <button className="btn-icon-only" onClick={handleFullReset} title="API切替 / API Switch">🔌</button>
-              </div>
+              <button type="button" className="btn-api-settings" onClick={openApiSettings} disabled={isWorking}>
+                APIキーを変更
+              </button>
             </div>
           </header>
 
@@ -778,42 +785,52 @@ Output the final translated image only. No explanations needed.`;
           {statusMessage && (
             <div className="inline-status"><span>{statusMessage}</span><button onClick={() => setStatusMessage('')}>✕</button></div>
           )}
-          {(errorMessage || needsApiKey) && (
+          {errorMessage && (
             <div className="error-bar" role="alert">
-              <span>⚠️ {errorMessage || 'APIキーを入れ直してください。 / Re-enter the API key.'}</span>
-              {needsApiKey
-                ? <button className="error-retry-key" onClick={handleRetryApiKey} disabled={isWorking}>APIキーを入れ直す / Re-enter API key</button>
-                : <button onClick={() => setErrorMessage('')}>✕</button>}
+              <span>⚠️ {errorMessage}</span>
+              {needsApiKey && <button type="button" className="error-retry-key" onClick={openApiSettings} disabled={isWorking}>APIキーを入れ直す</button>}
+              <button type="button" aria-label="エラー表示を閉じる" onClick={() => setErrorMessage('')}>✕</button>
             </div>
           )}
         </>}
       </div>
       {/* APIゲート */}
-      {!isUnlocked && (
-        <div className="api-gate">
-          <div className="api-gate-card" aria-busy={isCheckingApiKey}>
-            <div className="api-gate-icon">🌐</div>
-            <h1 className="api-gate-title">{APP_NAME}</h1>
-            <p className="api-gate-sub">V{SYSTEM_VERSION} — Multilingual Comic Translation Tool</p>
-            <input type="password" className="api-gate-input" placeholder="Gemini API Key または OpenAI Key (sk-...) を入力..."
-              aria-describedby="gemini-billing-notice"
-              value={apiKeyInput} disabled={isCheckingApiKey} onChange={(e) => { setApiKeyInput(e.target.value); setErrorMessage(''); }}
+      {(!isUnlocked || isApiSettingsOpen) && (
+        <div className="api-gate" onKeyDown={e => { if (isUnlocked && e.key === 'Escape') closeApiSettings(); }}>
+          <div className="api-gate-card" role="dialog" aria-modal="true" aria-labelledby="api-gate-title" aria-busy={isCheckingApiKey}>
+            {isUnlocked ? <>
+              <h2 id="api-gate-title" className="api-gate-title">APIキーを変更</h2>
+              <p id="api-settings-preserve" className="api-gate-preserve">
+                原稿・訳文・言語設定・生成結果を保持します。キーの変更後は「テキスト再抽出」で同じ原稿から続けられます。
+              </p>
+            </> : <>
+              <div className="api-gate-icon">🌐</div>
+              <h1 id="api-gate-title" className="api-gate-title">{APP_NAME}</h1>
+              <p className="api-gate-sub">V{SYSTEM_VERSION} — Multilingual Comic Translation Tool</p>
+            </>}
+            <input ref={apiKeyField} type="password" className="api-gate-input" placeholder="Gemini API Key または OpenAI Key (sk-...) を入力..."
+              aria-label="APIキー"
+              aria-describedby={isUnlocked ? 'api-settings-preserve gemini-billing-notice' : 'gemini-billing-notice'}
+              value={apiKeyInput} disabled={isCheckingApiKey} onChange={(e) => { setApiKeyInput(e.target.value); setApiKeyError(''); }}
               onKeyDown={(e) => e.key === 'Enter' && handleApiKeySubmit()} />
             <p id="gemini-billing-notice" className="api-gate-billing">
               アプリ本体は無料です。Geminiでの画像再生成には、課金を有効にしたGemini APIプロジェクトが必要です。
               {' '}<a href="https://aistudio.google.com/docs/pricing#gemini-nano-banana-2.1" target="_blank" rel="noreferrer" className="api-link-gemini">公式料金表</a>
             </p>
             <button className={`api-gate-btn ${apiKeyInput.trim().startsWith('sk-') ? 'api-gate-btn-openai' : ''}`} onClick={handleApiKeySubmit} disabled={isCheckingApiKey}>
-              {isCheckingApiKey ? 'APIキー確認中 / Checking API key…' : '🔓 起動する / Start'}
+              {isCheckingApiKey ? 'APIキー確認中 / Checking API key…' : isUnlocked ? 'キーを確認して適用' : '🔓 起動する / Start'}
             </button>
-            {errorMessage && <div className="error-bar api-gate-error" role="alert"><span>{errorMessage}</span></div>}
+            {isUnlocked && <button type="button" className="api-gate-return" onClick={closeApiSettings} disabled={isCheckingApiKey}>
+              原稿に戻る
+            </button>}
+            {apiKeyError && <div className="error-bar api-gate-error" role="alert"><span>{apiKeyError}</span></div>}
 
 
             <label>OpenAI text / Vision model
-              <select value={textModel} onChange={e => updateTextModel(e.target.value)} disabled={isWorking}>
+              <select value={draftTextModel} onChange={e => setDraftTextModel(e.target.value)} disabled={isWorking}>
                 {OPENAI_MODEL_OPTIONS.map(model => <option key={model.id} value={model.id}>{model.label}</option>)}
               </select>
-              <small className="openai-model-help">{OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.description}<br/>入力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.inputPriceUsdPerM} / 出力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === textModel)?.outputPriceUsdPerM} per 1M tokens</small>
+              <small className="openai-model-help">{OPENAI_MODEL_OPTIONS.find(model => model.id === draftTextModel)?.description}<br/>入力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === draftTextModel)?.inputPriceUsdPerM} / 出力 ${OPENAI_MODEL_OPTIONS.find(model => model.id === draftTextModel)?.outputPriceUsdPerM} per 1M tokens</small>
             </label>
             {/* Dual Engine 自動判定インジケーター */}
             <div className={`engine-indicator ${apiKeyInput.trim().startsWith('sk-') ? 'detecting-openai' : apiKeyInput.trim() ? 'detecting-gemini' : ''}`}>
@@ -839,7 +856,7 @@ Output the final translated image only. No explanations needed.`;
       )}
 
       {/* 汎用プロンプト モーダル */}
-      {showUniversalPrompt && (
+      {showUniversalPrompt && !isApiSettingsOpen && (
         <div className="prompt-modal-overlay" onClick={() => setShowUniversalPrompt(false)}>
           <div className="prompt-modal" onClick={(e) => e.stopPropagation()}>
             <div className="prompt-modal-header">
@@ -899,7 +916,7 @@ Output the final translated image only. No explanations needed.`;
         </div>
       )}
 
-      <div hidden={!isUnlocked}>
+      <div hidden={!isUnlocked} inert={isApiSettingsOpen}>
 
         {engineMode === 'openai' && <section className="openai-model-panel" aria-label="OpenAIモデルと料金 / Model and pricing">
           <div className="model-select-wrap">

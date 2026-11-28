@@ -77,13 +77,14 @@ test('the app waits for key verification, preserves a portrait page on rejection
   const portrait = readFileSync(new URL('./fixtures/portrait-comic.png', import.meta.url), 'base64');
   const original = 'data:image/png;base64,' + portrait;
   const errorMessages = [];
+  const apiKeyErrors = [];
   const statuses = [];
   const operations = [];
   const rows = [{ original: '灯台', translated: 'Lighthouse', type: 'dialogue', panel: '1コマ目' }];
   const model = 'gemini-nano-banana-2.1';
   const state = {
     apiKeyInput: invalidKey, isUnlocked: false, connectionStatus: null, isCheckingApiKey: false,
-    apiKeyCheckPending: { current: false }, originalImage: original, originalFileName: 'portrait-comic.png',
+    apiKeyCheckPending: { current: false }, isApiSettingsOpen: false, draftTextModel: 'gpt-6-luna', originalImage: original, originalFileName: 'portrait-comic.png',
     sourceLanguage: 'ja', targetLanguage: 'en', flipEnabled: false, textModel: 'gpt-6-luna',
     engineMode: 'gemini', selectedModel: model, isGenerating: false, imageResult: null, translatedImage: null,
     translations: [], instructionRules: [], customPrompt: '', extractionSessionRef: { current: 0 },
@@ -94,6 +95,10 @@ test('the app waits for key verification, preserves a portrait page on rejection
     setIsGenerating() {}, setShowBuilder() {}, setPanelLayout() {},
     setTranslations(value) { state.translations = value; },
     setErrorMessage(value) { errorMessages.push(value); },
+    setApiKeyError(value) { apiKeyErrors.push(value); },
+    setIsApiSettingsOpen(value) { state.isApiSettingsOpen = value; },
+    setDraftTextModel(value) { state.draftTextModel = value; },
+    setTextModelStatus() {},
     setConnectionStatus(value) { state.connectionStatus = value; },
     setIsCheckingApiKey(value) { state.isCheckingApiKey = value; },
     setApiKeyInput(value) { state.apiKeyInput = value; },
@@ -162,7 +167,7 @@ test('the app waits for key verification, preserves a portrait page on rejection
   delayedModels(invalidGemini());
   await submit;
   assert.equal(state.isUnlocked, false);
-  assert.match(errorMessages.at(-1), /GeminiがAPIキーを受け付けませんでした/);
+  assert.match(apiKeyErrors.at(-1), /GeminiがAPIキーを受け付けませんでした/);
 
   state.apiKeyInput = validKey;
   await invoke('handleApiKeySubmit', state);
@@ -177,14 +182,27 @@ test('the app waits for key verification, preserves a portrait page on rejection
   assert.equal(operations.filter(url => url.endsWith(':generateContent')).length, 1);
   assert.deepEqual(pageSettings(), initial);
 
-  invoke('handleRetryApiKey', state);
-  assert.equal(state.isUnlocked, false);
+  errorMessages.length = 0;
+  invoke('openApiSettings', state);
+  assert.equal(state.isUnlocked, true);
+  assert.equal(state.isApiSettingsOpen, true);
   assert.deepEqual(pageSettings(), initial);
+  const callsBeforeReturn = operations.length;
+  invoke('closeApiSettings', state);
+  assert.equal(state.isApiSettingsOpen, false);
+  assert.equal(state.connectionStatus, 'rejected');
+  await invoke('runExtraction', state);
+  await invoke('handleGenerate', state);
+  assert.equal(operations.length, callsBeforeReturn);
+  assert.deepEqual(pageSettings(), initial);
+
+  invoke('openApiSettings', state);
   state.apiKeyInput = validKey;
   runtimeKeyRejects = false;
   await invoke('handleApiKeySubmit', state);
   assert.equal(state.isUnlocked, true);
   assert.match(statuses.at(-1), /「テキスト再抽出」/);
+  assert.equal(state.isApiSettingsOpen, false);
   assert.equal(operations.filter(url => url.endsWith(':generateContent')).length, 1, 're-entry does not send an image operation');
   assert.deepEqual(pageSettings(), initial);
 

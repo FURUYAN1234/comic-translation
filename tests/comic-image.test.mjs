@@ -12,7 +12,7 @@ const pngUrl = dataUrl('image/png', png);
 const jpegUrl = dataUrl('image/jpeg', jpeg);
 const webpUrl = dataUrl('image/webp', webp);
 
-function installImageDom(t, { pngEncoding = pngUrl } = {}) {
+function installImageDom(t, { pngEncoding = pngUrl, clickError } = {}) {
   const previousImage = globalThis.Image;
   const previousDocument = globalThis.document;
   t.after(() => {
@@ -23,6 +23,17 @@ function installImageDom(t, { pngEncoding = pngUrl } = {}) {
   const downloads = [];
   const draws = [];
   const transforms = [];
+  const attached = new Set();
+  const objectUrls = new Map();
+  const revocations = [];
+  const timers = [];
+  t.mock.method(URL, 'createObjectURL', blob => {
+    const url = 'blob:fixture/' + (objectUrls.size + 1);
+    objectUrls.set(url, blob);
+    return url;
+  });
+  t.mock.method(URL, 'revokeObjectURL', url => { revocations.push(url); objectUrls.delete(url); });
+  t.mock.method(globalThis, 'setTimeout', (callback, delay) => { timers.push({ callback, delay }); });
   globalThis.Image = class {
     set src(url) {
       this.url = url;
@@ -38,10 +49,17 @@ function installImageDom(t, { pngEncoding = pngUrl } = {}) {
     }
   };
   globalThis.document = {
+    body: { append: link => attached.add(link) },
     createElement(element) {
       if (element === 'a') {
         return {
-          click() { downloads.push({ url: this.href, name: this.download }); },
+          click() {
+            assert.ok(attached.has(this), 'link was attached before browser activation');
+            if (clickError) throw clickError;
+            assert.match(this.href, /^blob:/);
+            downloads.push({ blob: objectUrls.get(this.href), name: this.download });
+          },
+          remove() { attached.delete(this); },
         };
       }
       assert.equal(element, 'canvas');
@@ -56,6 +74,12 @@ function installImageDom(t, { pngEncoding = pngUrl } = {}) {
             scale: (x, y) => transforms.push(['scale', x, y]),
           };
         },
+        toBlob(callback, type) {
+          assert.equal(type, 'image/png');
+          queueMicrotask(() => callback(pngEncoding === 'data:,'
+            ? null
+            : new Blob([Buffer.from(pngEncoding.split(',')[1], 'base64')], { type })));
+        },
         toDataURL(type) {
           assert.equal(type, 'image/png');
           return pngEncoding;
@@ -63,11 +87,11 @@ function installImageDom(t, { pngEncoding = pngUrl } = {}) {
       };
     },
   };
-  return { downloads, draws, transforms };
+  return { downloads, draws, transforms, attached, objectUrls, revocations, timers };
 }
 
 test('saved results use PNG bytes and the chosen result name and language', async (t) => {
-  const { downloads, draws, transforms } = installImageDom(t);
+  const { downloads, draws, transforms, attached, objectUrls, revocations, timers } = installImageDom(t);
   t.mock.method(Date, 'now', () => 1795827332771);
   const cases = [
     { translated: pngUrl, fileName: 'new.png', targetLanguage: 'en' },
@@ -80,11 +104,19 @@ test('saved results use PNG bytes and the chosen result name and language', asyn
     'first.edition_ZH_TW_1795827332771.png',
     'manga_JA_1795827332771.png',
   ]);
-  for (const { url } of downloads) {
-    assert.match(url, /^data:image\/png;base64,/);
-    assert.equal(Buffer.from(url.split(',')[1], 'base64').subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+  for (const { blob } of downloads) {
+    assert.equal(blob.type, 'image/png');
+    assert.equal(Buffer.from(await blob.arrayBuffer()).subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
   }
-  assert.equal(downloads[0].url, pngUrl, 'a valid PNG bypasses re-encoding');
+  assert.deepEqual(Buffer.from(await downloads[0].blob.arrayBuffer()), Buffer.from(png, 'base64'));
+  assert.equal(attached.size, 0);
+  assert.equal(revocations.length, 0);
+  assert.equal(objectUrls.size, 3);
+  for (const { callback, delay } of timers) {
+    assert.equal(delay, 30_000);
+    callback();
+  }
+  assert.equal(objectUrls.size, 0);
   assert.deepEqual(draws, [jpegUrl, webpUrl].map(url => ({ url, width: 10, height: 6, x: 0, y: 0 })));
   assert.deepEqual(transforms, []);
 });
@@ -114,4 +146,16 @@ test('invalid image responses and failed PNG conversion never create a download'
     translated: jpegUrl, fileName: 'sample', targetLanguage: 'ja',
   }), /Could not encode the PNG image/);
   assert.deepEqual(downloads, []);
+});
+
+test('a failed activation removes the temporary link and still schedules URL cleanup', async t => {
+  const error = new Error('fixture click could not start');
+  const { attached, timers, objectUrls, downloads } = installImageDom(t, { clickError: error });
+  await assert.rejects(downloadComicPng({ translated: pngUrl, fileName: 'first.png', targetLanguage: 'ja' }), error);
+  assert.equal(attached.size, 0);
+  assert.equal(downloads.length, 0);
+  assert.equal(timers.length, 1);
+  assert.equal(objectUrls.size, 1);
+  timers[0].callback();
+  assert.equal(objectUrls.size, 0);
 });

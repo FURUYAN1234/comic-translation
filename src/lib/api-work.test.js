@@ -33,7 +33,7 @@ test('late UI result and finally from a stopped action cannot overwrite or unloc
  const {readFile}=await import('node:fs/promises');const source=await readFile(new URL('../App.jsx',import.meta.url),'utf8');
  const start=source.indexOf('  const handleSingleTranslate =');const body=source.slice(start,source.indexOf('\n  };',start)+5).replace('const handleSingleTranslate =','return');
  let deliver;let writes=0,finishes=0;const pending=new Promise(resolve=>{deliver=resolve;});
- const values={translations:[{original:'hello'}],needsApiKey:false,startAiWork:()=>beginApiWork(),setTranslatingRow:()=>{},showStatus:()=>{},getLanguageInfo:()=>({nativeName:'English'}),targetLanguage:'en',sourceLanguage:'auto',translateSingleTextAI:()=>pending,engineMode:'gemini',setTextModelStatus:()=>{},getOpenAITextModelStatus:()=>({}),updateTranslation:()=>{writes++;},setErrorMessage:()=>{},isCurrentApiWork,isApiWorkCancelled,setApiBusy:()=>{finishes++;}};
+ const values={translations:[{original:'hello'}],needsApiKey:false,isApiSettingsOpen:false,startAiWork:()=>beginApiWork(),setTranslatingRow:()=>{},showStatus:()=>{},getLanguageInfo:()=>({nativeName:'English'}),targetLanguage:'en',sourceLanguage:'auto',translateSingleTextAI:()=>pending,engineMode:'gemini',setTextModelStatus:()=>{},getOpenAITextModelStatus:()=>({}),updateTranslation:()=>{writes++;},setErrorMessage:()=>{},isCurrentApiWork,isApiWorkCancelled,setApiBusy:()=>{finishes++;}};
  const runAction=new Function(...Object.keys(values),body)(...Object.values(values));
  const old=runAction(0);cancelApiWork();const fresh=beginApiWork();deliver('late answer');await old;
  assert.equal(writes,0);assert.equal(finishes,0);assert.equal(isCurrentApiWork(fresh),true);
