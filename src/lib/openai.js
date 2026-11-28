@@ -12,6 +12,7 @@ import {createApiWorkFetch,throwIfApiWorkCancelled} from './api-work.js';
 import { DEFAULT_OPENAI_MODEL, fallbackModels, chatOptions, completedText, terminalOpenAIError } from './openai-chat-contract.js';
 import { getLanguageInfo } from './languages.js';
 import { getOpenAIImageFallbackChain } from './openai-image-fallback.js';
+import { providerResponseError } from './provider-auth.js';
 
 // ── APIキー管理（メモリ限定・localStorage永続化なし） ──
 let currentOpenAIApiKey = "";
@@ -83,7 +84,7 @@ const callChatCompletion = async (modelId, messages, apiKey, timeout = 120000) =
 
     if (!response.ok) {
       const errorData = await response.json().catch(error => { throwIfApiWorkCancelled(error); return {}; });
-      throw Object.assign(new Error(`${response.status} ${errorData.error?.message || response.statusText}`), { status: response.status, code: errorData.error?.code });
+      throw providerResponseError('openai', response.status, errorData.error);
     }
 
     const data = await response.json();
@@ -472,10 +473,7 @@ VERIFICATION BEFORE OUTPUT:
 
         if (!response.ok) {
           const errorData = await response.json().catch(error => { throwIfApiWorkCancelled(error); return {}; });
-          const error = new Error(`OpenAI API Error: ${response.status} ${errorData.error?.message || response.statusText}`);
-          error.status = response.status;
-          error.code = errorData.error?.code;
-          throw error;
+          throw providerResponseError('openai', response.status, errorData.error);
         }
 
         const data = await response.json();

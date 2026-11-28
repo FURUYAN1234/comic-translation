@@ -3,6 +3,7 @@ import {beginApiWork,cancelApiWork,isCurrentApiWork,isApiWorkCancelled} from './
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { connectFuruMcp, mcpAppError } from './mcp-connection.js';
 import './App.css';
+import { checkProviderKey, isApiKeyRejected } from './lib/provider-auth.js';
 import { downloadComicPng, prepareComicInput, readTranslatedImage } from './lib/comic-image.js';
 import { setApiKey, IMAGE_MODEL_OPTIONS } from './lib/gemini';
 import { setOpenAIApiKey, setOpenAITextModel, getOpenAITextModelStatus } from './lib/openai';
@@ -32,6 +33,10 @@ const App = () => {
   const mcpActions = useRef(null);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState(null);
+  const [isCheckingApiKey, setIsCheckingApiKey] = useState(false);
+  const apiKeyCheckPending = useRef(false);
+  const needsApiKey = connectionStatus === 'rejected';
   const [selectedModel, setSelectedModel] = useState(IMAGE_MODEL_OPTIONS[0].value);
   const [textModel, setTextModel] = useState(DEFAULT_OPENAI_MODEL);
   const [textModelStatus, setTextModelStatus] = useState({ attempted: [], adopted: null });
@@ -262,24 +267,54 @@ Output the final translated image only. No explanations needed.`;
   };
 
   // ── API認証（Dual Engine: sk- → OpenAI / それ以外 → Gemini） ──
-  const handleApiKeySubmit = () => {
-    const cleanKey = apiKeyInput.replace(/[^\x20-\x7E]/g, "").trim();
-    if (cleanKey.length < 10) return;
+  const handleApiKeySubmit = async () => {
+    if (apiKeyCheckPending.current) return;
+    const cleanKey = apiKeyInput.replace(/[^\x20-\x7E]/g, '').trim();
+    if (!cleanKey) {
+      setErrorMessage('APIキーを入力してください。 / Enter an API key.');
+      return;
+    }
 
-    if (cleanKey.startsWith("sk-")) {
-      // OpenAI Engine
-      setOpenAIApiKey(cleanKey);
-      setActiveEngine('openai');
-      setEngineMode('openai');
+    const nextEngine = cleanKey.startsWith('sk-') ? 'openai' : 'gemini';
+    const provider = nextEngine === 'openai' ? 'OpenAI' : 'Gemini';
+    const run = startAiWork();
+    apiKeyCheckPending.current = true;
+    setIsCheckingApiKey(true);
+    setErrorMessage('');
+
+    try {
+      const verified = await checkProviderKey(nextEngine, cleanKey);
+      if (!isCurrentApiWork(run)) return;
+      setApiKey(nextEngine === 'gemini' ? cleanKey : '');
+      setOpenAIApiKey(nextEngine === 'openai' ? cleanKey : '');
+      setActiveEngine(nextEngine);
+      setEngineMode(nextEngine);
+      setConnectionStatus(verified ? 'verified' : 'unverified');
+      setApiKeyInput('');
       setIsUnlocked(true);
-      showStatus('✅ ChatGPT Engine 接続完了！ / Connected!', true);
+
+      if (!verified) {
+        showStatus(`${provider} APIキー未確認。モデル一覧の権限がないため、抽出・生成時に確認します。 / Model list access is restricted.`);
+      } else if (originalImage) {
+        showStatus(`${provider} APIキーを確認しました。「テキスト再抽出」で同じ画像から再開できます。`);
+      } else {
+        showStatus(`${provider} APIキーを確認しました。 / API key verified.`, true);
+      }
+    } catch (err) {
+      if (isCurrentApiWork(run) && !isApiWorkCancelled(err)) setErrorMessage(err.message);
+    } finally {
+      apiKeyCheckPending.current = false;
+      setIsCheckingApiKey(false);
+      if (isCurrentApiWork(run)) setApiBusy(false);
+    }
+  };
+
+  const reportApiError = (err, operation = '') => {
+    if (isApiKeyRejected(err)) {
+      setConnectionStatus('rejected');
+      setErrorMessage(err.message);
     } else {
-      // Gemini Engine（従来通り）
-      setApiKey(cleanKey);
-      setActiveEngine('gemini');
-      setEngineMode('gemini');
-      setIsUnlocked(true);
-      showStatus('✅ Gemini Engine 接続完了！ / Connected!', true);
+      setErrorMessage(operation ? `${operation} ${err.message}` : err.message);
     }
   };
 
@@ -317,7 +352,7 @@ Output the final translated image only. No explanations needed.`;
   // ── テキスト抽出 ──
   const runExtraction = async (imageDataUrl, langOverride, forMcp = false) => {
     const dataUrl = imageDataUrl || originalImage;
-    if (!dataUrl) return;
+    if (!dataUrl || needsApiKey) return;
     const run = startAiWork();
     setIsExtracting(true);
     setErrorMessage('');
@@ -338,6 +373,8 @@ Output the final translated image only. No explanations needed.`;
       
       // もし抽出中に別の画像がドロップされセッションが変わっていたら、古い結果は画面に反映せず破棄する
       if (!isCurrentApiWork(run) || currentSession !== extractionSessionRef.current) return;
+
+      setConnectionStatus('verified');
 
       // 新形式 {layout, texts, detectedSourceLang} を分離して保存
       if (result.layout && result.texts) {
@@ -367,6 +404,7 @@ Output the final translated image only. No explanations needed.`;
              result.texts = retranslated;
           } catch(e) {
              if (!isCurrentApiWork(run) || isApiWorkCancelled(e)) return;
+             if (isApiKeyRejected(e)) throw e;
              console.warn("Retranslation failed:", e);
           }
         }
@@ -386,7 +424,7 @@ Output the final translated image only. No explanations needed.`;
     } catch (err) {
       if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
       if (!isCurrentApiWork(run) || currentSession !== extractionSessionRef.current) return;
-      setErrorMessage(`テキスト抽出エラー: ${err.message}`);
+      reportApiError(err, 'テキスト抽出エラー。');
       showStatus('', false);
       if (forMcp) throw err;
     } finally {
@@ -429,7 +467,7 @@ Output the final translated image only. No explanations needed.`;
 
   const handleSingleTranslate = async (index) => {
     const item = translations[index];
-    if (!item.original) return;
+    if (!item.original || needsApiKey) return;
     const run = startAiWork();
     setTranslatingRow(index);
     showStatus(`🔄 テキスト #${index + 1} を翻訳中... / Translating text #${index + 1}...`);
@@ -443,7 +481,7 @@ Output the final translated image only. No explanations needed.`;
     } catch (err) {
       if (!isCurrentApiWork(run) || isApiWorkCancelled(err)) return;
       if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
-      setErrorMessage(`個別翻訳エラー / Translation Error: ${err.message}`);
+      reportApiError(err, '個別翻訳エラー / Translation Error.');
       showStatus('', false);
     } finally {
       if (isCurrentApiWork(run)) { setTranslatingRow(null); setApiBusy(false); }
@@ -501,7 +539,7 @@ Output the final translated image only. No explanations needed.`;
 
   // ── 画像生成 ──
   const handleGenerate = async (forceOriginal = false, forMcp = false) => {
-    if (!originalImage || isGenerating) return;
+    if (!originalImage || isGenerating || needsApiKey) return;
     const run = startAiWork();
     setIsGenerating(true);
     setErrorMessage('');
@@ -539,6 +577,7 @@ Output the final translated image only. No explanations needed.`;
         targetLanguage,
         timestamp: Date.now()
       };
+      setConnectionStatus('verified');
       setImageResult(entry);
       setHistory(prev => [entry, ...prev]);
       showStatus(`✅ ${langInfo.nativeName}${isRefinement ? '修正' : '翻訳'}完了 (${result.usedModel})`, true);
@@ -554,7 +593,7 @@ Output the final translated image only. No explanations needed.`;
     } catch (err) {
       if (!isCurrentApiWork(run) || isApiWorkCancelled(err)) return;
       if (engineMode === 'openai') setTextModelStatus(getOpenAITextModelStatus());
-      setErrorMessage(err.message);
+      reportApiError(err);
       showStatus('', false);
       if (forMcp) throw err;
     } finally {
@@ -595,26 +634,34 @@ Output the final translated image only. No explanations needed.`;
     setShowBuilder(false);
   };
 
-  // ── API リセット（エンジン設定もリセット） ──
-  const handleFullReset = () => {
-    handleImageReset();
+  // ── APIキーの再入力（画像・設定は維持） ──
+  const handleRetryApiKey = () => {
     setApiKey('');
     setOpenAIApiKey('');
+    setConnectionStatus(null);
+    setErrorMessage('');
+    showStatus('', false);
+    setApiKeyInput('');
+    setIsUnlocked(false);
+  };
+
+  // ── 全リセットとAPI切替 ──
+  const handleFullReset = () => {
+    handleImageReset();
+    handleRetryApiKey();
     setActiveEngine('gemini');
     setEngineMode('gemini');
-    setIsUnlocked(false);
-    setApiKeyInput('');
   };
 
   const isWorking = apiBusy || isExtracting || isGenerating || translatingRow !== null;
-  const canGenerate = originalImage && !isWorking && translations.length > 0;
+  const canGenerate = originalImage && !isWorking && !needsApiKey && translations.length > 0;
   useEffect(() => {
     mcpActions.current = {
-      readiness: () => isUnlocked,
+      readiness: () => isUnlocked && !needsApiKey,
       stop: stopAiWork,
       async execute(operation, { action }) {
         if (operation !== 'process_page') throw mcpAppError('OUTPUT_INVALID');
-        if (!isUnlocked) throw mcpAppError('API_REQUIRED');
+        if (!isUnlocked || needsApiKey) throw mcpAppError('API_REQUIRED');
         if (isWorking) throw mcpAppError('APP_BUSY');
         if (!originalImage) throw mcpAppError('INPUT_REQUIRED');
         if (action === 'extract') {
@@ -681,6 +728,7 @@ Output the final translated image only. No explanations needed.`;
               {/* エンジンバッジ */}
               <span className={`engine-badge ${engineMode === 'openai' ? 'engine-openai' : 'engine-gemini'}`}>
                 {engineMode === 'openai' ? '🟢 ChatGPT' : '🔵 Gemini'}
+                {needsApiKey ? ' · キー要確認' : connectionStatus === 'unverified' ? ' · キー未確認' : ''}
               </span>
               <div className="model-select-wrap">
                 <label className="model-label">入力言語 / Source</label>
@@ -730,27 +778,35 @@ Output the final translated image only. No explanations needed.`;
           {statusMessage && (
             <div className="inline-status"><span>{statusMessage}</span><button onClick={() => setStatusMessage('')}>✕</button></div>
           )}
-          {errorMessage && (
-            <div className="error-bar"><span>⚠️ {errorMessage}</span><button onClick={() => setErrorMessage('')}>✕</button></div>
+          {(errorMessage || needsApiKey) && (
+            <div className="error-bar" role="alert">
+              <span>⚠️ {errorMessage || 'APIキーを入れ直してください。 / Re-enter the API key.'}</span>
+              {needsApiKey
+                ? <button className="error-retry-key" onClick={handleRetryApiKey} disabled={isWorking}>APIキーを入れ直す / Re-enter API key</button>
+                : <button onClick={() => setErrorMessage('')}>✕</button>}
+            </div>
           )}
         </>}
       </div>
       {/* APIゲート */}
       {!isUnlocked && (
         <div className="api-gate">
-          <div className="api-gate-card">
+          <div className="api-gate-card" aria-busy={isCheckingApiKey}>
             <div className="api-gate-icon">🌐</div>
             <h1 className="api-gate-title">{APP_NAME}</h1>
             <p className="api-gate-sub">V{SYSTEM_VERSION} — Multilingual Comic Translation Tool</p>
             <input type="password" className="api-gate-input" placeholder="Gemini API Key または OpenAI Key (sk-...) を入力..."
               aria-describedby="gemini-billing-notice"
-              value={apiKeyInput} onChange={(e) => setApiKeyInput(e.target.value)}
+              value={apiKeyInput} disabled={isCheckingApiKey} onChange={(e) => { setApiKeyInput(e.target.value); setErrorMessage(''); }}
               onKeyDown={(e) => e.key === 'Enter' && handleApiKeySubmit()} />
             <p id="gemini-billing-notice" className="api-gate-billing">
               アプリ本体は無料です。Geminiでの画像再生成には、課金を有効にしたGemini APIプロジェクトが必要です。
               {' '}<a href="https://aistudio.google.com/docs/pricing#gemini-nano-banana-2.1" target="_blank" rel="noreferrer" className="api-link-gemini">公式料金表</a>
             </p>
-            <button className={`api-gate-btn ${apiKeyInput.trim().startsWith('sk-') ? 'api-gate-btn-openai' : ''}`} onClick={handleApiKeySubmit}>🔓 起動する / Start</button>
+            <button className={`api-gate-btn ${apiKeyInput.trim().startsWith('sk-') ? 'api-gate-btn-openai' : ''}`} onClick={handleApiKeySubmit} disabled={isCheckingApiKey}>
+              {isCheckingApiKey ? 'APIキー確認中 / Checking API key…' : '🔓 起動する / Start'}
+            </button>
+            {errorMessage && <div className="error-bar api-gate-error" role="alert"><span>{errorMessage}</span></div>}
 
 
             <label>OpenAI text / Vision model
@@ -763,9 +819,9 @@ Output the final translated image only. No explanations needed.`;
             <div className={`engine-indicator ${apiKeyInput.trim().startsWith('sk-') ? 'detecting-openai' : apiKeyInput.trim() ? 'detecting-gemini' : ''}`}>
               <span className="engine-dot" />
               {apiKeyInput.trim().startsWith('sk-')
-                ? '🟢 ChatGPT Engine で起動'
+                ? '🟢 OpenAI を選択 / OpenAI selected'
                 : apiKeyInput.trim()
-                  ? '🔵 Gemini Engine で起動'
+                  ? '🔵 Gemini を選択 / Gemini selected'
                   : '入力待ち... / Waiting for input...'}
               {apiKeyInput.trim().startsWith('sk-') && (
                 <span className="engine-cost-warn">⚠ 従量課金（OpenAI API）</span>
@@ -893,7 +949,7 @@ Output the final translated image only. No explanations needed.`;
 
             {/* テキスト抽出ボタン（画像の下、テキスト欄の上） */}
             {originalImage && (
-              <button className="btn-extract" onClick={() => runExtraction()} disabled={isExtracting || !originalImage}>
+              <button className="btn-extract" onClick={() => runExtraction()} disabled={isExtracting || needsApiKey}>
                 {isExtracting
                   ? <><span className="animate-spin">◉</span> テキスト解析中... / Extracting...</>
                   : <>📖 テキスト再抽出 / Re-extract Text</>
@@ -924,7 +980,7 @@ Output the final translated image only. No explanations needed.`;
                         onChange={(e) => updateOriginalText(i, e.target.value)}
                         className="text-input text-orig" rows={2} />
                       <div className="text-row-actions">
-                        <button className="btn-retrans" onClick={() => handleSingleTranslate(i)} disabled={translatingRow === i} title="この行だけ再翻訳 / Retranslate this line">
+                        <button className="btn-retrans" onClick={() => handleSingleTranslate(i)} disabled={translatingRow === i || needsApiKey} title="この行だけ再翻訳 / Retranslate this line">
                           {translatingRow === i ? <span className="animate-spin" style={{fontSize: '9px'}}>◉</span> : '🔄'}
                         </button>
                         <button className="btn-clear" onClick={() => updateTranslation(i, '')} disabled={translatingRow === i} title={`${getLanguageInfo(targetLanguage).nativeName}訳を消去 / Clear translation`}>🧹</button>

@@ -48,7 +48,7 @@ test('Gemini and OpenAI send the actual format for extraction and image editing'
         steps: [{ content: [{ type: 'image', data: jpeg.base64, mime_type: jpeg.mimeType }] }],
       });
     }
-    if (url.includes(':generateContent?')) {
+    if (url.endsWith(':generateContent')) {
       sent.push(JSON.parse(body).contents[0].parts[0].inlineData);
       return Response.json({ candidates: [{ content: { parts: [{ text: '[]' }] } }] });
     }

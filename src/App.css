@@ -53,9 +53,9 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
   width: 100%; padding: 0.9rem; background: var(--indigo); color: white;
   font-weight: 800; font-size: 0.85rem; border-radius: var(--radius-lg);
 }
-.api-gate-btn:hover { background: var(--indigo-light); }
+.api-gate-btn:hover:not(:disabled) { background: var(--indigo-light); }
 .api-gate-btn-openai { background: #059669 !important; }
-.api-gate-btn-openai:hover { background: #10b981 !important; }
+.api-gate-btn-openai:hover:not(:disabled) { background: #10b981 !important; }
 .api-gate-note { font-size: 0.6rem; color: var(--text-dim); margin-top: 0.8rem; line-height: 1.6; }
 
 /* Dual Engine — APIゲート内のリンク */
@@ -178,7 +178,7 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
 .inline-status button:hover { opacity: 1; }
 
 .error-bar {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.45rem;
   padding: 0.45rem 0.8rem; margin-bottom: 0.5rem;
   background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.35);
   border-radius: var(--radius-sm);
@@ -187,6 +187,9 @@ html, body { margin: 0; padding: 0; min-height: 100vh; }
 }
 .error-bar button { background: transparent; color: var(--rose); font-size: 0.7rem; padding: 0 0.2rem; opacity: 0.6; }
 .error-bar button:hover { opacity: 1; }
+.error-bar > span { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
+.error-bar .error-retry-key { border: 1px solid currentColor; border-radius: var(--radius-md); padding: 0.3rem 0.5rem; opacity: 1; }
+.api-gate-error { margin-top: 0.75rem; text-align: left; }
 
 /* === D&Dゾーン === */
 .drop-zone {

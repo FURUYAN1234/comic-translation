@@ -1,4 +1,5 @@
 import {createApiWorkFetch,throwIfApiWorkCancelled} from './api-work.js';
+import { isApiKeyRejected, providerResponseError } from './provider-auth.js';
 /**
  * Gemini API Client for AI漫画翻訳ツール
  * 共通モジュール準拠の Zenith Protocol フォールバック
@@ -45,11 +46,13 @@ export const diagnoseConnection = async () => {
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒タイムアウト
   try {
     const response = await fetchForWork(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${currentApiKey}`,
-      { signal: controller.signal }
+      'https://generativelanguage.googleapis.com/v1beta/models',
+      { headers: { 'x-goog-api-key': currentApiKey }, signal: controller.signal }
     );
     const data = await response.json();
-    if (data.error) return `API Error: ${data.error.message}`;
+    const providerError = providerResponseError('gemini', response.status, data.error);
+    if (isApiKeyRejected(providerError)) throw providerError;
+    if (providerError) return providerError.message;
     if (!data.models) return "No models returned by API.";
     const relevant = data.models
       .map(m => m.name.replace("models/", ""))
@@ -57,6 +60,7 @@ export const diagnoseConnection = async () => {
     return `Available Models: ${relevant.join(", ")}`;
   } catch (e) {
       throwIfApiWorkCancelled(e);
+    if (isApiKeyRejected(e)) throw e;
     let msg = e.message;
     if (e.name === 'AbortError') msg = "Timeout (10s)";
     return `Diagnostic Failed: ${msg}`;
@@ -153,6 +157,7 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
     }
   };
 
+  let accessError;
   for (const modelId of TEXT_MODEL_IDS) {
     let timeoutId;
     try {
@@ -162,10 +167,10 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
       timeoutId = setTimeout(() => controller.abort(), 25000);
 
       const response = await fetchForWork(
-        `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${currentApiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-goog-api-key": currentApiKey },
           body: JSON.stringify({
             contents: [{
               parts: [imagePayload, { text: prompt }]
@@ -185,7 +190,8 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
       );
 
       const data = await response.json();
-      if (data.error) throw new Error(`${data.error.message} (Code: ${data.error.code})`);
+      const providerError = providerResponseError('gemini', response.status, data.error);
+      if (providerError) throw providerError;
 
       const candidates = data.candidates || [];
       if (!candidates.length) throw new Error("No response candidates");
@@ -219,6 +225,8 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
 
     } catch (err) {
       throwIfApiWorkCancelled(err);
+      if (isApiKeyRejected(err)) throw err;
+      if (err.code === 'PERMISSION_DENIED' || err.code === 'RESOURCE_EXHAUSTED') accessError = err;
       let msg = err.message;
       if (err.name === "AbortError") msg = "Timeout (25s)";
       console.warn(`[Extract] ${modelId} failed:`, msg);
@@ -229,6 +237,7 @@ export const extractTranslations = async (base64Image, onStatus, targetLang = 'e
   }
 
   // 全モデル失敗
+  if (accessError) throw accessError;
   if (onStatus) onStatus("> [抽出] 全モデル失敗。診断中...");
   const diagnosis = await diagnoseConnection();
   throw new Error(`テキスト抽出失敗: ${diagnosis}`);
@@ -270,20 +279,22 @@ export const translateSingleText = async (originalText, targetLang = 'en', sourc
       const controller = new AbortController();
       timeoutId = setTimeout(() => controller.abort(), 25000);
       const response = await fetchForWork(
-        `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${currentApiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-goog-api-key": currentApiKey },
           body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
           signal: controller.signal,
         }
       );
       const data = await response.json();
-      if (data.error) throw new Error(data.error.message);
+      const providerError = providerResponseError('gemini', response.status, data.error);
+      if (providerError) throw providerError;
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
       if (text) return text.trim();
     } catch (e) {
       throwIfApiWorkCancelled(e);
+      if (isApiKeyRejected(e)) throw e;
       console.warn(`[SingleTranslate] ${modelId} failed:`, e.message);
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
@@ -401,6 +412,7 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
 
   const prompt = basePrompt;
 
+  let accessError;
   const imagePayload = { type: 'image', mime_type: imageMimeType, data: base64Image };
 
   // 選択モデル → フォールバックリスト構築
@@ -431,7 +443,8 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
       );
 
       const data = await response.json();
-      if (data.error) throw new Error(`${data.error.message} (Code: ${data.error.code})`);
+      const providerError = providerResponseError('gemini', response.status, data.error);
+      if (providerError) throw providerError;
 
       const parts = (data.steps || []).flatMap(step => step.content || []);
       const imagePart = parts
@@ -450,6 +463,8 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
 
     } catch (err) {
       throwIfApiWorkCancelled(err);
+      if (isApiKeyRejected(err)) throw err;
+      if (err.code === 'PERMISSION_DENIED' || err.code === 'RESOURCE_EXHAUSTED') accessError = err;
       let msg = err.message;
       if (err.name === "AbortError") msg = "Timeout (180s)";
       console.warn(`[ImageGen] ${modelId} failed:`, msg);
@@ -460,6 +475,7 @@ FINAL CHECK: Ensure NO original ${srcName} text remains and NO artwork was alter
   }
 
   // 全モデル失敗
+  if (accessError) throw accessError;
   if (onStatus) onStatus("> [生成] 全モデル失敗。診断中...");
   const diagnosis = await diagnoseConnection();
   let errorMsg = `画像生成全モデルエラー。\n${diagnosis}`;
